@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
 import { extractEmail } from '@/lib/utils';
 import crypto from 'crypto';
@@ -49,11 +49,11 @@ export async function POST(req: Request) {
     
     // Store email in a list (LIFO usually better for email? No, Redis list is generic. lpush = prepend)
     // lpush puts new emails at index 0.
-    await kv.lpush(key, emailData);
+    await redis.lpush(key, emailData);
     
     // Set expiry to 24 hours (86400 seconds)
     // Note: expire only works on the key, so it refreshes the whole list TTL.
-    await kv.expire(key, 86400);
+    await redis.expire(key, 86400);
 
     return NextResponse.json({ success: true, id: emailId });
   } catch (error) {
