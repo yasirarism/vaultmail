@@ -27,10 +27,17 @@ export function InboxInterface() {
   const [loading, setLoading] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [savedDomains, setSavedDomains] = useState<string[]>(['example.com', 'vaultmail.qzz.io']);
 
-  // Load saved address
+  // Load saved address and domains
   useEffect(() => {
     const saved = localStorage.getItem('dispo_address');
+    const savedDoms = localStorage.getItem('dispo_domains');
+    
+    if (savedDoms) {
+        setSavedDomains(JSON.parse(savedDoms));
+    }
+
     if (saved) {
         setAddress(saved);
         const savedDomain = saved.split('@')[1];
@@ -50,18 +57,7 @@ export function InboxInterface() {
     toast.success('New address generated');
   };
 
-  const handleDomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setDomain(e.target.value);
-  }
 
-  const updateAddressWithDomain = () => {
-      const userPart = address.split('@')[0] || 'user';
-      const newAddress = `${userPart}@${domain}`;
-      setAddress(newAddress);
-      localStorage.setItem('dispo_address', newAddress);
-      setEmails([]); // Clear inbox on address change
-      toast.info('Address updated');
-  }
 
   const copyAddress = () => {
     navigator.clipboard.writeText(address);
@@ -123,20 +119,58 @@ export function InboxInterface() {
           <div className="flex-1 flex gap-2">
             <div className="relative flex-1">
                 <Input 
-                    value={address.split('@')[0]} 
-                    readOnly 
+                    value={address.split('@')[0]}
+                    onChange={(e) => {
+                        const val = e.target.value.replace(/[^a-zA-Z0-9._-]/g, '');
+                        const currentDomain = address.split('@')[1] || domain;
+                        setAddress(`${val}@${currentDomain}`);
+                        localStorage.setItem('dispo_address', `${val}@${currentDomain}`);
+                    }}
                     className="pr-4 font-mono text-lg bg-black/20 border-white/10 h-12"
+                    placeholder="username"
                 />
-                <span className="absolute right-3 top-3 text-muted-foreground text-sm">@</span>
             </div>
-            <div className="relative flex-1 max-w-[200px]">
-                 <Input 
-                    value={domain}
-                    onChange={handleDomainChange}
-                    onBlur={updateAddressWithDomain}
-                    className="font-mono text-lg bg-black/20 border-white/10 h-12 border-l-0 rounded-l-none"
-                    placeholder="domain.com"
-                />
+            <div className="relative flex items-center">
+                 <span className="text-muted-foreground text-lg px-2">@</span>
+            </div>
+            <div className="relative flex-1 max-w-[250px] flex gap-2">
+                 {/* Domain Selection Logic */}
+                 <div className="relative w-full">
+                    <select 
+                        value={domain}
+                        onChange={(e) => {
+                            const newDomain = e.target.value;
+                            if (newDomain === 'add_new') {
+                                const custom = prompt("Enter custom domain:");
+                                if (custom) {
+                                    // Add to saved list
+                                    const newSaved = [...savedDomains, custom];
+                                    setSavedDomains(newSaved);
+                                    localStorage.setItem('dispo_domains', JSON.stringify(newSaved));
+                                    setDomain(custom);
+                                    
+                                    const currentUser = address.split('@')[0];
+                                    const newAddr = `${currentUser}@${custom}`;
+                                    setAddress(newAddr);
+                                    localStorage.setItem('dispo_address', newAddr);
+                                }
+                            } else {
+                                setDomain(newDomain);
+                                const currentUser = address.split('@')[0];
+                                const newAddr = `${currentUser}@${newDomain}`;
+                                setAddress(newAddr);
+                                localStorage.setItem('dispo_address', newAddr);
+                            }
+                        }}
+                        className="w-full h-12 pl-3 pr-8 rounded-md border border-white/10 bg-black/20 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 appearance-none glass"
+                    >
+                        {savedDomains.map((d) => (
+                            <option key={d} value={d} className="bg-slate-900">{d}</option>
+                        ))}
+                        <option value="add_new" className="bg-slate-900 font-bold text-blue-400">+ Add Domain</option>
+                    </select>
+                    <ArrowRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none rotate-90" />
+                 </div>
             </div>
           </div>
           <div className="flex gap-2">

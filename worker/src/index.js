@@ -4,7 +4,8 @@ export default {
   async email(message, env, ctx) {
     try {
         const parser = new PostalMime();
-        const email = await parser.parse(message.raw);
+        const rawEmail = await new Response(message.raw).arrayBuffer();
+        const email = await parser.parse(rawEmail);
         
         // Replace with your actual Vercel app URL
         // If testing locally, you'd need a tunnel (ngrok). For prod, use your vercel.app domain.
