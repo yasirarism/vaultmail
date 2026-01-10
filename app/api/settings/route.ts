@@ -14,7 +14,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No settings to update' }, { status: 400 });
     }
 
-    const settingsKey = `settings:${address.toLowerCase()}`;
+    const normalizedAddress = extractEmail(address) ?? address.toLowerCase();
+    const settingsKey = `settings:${normalizedAddress}`;
     const existingRaw = await redis.get(settingsKey);
     let existingSettings: Record<string, unknown> = {};
 
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
     // If there are existing emails/keys, we might want to update their TTL, but that's expensive.
     // Instead, we focus on *future* emails respecting this. 
     // However, we SHOULD update the 'inbox:{address}' list TTL if it exists.
-    const inboxKey = `inbox:${address.toLowerCase()}`;
+    const inboxKey = `inbox:${normalizedAddress}`;
     const exists = await redis.exists(inboxKey);
     if (exists && retentionSeconds !== undefined) {
         await redis.expire(inboxKey, parseInt(retentionSeconds, 10));
@@ -85,7 +86,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Missing address' }, { status: 400 });
     }
 
-    const settingsRaw = await redis.get(`settings:${address.toLowerCase()}`);
+    const normalizedAddress = extractEmail(address) ?? address.toLowerCase();
+    const settingsRaw = await redis.get(`settings:${normalizedAddress}`);
     let settings: Record<string, unknown> = {};
 
     if (settingsRaw) {

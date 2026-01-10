@@ -59,7 +59,7 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
         setRetention(seconds);
         setSaving(true);
         try {
-            await fetch('/api/settings', {
+            const response = await fetch('/api/settings', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ 
@@ -67,6 +67,10 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
                     retentionSeconds: seconds 
                 })
             });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data?.error || 'Failed to save settings');
+            }
             // Also save to LOCAL storage so we remember user preference for FUTURE addresses
             localStorage.setItem('dispo_default_retention', seconds.toString());
             toast.success('Retention updated');
@@ -82,7 +86,7 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
         if (!currentAddress) return;
         setForwardSaving(true);
         try {
-            await fetch('/api/settings', {
+            const response = await fetch('/api/settings', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -90,6 +94,10 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
                     forwardTo
                 })
             });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data?.error || 'Failed to save forwarding');
+            }
             if (forwardTo.trim()) {
                 toast.success('Forwarding updated');
             } else {
