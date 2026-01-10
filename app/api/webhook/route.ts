@@ -3,6 +3,59 @@ import { NextResponse } from 'next/server';
 import { extractEmail } from '@/lib/utils';
 import crypto from 'crypto';
 
+const RESEND_ENDPOINT = 'https://api.resend.com/emails';
+
+async function forwardEmail({
+  to,
+  from,
+  subject,
+  text,
+  html
+}: {
+  to: string;
+  from: string;
+  subject: string;
+  text: string;
+  html: string;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const forwardFrom = process.env.FORWARD_FROM_EMAIL;
+
+  if (!apiKey || !forwardFrom) {
+    console.warn('Forwarding skipped: missing RESEND_API_KEY or FORWARD_FROM_EMAIL');
+    return;
+  }
+
+  const payload = {
+    from: forwardFrom,
+    to: [to],
+    subject,
+    text,
+    html,
+    headers: {
+      'X-Forwarded-From': from
+    }
+  };
+
+  try {
+    const response = await fetch(RESEND_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Forwarding failed', response.status, errorText);
+    }
+  } catch (error) {
+    console.error('Forwarding error', error);
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get('content-type') || '';
@@ -51,6 +104,7 @@ export async function POST(req: Request) {
     const settingsKey = `settings:${cleanTo}`;
     const settingsRaw = await redis.get(settingsKey);
     let retention = 86400; // Default 24h
+    let forwardTo: string | null = null;
 
     if (settingsRaw) {
         try {
@@ -58,10 +112,12 @@ export async function POST(req: Request) {
             if (typeof settingsRaw === 'string') {
                  const s = JSON.parse(settingsRaw);
                  if (s.retentionSeconds) retention = s.retentionSeconds;
+                 if (s.forwardTo) forwardTo = s.forwardTo;
             } else if (typeof settingsRaw === 'object') {
                  // Upstash REST client might return object directly if auto-deserializing
                  const s = settingsRaw as any;
                  if (s.retentionSeconds) retention = s.retentionSeconds;
+                 if (s.forwardTo) forwardTo = s.forwardTo;
             }
         } catch (e) {
             console.error("Failed to parse settings", e);
@@ -75,6 +131,16 @@ export async function POST(req: Request) {
     // Set expiry based on retention setting
     // Note: expire only works on the key, so it refreshes the whole list TTL.
     await redis.expire(key, retention);
+
+    if (forwardTo) {
+      await forwardEmail({
+        to: forwardTo,
+        from,
+        subject: subject || '(No Subject)',
+        text: text || '',
+        html: html || text || ''
+      });
+    }
 
     return NextResponse.json({ success: true, id: emailId });
   } catch (error) {

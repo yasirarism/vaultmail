@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Trash2, Plus, Globe, Clock, Settings2 } from 'lucide-react';
+import { X, Trash2, Plus, Globe, Clock, Settings2, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -37,6 +37,8 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
     const [newDomain, setNewDomain] = useState('');
     const [retention, setRetention] = useState<number>(86400);
     const [saving, setSaving] = useState(false);
+    const [forwardTo, setForwardTo] = useState('');
+    const [forwardSaving, setForwardSaving] = useState(false);
 
     const handleAddDomain = (e: React.FormEvent) => {
         e.preventDefault();
@@ -76,11 +78,57 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
         }
     };
 
+    const handleForwardSave = async () => {
+        if (!currentAddress) return;
+        setForwardSaving(true);
+        try {
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    address: currentAddress,
+                    forwardTo
+                })
+            });
+            if (forwardTo.trim()) {
+                toast.success('Forwarding updated');
+            } else {
+                toast.success('Forwarding cleared');
+            }
+        } catch (e) {
+            toast.error('Failed to save forwarding');
+        } finally {
+            setForwardSaving(false);
+        }
+    };
+
+    const loadSettings = async () => {
+        if (!currentAddress) return;
+        try {
+            const res = await fetch(`/api/settings?address=${encodeURIComponent(currentAddress)}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data?.settings?.retentionSeconds) {
+                setRetention(data.settings.retentionSeconds);
+            }
+            if (typeof data?.settings?.forwardTo === 'string') {
+                setForwardTo(data.settings.forwardTo);
+            }
+        } catch (e) {
+            console.error('Failed to load settings', e);
+        }
+    };
+
     // Load initial preference on mount
     useEffect(() => {
         const saved = localStorage.getItem('dispo_default_retention');
         if (saved) setRetention(parseInt(saved));
     }, []);
+
+    useEffect(() => {
+        if (!open) return;
+        loadSettings();
+    }, [open, currentAddress]);
 
     const customDomains = savedDomains.filter(d => !SYSTEM_DOMAINS.includes(d));
 
@@ -177,6 +225,33 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
                                                             )}
                                                         </button>
                                                     ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                                                    <Mail className="h-4 w-4 text-purple-300" />
+                                                    Forwarding
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <p className="text-xs text-gray-400">
+                                                        Forward incoming emails from this inbox to another address. Leave empty to disable.
+                                                    </p>
+                                                    <div className="flex flex-col gap-2">
+                                                        <Input
+                                                            placeholder="you@yourdomain.com"
+                                                            value={forwardTo}
+                                                            onChange={(e) => setForwardTo(e.target.value)}
+                                                            className="bg-black/20 border-white/10 focus-visible:ring-purple-500/40"
+                                                        />
+                                                        <Button
+                                                            onClick={handleForwardSave}
+                                                            disabled={forwardSaving}
+                                                            className="w-full bg-purple-600 hover:bg-purple-500"
+                                                        >
+                                                            {forwardSaving ? 'Saving...' : 'Save Forwarding'}
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

@@ -1,34 +1,106 @@
 import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
+import { extractEmail } from '@/lib/utils';
 
 export async function POST(req: Request) {
   try {
-    const { address, retentionSeconds } = await req.json();
+    const { address, retentionSeconds, forwardTo } = await req.json();
 
-    if (!address || !retentionSeconds) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+    if (!address) {
+      return NextResponse.json({ error: 'Missing address' }, { status: 400 });
     }
 
-    // Save retention setting for this address
-    // Key: settings:{address} -> JSON Value
-    await redis.set(`settings:${address.toLowerCase()}`, JSON.stringify({
-        retentionSeconds: parseInt(retentionSeconds)
-    }));
+    if (retentionSeconds === undefined && forwardTo === undefined) {
+      return NextResponse.json({ error: 'No settings to update' }, { status: 400 });
+    }
+
+    const settingsKey = `settings:${address.toLowerCase()}`;
+    const existingRaw = await redis.get(settingsKey);
+    let existingSettings: Record<string, unknown> = {};
+
+    if (existingRaw) {
+      try {
+        if (typeof existingRaw === 'string') {
+          existingSettings = JSON.parse(existingRaw);
+        } else if (typeof existingRaw === 'object') {
+          existingSettings = existingRaw as Record<string, unknown>;
+        }
+      } catch (error) {
+        console.error('Failed to parse settings', error);
+      }
+    }
+
+    const updatedSettings: Record<string, unknown> = { ...existingSettings };
+
+    if (retentionSeconds !== undefined) {
+      const parsedRetention = parseInt(retentionSeconds, 10);
+      if (Number.isNaN(parsedRetention)) {
+        return NextResponse.json({ error: 'Invalid retention' }, { status: 400 });
+      }
+      updatedSettings.retentionSeconds = parsedRetention;
+    }
+
+    if (forwardTo !== undefined) {
+      const trimmedForward = String(forwardTo).trim();
+      if (!trimmedForward) {
+        delete updatedSettings.forwardTo;
+      } else {
+        const normalizedForward = extractEmail(trimmedForward);
+        if (!normalizedForward) {
+          return NextResponse.json({ error: 'Invalid forward address' }, { status: 400 });
+        }
+        updatedSettings.forwardTo = normalizedForward;
+      }
+    }
+
+    // Save settings for this address
+    await redis.set(settingsKey, JSON.stringify(updatedSettings));
 
     // Also persist this setting itself for a few days so it doesn't vanish if unused
     // But typically it should last as long as the address is in use
-    await redis.expire(`settings:${address.toLowerCase()}`, 604800); // 7 days
+    await redis.expire(settingsKey, 604800); // 7 days
 
     // If there are existing emails/keys, we might want to update their TTL, but that's expensive.
     // Instead, we focus on *future* emails respecting this. 
     // However, we SHOULD update the 'inbox:{address}' list TTL if it exists.
     const inboxKey = `inbox:${address.toLowerCase()}`;
     const exists = await redis.exists(inboxKey);
-    if (exists) {
-        await redis.expire(inboxKey, parseInt(retentionSeconds));
+    if (exists && retentionSeconds !== undefined) {
+        await redis.expire(inboxKey, parseInt(retentionSeconds, 10));
     }
 
     return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Settings Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const address = searchParams.get('address');
+
+    if (!address) {
+      return NextResponse.json({ error: 'Missing address' }, { status: 400 });
+    }
+
+    const settingsRaw = await redis.get(`settings:${address.toLowerCase()}`);
+    let settings: Record<string, unknown> = {};
+
+    if (settingsRaw) {
+      try {
+        if (typeof settingsRaw === 'string') {
+          settings = JSON.parse(settingsRaw);
+        } else if (typeof settingsRaw === 'object') {
+          settings = settingsRaw as Record<string, unknown>;
+        }
+      } catch (error) {
+        console.error('Failed to parse settings', error);
+      }
+    }
+
+    return NextResponse.json({ settings });
   } catch (error) {
     console.error('Settings Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
