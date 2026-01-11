@@ -3,6 +3,9 @@
 import { InboxInterface } from "@/components/inbox-interface";
 import { Shield, Zap, Globe } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { DEFAULT_LOCALE, getTranslations, Locale, SUPPORTED_LOCALES } from "@/lib/i18n";
 
 interface HomePageProps {
@@ -13,6 +16,7 @@ const STORAGE_KEY = 'vaultmail_locale';
 
 export function HomePage({ initialAddress }: HomePageProps) {
   const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -44,17 +48,55 @@ export function HomePage({ initialAddress }: HomePageProps) {
             <span>{t.appName}</span>
           </div>
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>{t.languageLabel}</span>
-              <select
-                value={locale}
-                onChange={(event) => setLocale(event.target.value as Locale)}
-                className="h-9 rounded-md border border-white/10 bg-black/20 px-2 text-xs uppercase tracking-wider text-white"
+            <div className="relative">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setShowLanguageMenu((prev) => !prev)}
+                className={cn(
+                  "h-10 px-3 gap-2 rounded-full border border-white/10 bg-white/5 text-xs uppercase tracking-wider text-white glass",
+                  showLanguageMenu && "bg-white/10"
+                )}
               >
-                <option value="en">{t.languageEnglish}</option>
-                <option value="id">{t.languageIndonesian}</option>
-              </select>
-            </label>
+                <Globe className="h-4 w-4 text-blue-300" />
+                {locale === 'id' ? t.languageIndonesian : t.languageEnglish}
+              </Button>
+
+              <AnimatePresence>
+                {showLanguageMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowLanguageMenu(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                      className="absolute right-0 z-50 mt-2 w-44 rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl glass overflow-hidden"
+                    >
+                      <div className="p-2 space-y-1">
+                        {(['en', 'id'] as Locale[]).map((lang) => (
+                          <button
+                            key={lang}
+                            type="button"
+                            onClick={() => {
+                              setLocale(lang);
+                              setShowLanguageMenu(false);
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+                              locale === lang
+                                ? "bg-white/15 text-white"
+                                : "text-gray-200 hover:bg-white/10"
+                            )}
+                          >
+                            {lang === 'en' ? t.languageEnglish : t.languageIndonesian}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
             <a
               href="https://github.com/yasirarism"
               target="_blank"

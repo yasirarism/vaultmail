@@ -43,6 +43,7 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
   const [showHistory, setShowHistory] = useState(false);
   const [isAddDomainOpen, setIsAddDomainOpen] = useState(false);
   const [retention, setRetention] = useState<number>(86400);
+  const [showDomainMenu, setShowDomainMenu] = useState(false);
 
   const stripEmailStyles = useCallback((html: string) => {
     if (!html) return '';
@@ -221,24 +222,58 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
             <div className="relative flex-1 max-w-[250px] flex gap-2">
                  {/* Domain Selection Logic */}
                  <div className="relative w-full">
-                    <select 
-                        value={domain}
-                        onChange={(e) => {
-                            const newDomain = e.target.value;
-                            setDomain(newDomain);
-                            const currentUser = address.split('@')[0];
-                            const newAddr = `${currentUser}@${newDomain}`;
-                            setAddress(newAddr);
-                            localStorage.setItem('dispo_address', newAddr);
-                            addToHistory(newAddr);
-                        }}
-                        className="w-full h-12 pl-3 pr-8 rounded-md border border-white/10 bg-black/20 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 appearance-none glass"
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setShowDomainMenu((prev) => !prev)}
+                        className={cn(
+                          "w-full h-12 pl-3 pr-8 justify-start rounded-md border border-white/10 bg-white/5 text-sm font-mono hover:bg-white/10 glass",
+                          showDomainMenu && "bg-white/10"
+                        )}
                     >
-                        {savedDomains.map((d) => (
-                            <option key={d} value={d} className="bg-slate-900 font-mono">{d}</option>
-                        ))}
-                    </select>
-                    <ArrowRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none rotate-90" />
+                        {domain}
+                        <ArrowRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 rotate-90" />
+                    </Button>
+
+                    <AnimatePresence>
+                        {showDomainMenu && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setShowDomainMenu(false)} />
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                                    className="absolute z-50 mt-2 w-full rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl glass overflow-hidden"
+                                >
+                                    <div className="max-h-60 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                                        {savedDomains.map((d) => (
+                                            <button
+                                                key={d}
+                                                type="button"
+                                                onClick={() => {
+                                                    setDomain(d);
+                                                    const currentUser = address.split('@')[0];
+                                                    const newAddr = `${currentUser}@${d}`;
+                                                    setAddress(newAddr);
+                                                    localStorage.setItem('dispo_address', newAddr);
+                                                    addToHistory(newAddr);
+                                                    setShowDomainMenu(false);
+                                                }}
+                                                className={cn(
+                                                  "w-full text-left px-3 py-2 rounded-lg font-mono text-sm transition-colors",
+                                                  d === domain
+                                                    ? "bg-white/15 text-white"
+                                                    : "text-gray-200 hover:bg-white/10"
+                                                )}
+                                            >
+                                                {d}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
                  </div>
             </div>
           </div>
