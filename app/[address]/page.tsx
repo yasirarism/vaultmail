@@ -1,12 +1,14 @@
 import { InboxInterface } from "@/components/inbox-interface";
 import { Shield, Zap, Globe } from "lucide-react";
 import { redirect } from "next/navigation";
+import { getTranslations } from "@/lib/i18n";
 
 export default async function Page({
     params,
   }: {
     params: Promise<{ address: string }>
   }) {
+  const t = getTranslations();
   const address = (await params).address;
 
   // Simple validation
@@ -28,7 +30,7 @@ export default async function Page({
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                     <Shield className="h-5 w-5 text-white" />
                 </div>
-                <span>YS Mail</span>
+                <span>{t.appName}</span>
             </a>
           <a
             href="https://github.com/yasirarism"
@@ -36,7 +38,7 @@ export default async function Page({
             rel="noopener noreferrer"
             className="text-sm font-medium text-muted-foreground hover:text-white transition-colors"
           >
-            GitHub
+            {t.github}
           </a>
         </div>
       </header>
@@ -45,11 +47,10 @@ export default async function Page({
       <div className="flex-1 py-12">
          <div className="text-center max-w-2xl mx-auto px-4 mb-12 space-y-4">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/50">
-              Disposable Email <br/> for Developers
+              {t.heroTitle} <br/> {t.heroTitleSuffix}
             </h1>
             <p className="text-muted-foreground text-lg">
-              Secure, serverless temporary email service. 
-              Bring your own domain or use the default.
+              {t.heroSubtitle}
             </p>
          </div>
 
@@ -59,24 +60,24 @@ export default async function Page({
          <div className="max-w-6xl mx-auto px-4 mt-24 grid md:grid-cols-3 gap-8">
             <Feature 
                 icon={<Zap className="h-6 w-6 text-yellow-400" />}
-                title="Instant & Real-time"
-                desc="Emails arrive instantly via Webhooks. The inbox auto-refreshes in real-time."
+                title={t.featureInstantTitle}
+                desc={t.featureInstantDesc}
             />
             <Feature 
                 icon={<Shield className="h-6 w-6 text-green-400" />}
-                title="Privacy First"
-                desc="No tracking. Emails traverse your infrastructure and are stored in Redis with 24h TTL."
+                title={t.featurePrivacyTitle}
+                desc={t.featurePrivacyDesc}
             />
             <Feature 
                 icon={<Globe className="h-6 w-6 text-blue-400" />}
-                title="Custom Domains"
-                desc="Point your domain's MX records to your Cloudflare/Mailgun and route emails here."
+                title={t.featureCustomTitle}
+                desc={t.featureCustomDesc}
             />
          </div>
       </div>
 
       <footer className="border-t border-white/5 py-8 mt-12 text-center text-muted-foreground text-sm">
-        <p>© {new Date().getFullYear()} YSMail. Open Source.</p>
+        <p>© {new Date().getFullYear()} {t.appName}. {t.footerSuffix}</p>
       </footer>
     </main>
   );

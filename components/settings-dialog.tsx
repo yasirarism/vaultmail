@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { X, Trash2, Plus, Globe, Clock, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { DEFAULT_DOMAINS } from '@/lib/config';
+import { getRetentionOptions, getTranslations } from '@/lib/i18n';
 
 interface SettingsDialogProps {
     open: boolean;
@@ -13,15 +15,9 @@ interface SettingsDialogProps {
     currentAddress: string;
 }
 
-const SYSTEM_DOMAINS = ['ysweb.biz.id', 'ysweb.id', 'ysdev.net'];
+const SYSTEM_DOMAINS = DEFAULT_DOMAINS;
 
-export const RETENTION_OPTIONS = [
-    { label: '30 Minutes', value: 1800 },
-    { label: '1 Hour', value: 3600 },
-    { label: '24 Hours', value: 86400 },
-    { label: '3 Days', value: 259200 },
-    { label: '1 Week', value: 604800 },
-];
+export const RETENTION_OPTIONS = getRetentionOptions();
 
 interface SettingsDialogProps {
     open: boolean;
@@ -33,6 +29,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomains, currentAddress, onRetentionChange }: SettingsDialogProps) {
+    const t = getTranslations();
     const [activeTab, setActiveTab] = useState<'domains' | 'retention'>('retention');
     const [newDomain, setNewDomain] = useState('');
     const [retention, setRetention] = useState<number>(86400);
@@ -44,13 +41,13 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
         if (domain && !savedDomains.includes(domain) && !SYSTEM_DOMAINS.includes(domain)) {
             onUpdateDomains([...savedDomains, domain]);
             setNewDomain('');
-            toast.success('Domain added');
+            toast.success(t.toastDomainAdded);
         }
     };
 
     const handleDeleteDomain = (domain: string) => {
         onUpdateDomains(savedDomains.filter(d => d !== domain));
-        toast.success('Domain removed');
+        toast.success(t.toastDomainRemoved);
     };
 
     const handleRetentionSave = async (seconds: number) => {
@@ -67,10 +64,10 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
             });
             // Also save to LOCAL storage so we remember user preference for FUTURE addresses
             localStorage.setItem('dispo_default_retention', seconds.toString());
-            toast.success('Retention updated');
+            toast.success(t.toastRetentionUpdated);
             if (onRetentionChange) onRetentionChange(seconds);
         } catch (e) {
-            toast.error('Failed to save settings');
+            toast.error(t.toastRetentionFailed);
         } finally {
             setSaving(false);
         }
@@ -105,8 +102,8 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
                                             <Settings2 className="h-5 w-5 text-purple-400" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-bold text-white leading-none">Settings</h3>
-                                            <p className="text-xs text-muted-foreground mt-1">Manage preferences & domains</p>
+                                            <h3 className="text-lg font-bold text-white leading-none">{t.dialogTitle}</h3>
+                                            <p className="text-xs text-muted-foreground mt-1">{t.dialogSubtitle}</p>
                                         </div>
                                     </div>
                                     <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="h-8 w-8 hover:bg-white/10 rounded-full">
@@ -124,7 +121,7 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
                                         }`}
                                     >
                                         <Clock className="w-4 h-4" />
-                                        Retention
+                                        {t.retentionTab}
                                     </button>
                                     <button 
                                         onClick={() => setActiveTab('domains')}
@@ -135,7 +132,7 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
                                         }`}
                                     >
                                         <Globe className="w-4 h-4" />
-                                        Domains
+                                        {t.domainsTab}
                                     </button>
                                 </div>
 
@@ -143,15 +140,14 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
                                     {activeTab === 'retention' ? (
                                         <div className="space-y-6">
                                             <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-xl p-5 border border-white/5">
-                                                <h4 className="text-sm font-semibold text-white mb-2">Inbox Lifespan</h4>
+                                                <h4 className="text-sm font-semibold text-white mb-2">{t.retentionHeading}</h4>
                                                 <p className="text-xs text-gray-400 leading-relaxed">
-                                                    Configure how long emails persist in this inbox. 
-                                                    Setting a shorter duration improves privacy, while a longer duration ensures you don't miss important mails.
+                                                    {t.retentionDesc}
                                                 </p>
                                             </div>
 
                                             <div className="space-y-3">
-                                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Duration Selection</label>
+                                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t.retentionDurationLabel}</label>
                                                 <div className="grid grid-cols-1 gap-2">
                                                     {RETENTION_OPTIONS.map((opt) => (
                                                         <button
@@ -173,7 +169,7 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
                                                                 <span className="font-medium">{opt.label}</span>
                                                             </div>
                                                             {retention === opt.value && (
-                                                                <span className="text-[10px] font-bold px-2 py-1 rounded bg-purple-500/20 text-purple-300">ACTIVE</span>
+                                                                <span className="text-[10px] font-bold px-2 py-1 rounded bg-purple-500/20 text-purple-300">{t.retentionActive}</span>
                                                             )}
                                                         </button>
                                                     ))}
@@ -184,12 +180,12 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
                                         <div className="space-y-6">
                                             {/* System Domains */}
                                             <div className="space-y-3">
-                                                <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider">System Domains</h4>
+                                                <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider">{t.systemDomainsTitle}</h4>
                                                 <div className="grid gap-2">
                                                     {SYSTEM_DOMAINS.map(domain => (
                                                         <div key={domain} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
                                                             <span className="font-mono text-sm text-gray-300">{domain}</span>
-                                                            <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded">Default</span>
+                                                            <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded">{t.defaultBadge}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -197,11 +193,11 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
 
                                             {/* Custom Domains */}
                                             <div className="space-y-3">
-                                                <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider">Custom Domains</h4>
+                                                <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider">{t.customDomainsTitle}</h4>
                                                 
                                                 <form onSubmit={handleAddDomain} className="flex gap-2">
                                                     <Input 
-                                                        placeholder="Enter new domain..." 
+                                                        placeholder={t.customDomainPlaceholder}
                                                         value={newDomain}
                                                         onChange={(e) => setNewDomain(e.target.value)}
                                                         className="bg-black/20 border-white/10 focus-visible:ring-blue-500/50"
@@ -213,7 +209,7 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
 
                                                 <div className="grid gap-2">
                                                     {customDomains.length === 0 ? (
-                                                        <p className="text-sm text-muted-foreground text-center py-4 italic">No custom domains added.</p>
+                                                        <p className="text-sm text-muted-foreground text-center py-4 italic">{t.customDomainEmpty}</p>
                                                     ) : (
                                                         customDomains.map(domain => (
                                                             <div key={domain} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 group hover:bg-white/10 transition-colors">

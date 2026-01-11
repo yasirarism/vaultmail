@@ -8,6 +8,8 @@ import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, Globe, Hist
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { DEFAULT_DOMAINS, DEFAULT_EMAIL, getDefaultEmailDomain } from '@/lib/config';
+import { getTranslations } from '@/lib/i18n';
 
 // Types
 interface Email {
@@ -27,13 +29,14 @@ interface InboxInterfaceProps {
 }
 
 export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
+  const t = getTranslations();
   const [address, setAddress] = useState<string>(initialAddress || '');
-  const [domain, setDomain] = useState<string>('ysweb.biz.id');
+  const [domain, setDomain] = useState<string>(getDefaultEmailDomain());
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [savedDomains, setSavedDomains] = useState<string[]>(['ysweb.biz.id', 'ysweb.id', 'ysdev.net']);
+  const [savedDomains, setSavedDomains] = useState<string[]>(DEFAULT_DOMAINS);
   const [history, setHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [isAddDomainOpen, setIsAddDomainOpen] = useState(false);
@@ -64,7 +67,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
         setSavedDomains(JSON.parse(savedDoms));
     } else {
         // Ensure defaults are set if nothing saved
-        localStorage.setItem('dispo_domains', JSON.stringify(['ysweb.biz.id', 'ysdev.net', 'ysweb.id']));
+        localStorage.setItem('dispo_domains', JSON.stringify(DEFAULT_DOMAINS));
     }
 
     if (savedHist) setHistory(JSON.parse(savedHist));
@@ -75,6 +78,11 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
         if (saved) {
             setAddress(saved);
             const parts = saved.split('@');
+            if (parts.length > 1) setDomain(parts[1]);
+        } else if (DEFAULT_EMAIL) {
+            setAddress(DEFAULT_EMAIL);
+            localStorage.setItem('dispo_address', DEFAULT_EMAIL);
+            const parts = DEFAULT_EMAIL.split('@');
             if (parts.length > 1) setDomain(parts[1]);
         } else {
             generateAddress();
@@ -127,7 +135,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
     localStorage.setItem('dispo_address', newAddress);
     setEmails([]);
     setSelectedEmail(null);
-    toast.success('New alias created');
+    toast.success(t.toastNewAlias);
     addToHistory(newAddress);
   };
 
@@ -135,7 +143,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
 
   const copyAddress = () => {
     navigator.clipboard.writeText(address);
-    toast.success('Address copied to clipboard');
+    toast.success(t.toastCopied);
   };
 
   const fetchEmails = useCallback(async () => {
@@ -175,16 +183,16 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="space-y-1 text-center md:text-left">
             <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-              Your Temporary Inbox
+              {t.inboxTitle}
             </h2>
             <p className="text-muted-foreground text-sm">
-              Waiting for emails at this address. Messages auto-delete after <span className="text-purple-400 font-medium">{RETENTION_OPTIONS.find(o => o.value === retention)?.label || '24 Hours'}</span>.
+              {t.inboxHintPrefix} {t.inboxHintSuffix} <span className="text-purple-400 font-medium">{RETENTION_OPTIONS.find(o => o.value === retention)?.label || t.retentionOptions.hours24}</span>.
             </p>
           </div>
           <div className="flex items-center gap-2">
             <span className={`h-2 w-2 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
             <span className="text-xs text-muted-foreground uppercase tracking-wider font-mono">
-                {loading ? 'Syncing...' : 'Live'}
+                {loading ? t.syncing : t.live}
             </span>
           </div>
         </div>
@@ -202,7 +210,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                     }}
                     onBlur={() => addToHistory(address)}
                     className="pr-4 font-mono text-lg bg-black/20 border-white/10 h-12"
-                    placeholder="username"
+                    placeholder={t.usernamePlaceholder}
                 />
             </div>
             <div className="relative flex items-center">
@@ -239,7 +247,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                 size="icon"
                 onClick={() => setIsAddDomainOpen(true)}
                 className="h-12 w-12 border border-white/10 hover:bg-white/5 text-purple-400 hover:text-purple-300"
-                title="Settings"
+                title={t.settingsTitle}
             >
                 <Settings2 className="h-5 w-5" />
             </Button>
@@ -250,7 +258,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                     variant="ghost" 
                     size="icon" 
                     className={cn("h-12 w-12 border border-white/10 hover:bg-white/5 relative", showHistory && "bg-white/10 ring-2 ring-white/10")}
-                    title="History"
+                    title={t.historyTitle}
                 >
                     <History className="h-5 w-5" />
                     {history.length > 0 && (
@@ -269,7 +277,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                                 className="absolute right-0 top-14 w-80 rounded-xl p-0 z-50 border border-white/10 shadow-2xl overflow-hidden bg-zinc-900"
                             >
                                 <div className="flex justify-between items-center px-4 py-3 border-b border-white/10 bg-zinc-800/50">
-                                    <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">History</span>
+                                    <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">{t.historyTitle}</span>
                                     {history.length > 0 && (
                                         <button 
                                             onClick={() => {
@@ -278,7 +286,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                                             }}
                                             className="text-[10px] uppercase font-bold text-red-400 hover:text-red-300 transition-colors"
                                         >
-                                            Clear All
+                                            {t.historyClearAll}
                                         </button>
                                     )}
                                 </div>
@@ -286,7 +294,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                                     {history.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground space-y-2">
                                             <History className="h-8 w-8 opacity-20" />
-                                            <p className="text-sm">No recent addresses</p>
+                                            <p className="text-sm">{t.historyEmpty}</p>
                                         </div>
                                     ) : (
                                         history.map((histAddr) => (
@@ -303,7 +311,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                                                 >
                                                     <p className="font-mono text-sm truncate text-gray-200">{histAddr}</p>
                                                     <p className="textxs text-muted-foreground truncate opacity-50 text-[10px]">
-                                                        {emails.length > 0 && address === histAddr ? 'Active' : 'Click to restore'}
+                                                        {emails.length > 0 && address === histAddr ? t.historyActive : t.historyRestore}
                                                     </p>
                                                 </div>
                                                 <Button
@@ -329,10 +337,10 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                 </AnimatePresence>
             </div>
             <Button onClick={copyAddress} variant="secondary" size="lg" className="h-12 w-full md:w-auto">
-              <Copy className="mr-2 h-4 w-4" /> Copy
+              <Copy className="mr-2 h-4 w-4" /> {t.copy}
             </Button>
             <Button onClick={generateAddress} variant="outline" size="lg" className="h-12 border-white/10 hover:bg-white/5 w-full md:w-auto">
-              <RefreshCw className="mr-2 h-4 w-4" /> New
+              <RefreshCw className="mr-2 h-4 w-4" /> {t.newAlias}
             </Button>
           </div>
         </div>
@@ -344,7 +352,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
             currentAddress={address}
             onRetentionChange={setRetention}
             onUpdateDomains={(newDomains) => {
-                const combined = [...new Set([...['vaultmail.dpdns.org', 'vaultmail.qzz.io'], ...newDomains])];
+                const combined = [...new Set([...DEFAULT_DOMAINS, ...newDomains])];
                 setSavedDomains(combined);
                 localStorage.setItem('dispo_domains', JSON.stringify(combined));
             }}
@@ -356,7 +364,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
         <div className="md:col-span-1 glass-card rounded-2xl overflow-hidden flex flex-col min-h-[45vh] md:min-h-0">
             <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/20">
                 <h3 className="font-semibold flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-blue-400" /> Inbox
+                    <Mail className="h-4 w-4 text-blue-400" /> {t.inboxLabel}
                     <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-muted-foreground">{emails.length}</span>
                 </h3>
                 <Button variant="ghost" size="icon" onClick={() => fetchEmails()} disabled={loading}>
@@ -371,7 +379,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                             className="h-full flex flex-col items-center justify-center text-center p-4 text-muted-foreground space-y-2 opacity-50"
                         >
                             <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-                            <p>Waiting for incoming mail...</p>
+                            <p>{t.waitingForIncoming}</p>
                         </motion.div>
                     ) : (
                         emails.map((email) => (
@@ -420,7 +428,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-medium text-white">{selectedEmail.from}</span>
-                                <span className="text-muted-foreground text-xs">to {selectedEmail.to || address}</span>
+                                <span className="text-muted-foreground text-xs">{t.toLabel} {selectedEmail.to || address}</span>
                             </div>
                         </div>
                     </div>
@@ -442,7 +450,7 @@ export function InboxInterface({ initialAddress }: InboxInterfaceProps) {
                     <div className="p-4 rounded-full bg-white/5 border border-white/5">
                         <Mail className="h-8 w-8 opacity-50" />
                     </div>
-                    <p>Select an email to read</p>
+                    <p>{t.selectEmail}</p>
                 </div>
             )}
         </div>
