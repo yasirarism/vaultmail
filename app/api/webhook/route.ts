@@ -76,6 +76,33 @@ export async function POST(req: Request) {
     // Note: expire only works on the key, so it refreshes the whole list TTL.
     await redis.expire(key, retention);
 
+    const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+    const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+    if (telegramToken && telegramChatId) {
+      const summary = [
+        '📬 New Email',
+        `To: ${cleanTo}`,
+        `From: ${emailData.from}`,
+        `Subject: ${emailData.subject}`,
+        emailData.text ? `Preview: ${emailData.text.slice(0, 200)}` : null,
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      try {
+        await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: telegramChatId,
+            text: summary,
+          }),
+        });
+      } catch (error) {
+        console.error('Telegram send failed', error);
+      }
+    }
+
     return NextResponse.json({ success: true, id: emailId });
   } catch (error) {
     console.error('Webhook Error:', error);
