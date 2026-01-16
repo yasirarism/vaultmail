@@ -159,6 +159,8 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
         // Only update if changes to avoid jitter, or just replace for now
         // De-dupe could be handled here
         setEmails(data.emails);
+        localStorage.setItem('dispo_email_count', data.emails.length.toString());
+        localStorage.setItem('dispo_last_sync', new Date().toISOString());
       }
     } catch (e) {
       console.error(e);
@@ -178,6 +180,16 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
     const interval = setInterval(fetchEmails, 5000);
     return () => clearInterval(interval);
   }, [autoRefresh, fetchEmails]);
+
+  useEffect(() => {
+    const handleRetentionUpdate = () => {
+      const savedRet = localStorage.getItem('dispo_default_retention');
+      if (savedRet) setRetention(parseInt(savedRet));
+    };
+
+    window.addEventListener('vaultmail-retention-updated', handleRetentionUpdate);
+    return () => window.removeEventListener('vaultmail-retention-updated', handleRetentionUpdate);
+  }, []);
   
   return (
     <div className="w-full max-w-6xl mx-auto p-4 md:p-8 space-y-8">
@@ -386,10 +398,7 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
             open={isAddDomainOpen}
             onOpenChange={setIsAddDomainOpen}
             savedDomains={savedDomains}
-            currentAddress={address}
-            retentionOptions={retentionOptions}
             translations={t}
-            onRetentionChange={setRetention}
             onUpdateDomains={(newDomains) => {
                 const combined = [...new Set([...DEFAULT_DOMAINS, ...newDomains])];
                 setSavedDomains(combined);
