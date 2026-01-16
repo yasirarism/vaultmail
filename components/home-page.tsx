@@ -98,6 +98,12 @@ export function HomePage({ initialAddress }: HomePageProps) {
               </AnimatePresence>
             </div>
             <a
+              href="/admin"
+              className="text-sm font-medium text-muted-foreground hover:text-white transition-colors"
+            >
+              {t.adminLabel}
+            </a>
+            <a
               href="https://github.com/yasirarism"
               target="_blank"
               rel="noopener noreferrer"
