@@ -8,7 +8,7 @@ import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, Ch
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { cn, getSenderInfo } from '@/lib/utils';
-import { DEFAULT_DOMAINS, DEFAULT_EMAIL, getDefaultEmailDomain } from '@/lib/config';
+import { DEFAULT_DOMAINS, DEFAULT_EMAIL, getDefaultEmailDomain, getDomainExpiration } from '@/lib/config';
 import { getTranslations, Locale } from '@/lib/i18n';
 
 // Types
@@ -54,6 +54,8 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [showDomainMenu, setShowDomainMenu] = useState(false);
 
   const selectedSender = selectedEmail ? getSenderInfo(selectedEmail.from) : null;
+  const domainExpiration = getDomainExpiration(domain);
+  const isDomainExpired = domainExpiration ? domainExpiration.getTime() < Date.now() : false;
 
   const downloadEmail = useCallback(() => {
     if (!selectedEmail) return;
@@ -279,27 +281,28 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
         </div>
 
         <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 flex gap-2">
-            <div className="relative flex-1">
-                <Input 
-                    value={address.split('@')[0]}
-                    onChange={(e) => {
-                        const val = e.target.value.replace(/[^a-zA-Z0-9._-]/g, '');
-                        const currentDomain = address.split('@')[1] || domain;
-                        setAddress(`${val}@${currentDomain}`);
-                        localStorage.setItem('dispo_address', `${val}@${currentDomain}`);
-                    }}
-                    onBlur={() => addToHistory(address)}
-                    className="pr-4 font-mono text-lg bg-black/20 border-white/10 h-12"
-                    placeholder={t.usernamePlaceholder}
-                />
-            </div>
-            <div className="relative flex items-center">
-                 <span className="text-muted-foreground text-lg px-2">@</span>
-            </div>
-            <div className="relative flex-1 max-w-[250px] flex gap-2">
-                 {/* Domain Selection Logic */}
-                 <div className="relative w-full">
+          <div className="flex-1 flex flex-col gap-2">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                  <Input 
+                      value={address.split('@')[0]}
+                      onChange={(e) => {
+                          const val = e.target.value.replace(/[^a-zA-Z0-9._-]/g, '');
+                          const currentDomain = address.split('@')[1] || domain;
+                          setAddress(`${val}@${currentDomain}`);
+                          localStorage.setItem('dispo_address', `${val}@${currentDomain}`);
+                      }}
+                      onBlur={() => addToHistory(address)}
+                      className="pr-4 font-mono text-lg bg-black/20 border-white/10 h-12"
+                      placeholder={t.usernamePlaceholder}
+                  />
+              </div>
+              <div className="relative flex items-center">
+                   <span className="text-muted-foreground text-lg px-2">@</span>
+              </div>
+              <div className="relative flex-1 max-w-[250px] flex gap-2">
+                   {/* Domain Selection Logic */}
+                   <div className="relative w-full">
                     <Button
                         type="button"
                         variant="ghost"
@@ -354,6 +357,21 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     </AnimatePresence>
                  </div>
             </div>
+            </div>
+            {domainExpiration && (
+              <div className="text-xs text-muted-foreground">
+                {isDomainExpired ? (
+                  <span className="text-red-300">Domain ini sudah kedaluwarsa.</span>
+                ) : (
+                  <span>
+                    Domain berakhir:{' '}
+                    <span className="text-purple-200 font-medium">
+                      {domainExpiration.toLocaleDateString()}
+                    </span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex gap-2 items-center">
             {/* Settings Button */}

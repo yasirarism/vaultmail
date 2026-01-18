@@ -1,6 +1,6 @@
 import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
-import { extractEmail } from '@/lib/utils';
+import { extractEmail, getSenderInfo } from '@/lib/utils';
 import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
 import crypto from 'crypto';
 
@@ -59,9 +59,10 @@ const sendTelegramNotification = async (payload: {
     return;
   }
 
+  const sender = getSenderInfo(payload.from);
   const messageLines = [
     '📬 New Inbox Message',
-    `From: ${payload.from}`,
+    `From: ${sender.label}`,
     `To: ${payload.to}`,
     `Subject: ${payload.subject}`,
     '',
