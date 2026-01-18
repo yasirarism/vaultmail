@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
+import { Clock, Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
 
 type TelegramSettings = {
   enabled: boolean;
@@ -12,50 +12,64 @@ type TelegramSettings = {
   chatId: string;
 };
 
+type RetentionSettings = {
+  seconds: number;
+};
+
 export function AdminDashboard() {
-  const [password, setPassword] = useState('');
   const [enabled, setEnabled] = useState(false);
   const [botToken, setBotToken] = useState('');
   const [chatId, setChatId] = useState('');
+  const [retentionSeconds, setRetentionSeconds] = useState(86400);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [retentionSaving, setRetentionSaving] = useState(false);
 
-  const passwordReady = useMemo(() => password.trim().length > 0, [password]);
+  const retentionOptions = useMemo(
+    () => [
+      { label: '30 menit', value: 1800 },
+      { label: '1 jam', value: 3600 },
+      { label: '24 jam', value: 86400 },
+      { label: '3 hari', value: 259200 },
+      { label: '1 minggu', value: 604800 }
+    ],
+    []
+  );
 
   const loadSettings = async () => {
-    if (!passwordReady) return;
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/telegram', {
-        headers: { 'x-admin-password': password }
-      });
-      if (!response.ok) {
+      const [telegramResponse, retentionResponse] = await Promise.all([
+        fetch('/api/admin/telegram'),
+        fetch('/api/admin/retention')
+      ]);
+      if (!telegramResponse.ok || !retentionResponse.ok) {
         throw new Error('Unauthorized or failed to load settings.');
       }
-      const data = (await response.json()) as TelegramSettings;
+      const data = (await telegramResponse.json()) as TelegramSettings;
+      const retentionData =
+        (await retentionResponse.json()) as RetentionSettings;
       setEnabled(Boolean(data.enabled));
       setBotToken(data.botToken || '');
       setChatId(data.chatId || '');
+      if (retentionData?.seconds) {
+        setRetentionSeconds(retentionData.seconds);
+      }
     } catch (error) {
       console.error(error);
-      toast.error('Gagal memuat setting Telegram.');
+      toast.error('Gagal memuat setting admin.');
     } finally {
       setLoading(false);
     }
   };
 
   const saveSettings = async () => {
-    if (!passwordReady) {
-      toast.error('Masukkan password admin dulu.');
-      return;
-    }
     setSaving(true);
     try {
       const response = await fetch('/api/admin/telegram', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-admin-password': password
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           enabled,
@@ -75,11 +89,30 @@ export function AdminDashboard() {
     }
   };
 
-  useEffect(() => {
-    if (passwordReady) {
-      loadSettings();
+  const saveRetention = async (value: number) => {
+    setRetentionSeconds(value);
+    setRetentionSaving(true);
+    try {
+      const response = await fetch('/api/admin/retention', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seconds: value })
+      });
+      if (!response.ok) {
+        throw new Error('Unauthorized or failed to save retention.');
+      }
+      toast.success('Retensi global tersimpan.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal menyimpan retensi.');
+    } finally {
+      setRetentionSaving(false);
     }
-  }, [passwordReady]);
+  };
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/60 text-white">
@@ -98,31 +131,6 @@ export function AdminDashboard() {
           </div>
 
           <div className="mt-8 grid gap-6">
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-              <label className="text-xs font-semibold uppercase tracking-widest text-white/60">
-                Password Admin
-              </label>
-              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Masukkan password admin"
-                  className="flex-1 bg-black/30 text-white placeholder:text-white/40"
-                />
-                <Button
-                  onClick={loadSettings}
-                  disabled={!passwordReady || loading}
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Muat Setting'
-                  )}
-                </Button>
-              </div>
-            </div>
-
             <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -182,9 +190,50 @@ export function AdminDashboard() {
               </p>
             </div>
 
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Retensi Global Inbox
+                  </h2>
+                  <p className="text-sm text-white/60">
+                    Semua inbox mengikuti durasi ini.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-white/50">
+                  <Clock className="h-4 w-4" />
+                  {retentionOptions.find((option) => option.value === retentionSeconds)
+                    ?.label || '24 jam'}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-2">
+                {retentionOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => saveRetention(option.value)}
+                    disabled={retentionSaving}
+                    className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm transition-all ${
+                      retentionSeconds === option.value
+                        ? 'border-purple-500/50 bg-purple-500/10 text-white'
+                        : 'border-white/5 bg-white/[0.02] text-white/70 hover:border-white/10 hover:bg-white/[0.05]'
+                    }`}
+                  >
+                    <span className="font-medium">{option.label}</span>
+                    {retentionSeconds === option.value && (
+                      <span className="rounded-full bg-purple-500/20 px-2 py-1 text-[10px] font-semibold text-purple-200">
+                        AKTIF
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="flex justify-end">
-              <Button onClick={saveSettings} disabled={saving}>
-                {saving ? (
+              <Button onClick={saveSettings} disabled={saving || loading}>
+                {saving || loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   'Simpan'

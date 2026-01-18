@@ -1,30 +1,28 @@
-import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { redis } from '@/lib/redis';
 import {
   ADMIN_SESSION_COOKIE,
-  isAdminSessionValid,
-  TELEGRAM_SETTINGS_KEY
+  RETENTION_SETTINGS_KEY,
+  isAdminSessionValid
 } from '@/lib/admin-auth';
 
-type TelegramSettings = {
-  enabled: boolean;
-  botToken: string;
-  chatId: string;
+type RetentionSettings = {
+  seconds: number;
   updatedAt: string;
 };
 
-const parseSettings = (value: unknown): TelegramSettings | null => {
+const parseSettings = (value: unknown): RetentionSettings | null => {
   if (!value) return null;
   if (typeof value === 'string') {
     try {
-      return JSON.parse(value) as TelegramSettings;
+      return JSON.parse(value) as RetentionSettings;
     } catch {
       return null;
     }
   }
   if (typeof value === 'object') {
-    return value as TelegramSettings;
+    return value as RetentionSettings;
   }
   return null;
 };
@@ -40,11 +38,9 @@ export async function GET() {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const settingsRaw = await redis.get(TELEGRAM_SETTINGS_KEY);
+  const settingsRaw = await redis.get(RETENTION_SETTINGS_KEY);
   const settings = parseSettings(settingsRaw) || {
-    enabled: false,
-    botToken: '',
-    chatId: '',
+    seconds: 86400,
     updatedAt: new Date().toISOString()
   };
 
@@ -57,18 +53,18 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const enabled = Boolean(body?.enabled);
-  const botToken = String(body?.botToken || '').trim();
-  const chatId = String(body?.chatId || '').trim();
+  const seconds = Number(body?.seconds || 0);
 
-  const settings: TelegramSettings = {
-    enabled,
-    botToken,
-    chatId,
+  if (!seconds) {
+    return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  }
+
+  const settings: RetentionSettings = {
+    seconds,
     updatedAt: new Date().toISOString()
   };
 
-  await redis.set(TELEGRAM_SETTINGS_KEY, settings);
+  await redis.set(RETENTION_SETTINGS_KEY, settings);
 
   return NextResponse.json(settings);
 }

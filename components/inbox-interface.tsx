@@ -4,12 +4,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, Globe, History, ChevronDown, X, Settings2 } from 'lucide-react';
+import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, ChevronDown, X, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DEFAULT_DOMAINS, DEFAULT_EMAIL, getDefaultEmailDomain } from '@/lib/config';
-import { getRetentionOptions, getTranslations, Locale } from '@/lib/i18n';
+import { getTranslations, Locale } from '@/lib/i18n';
 
 // Types
 interface Email {
@@ -31,7 +31,6 @@ interface InboxInterfaceProps {
 
 export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) {
   const t = getTranslations(locale);
-  const retentionOptions = getRetentionOptions(locale);
   const [address, setAddress] = useState<string>(initialAddress || '');
   const [domain, setDomain] = useState<string>(getDefaultEmailDomain());
   const [emails, setEmails] = useState<Email[]>([]);
@@ -42,7 +41,6 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
   const [history, setHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [isAddDomainOpen, setIsAddDomainOpen] = useState(false);
-  const [retention, setRetention] = useState<number>(86400);
   const [showDomainMenu, setShowDomainMenu] = useState(false);
 
   const stripEmailStyles = useCallback((html: string) => {
@@ -64,7 +62,6 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
   useEffect(() => {
     const savedDoms = localStorage.getItem('dispo_domains');
     const savedHist = localStorage.getItem('dispo_history');
-    const savedRet = localStorage.getItem('dispo_default_retention');
     
     if (savedDoms) {
         setSavedDomains(JSON.parse(savedDoms));
@@ -74,8 +71,6 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
     }
 
     if (savedHist) setHistory(JSON.parse(savedHist));
-    if (savedRet) setRetention(parseInt(savedRet));
-
     if (!initialAddress) {
         const saved = localStorage.getItem('dispo_address');
         if (saved) {
@@ -189,7 +184,7 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
               {t.inboxTitle}
             </h2>
             <p className="text-muted-foreground text-sm">
-              {t.inboxHintPrefix} {t.inboxHintSuffix} <span className="text-purple-400 font-medium">{retentionOptions.find(o => o.value === retention)?.label || t.retentionOptions.hours24}</span>.
+              {t.inboxHintPrefix} {t.inboxHintSuffix}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -386,10 +381,7 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
             open={isAddDomainOpen}
             onOpenChange={setIsAddDomainOpen}
             savedDomains={savedDomains}
-            currentAddress={address}
-            retentionOptions={retentionOptions}
             translations={t}
-            onRetentionChange={setRetention}
             onUpdateDomains={(newDomains) => {
                 const combined = [...new Set([...DEFAULT_DOMAINS, ...newDomains])];
                 setSavedDomains(combined);

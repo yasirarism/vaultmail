@@ -1,6 +1,7 @@
 import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
 import { extractEmail } from '@/lib/utils';
+import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
 import crypto from 'crypto';
 
 type TelegramSettings = {
@@ -9,7 +10,26 @@ type TelegramSettings = {
   chatId: string;
 };
 
+type RetentionSettings = {
+  seconds: number;
+};
+
 const TELEGRAM_SETTINGS_KEY = 'settings:telegram';
+
+const parseRetentionSettings = (value: unknown): RetentionSettings | null => {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as RetentionSettings;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value === 'object') {
+    return value as RetentionSettings;
+  }
+  return null;
+};
 
 const parseSettings = (value: unknown): TelegramSettings | null => {
   if (!value) return null;
@@ -67,6 +87,12 @@ const sendTelegramNotification = async (payload: {
   }
 };
 
+const getRetentionSeconds = async () => {
+  const settingsRaw = await redis.get(RETENTION_SETTINGS_KEY);
+  const settings = parseRetentionSettings(settingsRaw);
+  return settings?.seconds || 86400;
+};
+
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get('content-type') || '';
@@ -111,33 +137,13 @@ export async function POST(req: Request) {
 
     const key = `inbox:${cleanTo}`;
     
-    // Check for custom retention settings
-    const settingsKey = `settings:${cleanTo}`;
-    const settingsRaw = await redis.get(settingsKey);
-    let retention = 86400; // Default 24h
-
-    if (settingsRaw) {
-        try {
-            // If stored as JSON string
-            if (typeof settingsRaw === 'string') {
-                 const s = JSON.parse(settingsRaw);
-                 if (s.retentionSeconds) retention = s.retentionSeconds;
-            } else if (typeof settingsRaw === 'object') {
-                 // Upstash REST client might return object directly if auto-deserializing
-                 const s = settingsRaw as any;
-                 if (s.retentionSeconds) retention = s.retentionSeconds;
-            }
-        } catch (e) {
-            console.error("Failed to parse settings", e);
-        }
-    }
+    const retention = await getRetentionSeconds();
     
     // Store email in a list (LIFO usually better for email? No, Redis list is generic. lpush = prepend)
     // lpush puts new emails at index 0.
     await redis.lpush(key, emailData);
     
-    // Set expiry based on retention setting
-    // Note: expire only works on the key, so it refreshes the whole list TTL.
+    // Set expiry based on global retention setting.
     await redis.expire(key, retention);
 
     await sendTelegramNotification({

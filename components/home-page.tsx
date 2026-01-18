@@ -1,7 +1,7 @@
 'use client';
 
 import { InboxInterface } from "@/components/inbox-interface";
-import { Shield, Zap, Globe } from "lucide-react";
+import { Menu, Shield, Zap, Globe } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ const STORAGE_KEY = 'vaultmail_locale';
 
 export function HomePage({ initialAddress }: HomePageProps) {
   const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -52,59 +52,64 @@ export function HomePage({ initialAddress }: HomePageProps) {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setShowLanguageMenu((prev) => !prev)}
+                onClick={() => setShowMenu((prev) => !prev)}
                 className={cn(
-                  "h-10 px-3 gap-2 rounded-full border border-white/10 bg-white/5 text-xs uppercase tracking-wider text-white glass",
-                  showLanguageMenu && "bg-white/10"
+                  "h-10 w-10 rounded-full border border-white/10 bg-white/5 text-white glass",
+                  showMenu && "bg-white/10"
                 )}
               >
-                <Globe className="h-4 w-4 text-blue-300" />
-                {locale === 'id' ? t.languageIndonesian : t.languageEnglish}
+                <Menu className="h-5 w-5 text-blue-200" />
               </Button>
 
               <AnimatePresence>
-                {showLanguageMenu && (
+                {showMenu && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowLanguageMenu(false)} />
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
                     <motion.div
                       initial={{ opacity: 0, y: 10, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                      className="absolute right-0 z-50 mt-2 w-44 rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl glass overflow-hidden"
+                      className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl glass overflow-hidden"
                     >
-                      <div className="p-2 space-y-1">
-                        {(['en', 'id'] as Locale[]).map((lang) => (
-                          <button
-                            key={lang}
-                            type="button"
-                            onClick={() => {
-                              setLocale(lang);
-                              setShowLanguageMenu(false);
-                            }}
-                            className={cn(
-                              "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
-                              locale === lang
-                                ? "bg-white/15 text-white"
-                                : "text-gray-200 hover:bg-white/10"
-                            )}
-                          >
-                            {lang === 'en' ? t.languageEnglish : t.languageIndonesian}
-                          </button>
-                        ))}
+                      <div className="p-2 space-y-2">
+                        <div className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
+                          Menu
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLocale(locale === 'id' ? 'en' : 'id');
+                            setShowMenu(false);
+                          }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
+                        >
+                          <Globe className="h-4 w-4 text-blue-300" />
+                          {locale === 'id' ? t.languageEnglish : t.languageIndonesian}
+                        </button>
+                        <a
+                          href="/admin"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
+                          onClick={() => setShowMenu(false)}
+                        >
+                          <Shield className="h-4 w-4 text-purple-300" />
+                          Admin Dashboard
+                        </a>
+                        <a
+                          href="https://github.com/yasirarism"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
+                          onClick={() => setShowMenu(false)}
+                        >
+                          <Shield className="h-4 w-4 text-green-300" />
+                          {t.github}
+                        </a>
                       </div>
                     </motion.div>
                   </>
                 )}
               </AnimatePresence>
             </div>
-            <a
-              href="https://github.com/yasirarism"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium text-muted-foreground hover:text-white transition-colors"
-            >
-              {t.github}
-            </a>
           </div>
         </div>
       </header>
