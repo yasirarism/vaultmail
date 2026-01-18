@@ -17,6 +17,22 @@ type RetentionSettings = {
 
 const TELEGRAM_SETTINGS_KEY = 'settings:telegram';
 
+const extractAttachmentsFromFormData = async (formData: FormData) => {
+  const attachments = [];
+  for (const [, value] of formData.entries()) {
+    if (value instanceof File) {
+      const buffer = Buffer.from(await value.arrayBuffer());
+      attachments.push({
+        filename: value.name,
+        contentType: value.type || 'application/octet-stream',
+        size: value.size,
+        contentBase64: buffer.toString('base64')
+      });
+    }
+  }
+  return attachments;
+};
+
 const parseRetentionSettings = (value: unknown): RetentionSettings | null => {
   if (!value) return null;
   if (typeof value === 'string') {
@@ -122,6 +138,7 @@ export async function POST(req: Request) {
       subject = formData.get('subject') as string;
       text = formData.get('text') as string || formData.get('body-plain') as string;
       html = formData.get('html') as string || formData.get('body-html') as string;
+      attachments = await extractAttachmentsFromFormData(formData);
     } else {
        return new NextResponse('Unsupported Content-Type', { status: 415 });
     }

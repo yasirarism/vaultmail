@@ -652,7 +652,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     {/* Body */}
                     <div className="flex-1 overflow-y-auto p-6 bg-white">
                          <div 
-                            className="prose prose-base md:prose-lg max-w-none text-black"
+                            className="prose prose-base md:prose-lg max-w-none text-black prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
                             dangerouslySetInnerHTML={{
                               __html: stripEmailStyles(
                                 selectedEmail.html || `<p>${selectedEmail.text}</p>`
