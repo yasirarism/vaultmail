@@ -449,7 +449,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute right-0 top-14 w-80 rounded-xl p-0 z-50 border border-white/10 shadow-2xl overflow-hidden bg-zinc-900"
+                                className="absolute right-0 top-14 z-50 w-[min(90vw,20rem)] max-w-[calc(100vw-2rem)] rounded-xl border border-white/10 bg-zinc-900 p-0 shadow-2xl"
                             >
                                 <div className="flex justify-between items-center px-4 py-3 border-b border-white/10 bg-zinc-800/50">
                                     <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">{t.historyTitle}</span>
