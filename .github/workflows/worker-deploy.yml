@@ -14,12 +14,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    environment: production
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Deploy worker
         uses: cloudflare/wrangler-action@v3
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          FORWARD_DOMAINS: ${{ secrets.FORWARD_DOMAINS }}
+          FORWARD_EMAIL: ${{ secrets.FORWARD_EMAIL }}
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
