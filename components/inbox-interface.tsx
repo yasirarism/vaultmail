@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, ChevronDown, X, Settings2 } from 'lucide-react';
+import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, ChevronDown, X, Settings2, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { cn, getSenderInfo } from '@/lib/utils';
@@ -18,8 +18,17 @@ interface Email {
   subject: string;
   text: string;
   html: string;
+  attachments?: EmailAttachment[];
   receivedAt: string;
   to: string;
+}
+
+interface EmailAttachment {
+  filename?: string;
+  contentType?: string;
+  size?: number;
+  contentBase64?: string;
+  contentId?: string;
 }
 
 import { SettingsDialog } from './settings-dialog';
@@ -45,6 +54,52 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [showDomainMenu, setShowDomainMenu] = useState(false);
 
   const selectedSender = selectedEmail ? getSenderInfo(selectedEmail.from) : null;
+
+  const downloadEmail = useCallback(() => {
+    if (!selectedEmail) return;
+    const sender = getSenderInfo(selectedEmail.from);
+    const content = [
+      `From: ${sender.label}`,
+      `To: ${selectedEmail.to || address}`,
+      `Subject: ${selectedEmail.subject}`,
+      `Date: ${new Date(selectedEmail.receivedAt).toUTCString()}`,
+      '',
+      selectedEmail.text || ''
+    ].join('\n');
+    const fileName = (selectedEmail.subject || 'email')
+      .replace(/[^a-z0-9-_]+/gi, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 60) || 'email';
+    const blob = new Blob([content], { type: 'message/rfc822;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${fileName}.eml`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, [address, selectedEmail]);
+
+  const downloadAttachment = useCallback((attachment: EmailAttachment) => {
+    if (!attachment.contentBase64) return;
+    const binary = atob(attachment.contentBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], {
+      type: attachment.contentType || 'application/octet-stream'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = attachment.filename || 'attachment';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, []);
 
   const stripEmailStyles = useCallback((html: string) => {
     if (!html) return '';
@@ -456,11 +511,17 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                 <div className="flex flex-col h-full">
                     {/* Header */}
                     <div className="p-6 border-b border-white/5 space-y-4 bg-black/20">
-                        <div className="flex justify-between items-start">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
                             <h1 className="text-xl font-bold text-white">{selectedEmail.subject}</h1>
-                            <span className="text-xs text-muted-foreground border border-white/10 px-2 py-1 rounded-md">
-                                {new Date(selectedEmail.receivedAt).toLocaleString()}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <Button variant="ghost" size="sm" onClick={downloadEmail}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download Email
+                              </Button>
+                              <span className="text-xs text-muted-foreground border border-white/10 px-2 py-1 rounded-md">
+                                  {new Date(selectedEmail.receivedAt).toLocaleString()}
+                              </span>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3 text-sm">
                             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs">
@@ -471,6 +532,26 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 <span className="text-muted-foreground text-xs">{t.toLabel} {selectedEmail.to || address}</span>
                             </div>
                         </div>
+                        {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-xs uppercase tracking-widest text-white/60">
+                              Attachments
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedEmail.attachments.map((attachment, index) => (
+                                <Button
+                                  key={`${attachment.filename || 'attachment'}-${index}`}
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => downloadAttachment(attachment)}
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  {attachment.filename || `Attachment ${index + 1}`}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                     </div>
                     
                     {/* Body */}

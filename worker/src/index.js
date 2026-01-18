@@ -6,6 +6,15 @@ export default {
         const parser = new PostalMime();
         const rawEmail = await new Response(message.raw).arrayBuffer();
         const email = await parser.parse(rawEmail);
+        const toBase64 = (value) => {
+          if (!value) return '';
+          const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+          let binary = '';
+          bytes.forEach((byte) => {
+            binary += String.fromCharCode(byte);
+          });
+          return btoa(binary);
+        };
 
         const targetUrl = env.WEBHOOK_URL;
         const forwardDomains = (env.FORWARD_DOMAINS || '')
@@ -54,6 +63,16 @@ export default {
           return;
         }
 
+        const attachments = Array.isArray(email.attachments)
+          ? email.attachments.map((attachment) => ({
+              filename: attachment.filename,
+              contentType: attachment.contentType,
+              size: attachment.size,
+              contentBase64: toBase64(attachment.content),
+              contentId: attachment.contentId
+            }))
+          : [];
+
         const response = await fetch(targetUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -62,7 +81,8 @@ export default {
             to: message.to,
             subject: message.headers.get('subject'),
             text: email.text,
-            html: email.html
+            html: email.html,
+            attachments
           })
         });
 

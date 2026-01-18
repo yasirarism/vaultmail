@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Clock, Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import Link from 'next/link';
 
 type TelegramSettings = {
   enabled: boolean;
@@ -167,16 +168,24 @@ export function AdminDashboard() {
     <div className="min-h-screen bg-gradient-to-b from-background to-background/60 text-white">
       <div className="mx-auto w-full max-w-4xl px-6 py-12">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-lg backdrop-blur">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.2em] text-blue-200/70">
-              Admin Dashboard
-            </p>
-            <h1 className="text-3xl font-semibold text-white">
-              Pengaturan Telegram Channel
-            </h1>
-            <p className="text-sm text-white/70">
-              Atur bot Telegram untuk mengirim notifikasi inbox baru.
-            </p>
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex flex-col gap-2">
+              <p className="text-sm uppercase tracking-[0.2em] text-blue-200/70">
+                Admin Dashboard
+              </p>
+              <h1 className="text-3xl font-semibold text-white">
+                Pengaturan Telegram Channel
+              </h1>
+              <p className="text-sm text-white/70">
+                Atur bot Telegram untuk mengirim notifikasi inbox baru.
+              </p>
+            </div>
+            <Button asChild variant="secondary">
+              <Link href="/" className="inline-flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Kembali ke Beranda
+              </Link>
+            </Button>
           </div>
 
           <div className="mt-8 grid gap-6">
