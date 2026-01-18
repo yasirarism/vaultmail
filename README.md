@@ -95,6 +95,85 @@ We include a pre-configured worker in the `worker/` directory.
     npm run dev
     ```
 
+## 📚 API Documentation (Temporary Email)
+
+### 1) Fetch Inbox
+
+Ambil daftar email untuk alamat sementara.
+
+**Endpoint**
+```
+GET /api/inbox?address=nama@domain.com
+```
+
+**Response**
+```json
+{
+  "emails": [
+    {
+      "id": "uuid",
+      "from": "sender@example.com",
+      "to": "nama@domain.com",
+      "subject": "Hello",
+      "text": "Plain text",
+      "html": "<p>Plain text</p>",
+      "attachments": [],
+      "receivedAt": "2025-01-01T00:00:00.000Z",
+      "read": false
+    }
+  ]
+}
+```
+
+### 2) Webhook (Inbound Email)
+
+Email routing service (Cloudflare/Mailgun) mengirim email ke endpoint ini.
+
+**Endpoint**
+```
+POST /api/webhook
+```
+
+**JSON Body Example**
+```json
+{
+  "from": "sender@example.com",
+  "to": "nama@domain.com",
+  "subject": "Hello",
+  "text": "Plain text message",
+  "html": "<p>Plain text message</p>",
+  "attachments": []
+}
+```
+
+**Response**
+```json
+{ "success": true, "id": "uuid" }
+```
+
+### 3) Download Email / Attachment
+
+**Endpoint**
+```
+GET /api/download?address=nama@domain.com&emailId=uuid&type=email
+GET /api/download?address=nama@domain.com&emailId=uuid&type=attachment&index=0
+```
+
+### 4) Retention Settings (Read Only)
+
+**Endpoint**
+```
+GET /api/retention
+```
+
+**Response**
+```json
+{
+  "seconds": 86400,
+  "updatedAt": "2025-01-01T00:00:00.000Z"
+}
+```
+
 ## 📜 License
 
 MIT License. Feel free to fork and deploy your own private email shield.

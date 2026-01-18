@@ -12,7 +12,7 @@ export async function GET(req: Request) {
   }
 
   const stored = await getStoredDomainExpiration(domain);
-  if (stored) {
+  if (stored?.expiresAt) {
     const checkedAt = new Date(stored.checkedAt).getTime();
     const ageHours = (Date.now() - checkedAt) / (1000 * 60 * 60);
     if (Number.isFinite(ageHours) && ageHours < MAX_AGE_HOURS) {
