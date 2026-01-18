@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, ChevronDown, X, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, getSenderInfo } from '@/lib/utils';
 import { DEFAULT_DOMAINS, DEFAULT_EMAIL, getDefaultEmailDomain } from '@/lib/config';
 import { getTranslations, Locale } from '@/lib/i18n';
 
@@ -43,6 +43,8 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [showHistory, setShowHistory] = useState(false);
   const [isAddDomainOpen, setIsAddDomainOpen] = useState(false);
   const [showDomainMenu, setShowDomainMenu] = useState(false);
+
+  const selectedSender = selectedEmail ? getSenderInfo(selectedEmail.from) : null;
 
   const stripEmailStyles = useCallback((html: string) => {
     if (!html) return '';
@@ -418,7 +420,9 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                             <p>{t.waitingForIncoming}</p>
                         </motion.div>
                     ) : (
-                        emails.map((email) => (
+                        emails.map((email) => {
+                            const sender = getSenderInfo(email.from);
+                            return (
                             <motion.div
                                 key={email.id}
                                 layout
@@ -432,7 +436,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 )}
                             >
                                 <div className="flex justify-between items-start mb-1">
-                                    <span className="font-medium truncate max-w-[150px] text-sm">{email.from}</span>
+                                    <span className="font-medium truncate max-w-[150px] text-sm">{sender.label}</span>
                                     <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                                         {formatDistanceToNow(new Date(email.receivedAt), { addSuffix: true })}
                                     </span>
@@ -440,7 +444,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 <h4 className="text-sm font-semibold truncate text-blue-100">{email.subject}</h4>
                                 <p className="text-xs text-muted-foreground truncate mt-1">{email.text.slice(0, 50)}...</p>
                             </motion.div>
-                        ))
+                        )})
                     )}
                 </AnimatePresence>
             </div>
@@ -460,10 +464,10 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                         </div>
                         <div className="flex items-center gap-3 text-sm">
                             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs">
-                                {selectedEmail.from.charAt(0).toUpperCase()}
+                                {selectedSender?.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex flex-col">
-                                <span className="font-medium text-white">{selectedEmail.from}</span>
+                                <span className="font-medium text-white">{selectedSender?.label}</span>
                                 <span className="text-muted-foreground text-xs">{t.toLabel} {selectedEmail.to || address}</span>
                             </div>
                         </div>

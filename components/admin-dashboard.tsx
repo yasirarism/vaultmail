@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Clock, Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 type TelegramSettings = {
   enabled: boolean;
@@ -16,6 +17,12 @@ type RetentionSettings = {
   seconds: number;
 };
 
+type AdminStats = {
+  inboxCount: number;
+  messageCount: number;
+  latestReceivedAt: string | null;
+};
+
 export function AdminDashboard() {
   const [enabled, setEnabled] = useState(false);
   const [botToken, setBotToken] = useState('');
@@ -24,6 +31,9 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [retentionSaving, setRetentionSaving] = useState(false);
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsError, setStatsError] = useState(false);
 
   const retentionOptions = useMemo(
     () => [
@@ -62,6 +72,24 @@ export function AdminDashboard() {
       setLoading(false);
     }
   };
+
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true);
+    setStatsError(false);
+    try {
+      const response = await fetch('/api/admin/stats');
+      if (!response.ok) {
+        throw new Error('Unauthorized or failed to load stats.');
+      }
+      const data = (await response.json()) as AdminStats;
+      setStats(data);
+    } catch (error) {
+      console.error(error);
+      setStatsError(true);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
 
   const saveSettings = async () => {
     setSaving(true);
@@ -114,6 +142,27 @@ export function AdminDashboard() {
     loadSettings();
   }, []);
 
+  useEffect(() => {
+    fetchStats();
+    const interval = setInterval(fetchStats, 5000);
+    return () => clearInterval(interval);
+  }, [fetchStats]);
+
+  const latestActivityLabel = useMemo(() => {
+    if (statsLoading && !stats) {
+      return 'Memuat...';
+    }
+    if (statsError) {
+      return 'Gagal memuat';
+    }
+    if (!stats?.latestReceivedAt) {
+      return 'Belum ada email';
+    }
+    return formatDistanceToNow(new Date(stats.latestReceivedAt), {
+      addSuffix: true
+    });
+  }, [stats, statsError, statsLoading]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/60 text-white">
       <div className="mx-auto w-full max-w-4xl px-6 py-12">
@@ -131,6 +180,49 @@ export function AdminDashboard() {
           </div>
 
           <div className="mt-8 grid gap-6">
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-white/50">
+                    Statistik Real-time
+                  </p>
+                  <h2 className="text-lg font-semibold text-white">
+                    Aktivitas Inbox
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-emerald-200">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                  Live
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs uppercase tracking-widest text-white/50">
+                    Inbox Aktif
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-white">
+                    {stats?.inboxCount ?? 0}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs uppercase tracking-widest text-white/50">
+                    Total Pesan
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-white">
+                    {stats?.messageCount ?? 0}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs uppercase tracking-widest text-white/50">
+                    Terakhir Masuk
+                  </p>
+                  <p className="mt-2 text-base font-semibold text-white">
+                    {latestActivityLabel}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
