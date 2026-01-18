@@ -11,11 +11,13 @@ export default {
         // If testing locally, you'd need a tunnel (ngrok). For prod, use your vercel.app domain.
         const TARGET_URL = 'https://vaultmail-one.vercel.app/api/webhook'; 
 
+        const parsedFrom = email?.from?.text || email?.from?.address || message.from;
+
         const response = await fetch(TARGET_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            from: message.from,
+            from: parsedFrom,
             to: message.to,
             subject: message.headers.get('subject'),
             text: email.text,
