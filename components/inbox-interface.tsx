@@ -167,12 +167,6 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     [normalizeContentId]
   );
 
-  const isImageAttachment = useCallback((attachment: EmailAttachment) => {
-    if (attachment.contentType?.startsWith('image/')) return true;
-    if (!attachment.filename) return false;
-    return /\.(png|jpe?g|gif|webp|svg)$/i.test(attachment.filename);
-  }, []);
-
   useEffect(() => {
     if (!domain) return;
     let active = true;
@@ -697,36 +691,6 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     
                     {/* Body */}
                     <div className="flex-1 overflow-y-auto p-6 bg-white">
-                        {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
-                          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {selectedEmail.attachments
-                              .filter(
-                                (attachment) =>
-                                  attachment.contentBase64 && isImageAttachment(attachment)
-                              )
-                              .map((attachment, index) => {
-                                const contentType = attachment.contentType || 'image/png';
-                                const src = attachment.contentBase64
-                                  ? `data:${contentType};base64,${attachment.contentBase64}`
-                                  : '';
-                                const label = attachment.filename || `Image ${index + 1}`;
-                                return (
-                                  <div
-                                    key={`${attachment.filename || 'image'}-${index}`}
-                                    className="rounded-lg border border-black/10 bg-white p-2 shadow-sm"
-                                  >
-                                    <img
-                                      src={src}
-                                      alt={label}
-                                      className="h-auto w-full rounded-md object-contain"
-                                      loading="lazy"
-                                    />
-                                    <p className="mt-2 truncate text-xs text-gray-600">{label}</p>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        )}
                         <div 
                           className="prose prose-base md:prose-lg max-w-none text-black prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
                           dangerouslySetInnerHTML={{
