@@ -6,7 +6,13 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { DEFAULT_LOCALE, getTranslations, Locale, SUPPORTED_LOCALES } from "@/lib/i18n";
+import {
+  DEFAULT_LOCALE,
+  getRetentionOptions,
+  getTranslations,
+  Locale,
+  SUPPORTED_LOCALES,
+} from "@/lib/i18n";
 
 interface HomePageProps {
   initialAddress?: string;
@@ -17,6 +23,7 @@ const STORAGE_KEY = 'vaultmail_locale';
 export function HomePage({ initialAddress }: HomePageProps) {
   const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
   const [showMenu, setShowMenu] = useState(false);
+  const [retentionSeconds, setRetentionSeconds] = useState(86400);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -31,6 +38,35 @@ export function HomePage({ initialAddress }: HomePageProps) {
   }, [locale]);
 
   const t = useMemo(() => getTranslations(locale), [locale]);
+  const retentionOptions = useMemo(() => getRetentionOptions(locale), [locale]);
+  const retentionLabel =
+    retentionOptions.find((option) => option.value === retentionSeconds)
+      ?.label || retentionOptions[2]?.label || "24 Hours";
+
+  useEffect(() => {
+    const loadRetention = async () => {
+      try {
+        const response = await fetch("/api/retention");
+        if (!response.ok) return;
+        const data = (await response.json()) as { seconds?: number };
+        if (data?.seconds) {
+          setRetentionSeconds(data.seconds);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadRetention();
+  }, []);
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return t.greetingMorning;
+    if (hour >= 12 && hour < 15) return t.greetingAfternoon;
+    if (hour >= 15 && hour < 19) return t.greetingEvening;
+    return t.greetingNight;
+  }, [t]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
@@ -54,11 +90,11 @@ export function HomePage({ initialAddress }: HomePageProps) {
                 variant="ghost"
                 onClick={() => setShowMenu((prev) => !prev)}
                 className={cn(
-                  "h-10 w-10 rounded-full border border-white/10 bg-white/5 text-white glass",
+                  "h-11 w-11 rounded-full border border-white/10 bg-white/10 text-white",
                   showMenu && "bg-white/10"
                 )}
               >
-                <Menu className="h-5 w-5 text-blue-200" />
+                <Menu className="h-6 w-6 text-blue-200" />
               </Button>
 
               <AnimatePresence>
@@ -69,7 +105,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
                       initial={{ opacity: 0, y: 10, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                      className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl glass overflow-hidden"
+                      className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl overflow-hidden"
                     >
                       <div className="p-2 space-y-2">
                         <div className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
@@ -115,8 +151,11 @@ export function HomePage({ initialAddress }: HomePageProps) {
       </header>
       
       {/* Content */}
-      <div className="flex-1 py-12">
+          <div className="flex-1 py-12">
          <div className="text-center max-w-2xl mx-auto px-4 mb-12 space-y-4">
+            <p className="text-xs uppercase tracking-[0.3em] text-blue-200/70">
+              {greeting}
+            </p>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/50">
               {t.heroTitle} <br/> {t.heroTitleSuffix}
             </h1>
@@ -125,7 +164,11 @@ export function HomePage({ initialAddress }: HomePageProps) {
             </p>
          </div>
 
-         <InboxInterface initialAddress={initialAddress} locale={locale} />
+         <InboxInterface
+           initialAddress={initialAddress}
+           locale={locale}
+           retentionLabel={retentionLabel}
+         />
 
          {/* Features Grid */}
          <div className="max-w-6xl mx-auto px-4 mt-24 grid md:grid-cols-3 gap-8">
@@ -148,7 +191,10 @@ export function HomePage({ initialAddress }: HomePageProps) {
       </div>
 
       <footer className="border-t border-white/5 py-8 mt-12 text-center text-muted-foreground text-sm">
-        <p>© {new Date().getFullYear()} {t.appName}. {t.footerSuffix}</p>
+        <p>
+          © {new Date().getFullYear()} {t.appName}. {t.footerSuffix}{" "}
+          {t.footerRetentionPrefix}: {retentionLabel}.
+        </p>
       </footer>
     </main>
   );

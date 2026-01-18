@@ -27,9 +27,10 @@ import { SettingsDialog } from './settings-dialog';
 interface InboxInterfaceProps {
     initialAddress?: string;
     locale?: Locale;
+    retentionLabel?: string;
 }
 
-export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) {
+export function InboxInterface({ initialAddress, locale, retentionLabel }: InboxInterfaceProps) {
   const t = getTranslations(locale);
   const [address, setAddress] = useState<string>(initialAddress || '');
   const [domain, setDomain] = useState<string>(getDefaultEmailDomain());
@@ -184,7 +185,11 @@ export function InboxInterface({ initialAddress, locale }: InboxInterfaceProps) 
               {t.inboxTitle}
             </h2>
             <p className="text-muted-foreground text-sm">
-              {t.inboxHintPrefix} {t.inboxHintSuffix}
+              {t.inboxHintPrefix} {t.inboxHintSuffix}{' '}
+              <span className="text-purple-400 font-medium">
+                {retentionLabel || t.retentionOptions.hours24}
+              </span>
+              .
             </p>
           </div>
           <div className="flex items-center gap-2">
