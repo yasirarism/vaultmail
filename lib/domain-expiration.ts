@@ -46,10 +46,34 @@ const parseRecord = (value: unknown): DomainExpirationRecord | null => {
   return null;
 };
 
+const collectEvents = (
+  value: unknown,
+  events: Array<{ eventAction?: string; eventDate?: string }>
+) => {
+  if (!value) return;
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectEvents(item, events));
+    return;
+  }
+  if (typeof value !== 'object') return;
+  const record = value as Record<string, unknown>;
+  const maybeEvents = record.events;
+  if (Array.isArray(maybeEvents)) {
+    maybeEvents.forEach((item) => {
+      if (item && typeof item === 'object') {
+        events.push(item as { eventAction?: string; eventDate?: string });
+      }
+    });
+  }
+  Object.values(record).forEach((item) => collectEvents(item, events));
+};
+
 const parseExpirationEvent = (data: {
   events?: Array<{ eventAction?: string; eventDate?: string }>;
 }) => {
-  const event = data.events?.find((item) => {
+  const collected: Array<{ eventAction?: string; eventDate?: string }> = [];
+  collectEvents(data, collected);
+  const event = collected.find((item) => {
     const action = item.eventAction?.toLowerCase() || '';
     return (
       action === 'expiration' ||
@@ -122,18 +146,16 @@ const getBootstrap = async () => {
 };
 
 const getRdapBaseUrls = async (domain: string) => {
-  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() === 'true';
-  if (!useBootstrap) {
+  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() !== 'false';
+  const tld = domain.toLowerCase().split('.').pop();
+  if (!useBootstrap || !tld) {
     return [DEFAULT_RDAP_BASE_URL];
   }
-  const tld = domain.toLowerCase().split('.').pop();
-  if (!tld) return [DEFAULT_RDAP_BASE_URL];
   const bootstrap = await getBootstrap();
   const services = bootstrap?.services || [];
   const match = services.find(([tlds]) => tlds.map((item) => item.toLowerCase()).includes(tld));
   const urls = match?.[1] || [];
-  const fallback = [DEFAULT_RDAP_BASE_URL];
-  const merged = [...urls, ...fallback];
+  const merged = [DEFAULT_RDAP_BASE_URL, ...urls];
   return merged.filter((value, index) => merged.indexOf(value) === index);
 };
 
