@@ -452,19 +452,30 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:absolute sm:inset-auto sm:right-0 sm:top-14 sm:block sm:p-0"
                             >
                                 <div className="w-full max-w-[22rem] rounded-2xl border border-white/10 bg-black/70 p-0 text-white shadow-2xl backdrop-blur-xl sm:w-80 sm:bg-zinc-900">
-                                <div className="flex justify-between items-center px-4 py-3 border-b border-white/10 bg-black/60">
+                                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-black/60">
                                     <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">{t.historyTitle}</span>
-                                    {history.length > 0 && (
-                                        <button 
-                                            onClick={() => {
-                                                setHistory([]);
-                                                localStorage.removeItem('dispo_history');
-                                            }}
-                                            className="text-[10px] uppercase font-bold text-red-400 hover:text-red-300 transition-colors"
+                                    <div className="flex items-center gap-2">
+                                        {history.length > 0 && (
+                                            <button 
+                                                onClick={() => {
+                                                    setHistory([]);
+                                                    localStorage.removeItem('dispo_history');
+                                                }}
+                                                className="text-[10px] uppercase font-bold text-red-400 hover:text-red-300 transition-colors"
+                                            >
+                                                {t.historyClearAll}
+                                            </button>
+                                        )}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10"
+                                            onClick={() => setShowHistory(false)}
+                                            aria-label="Close history"
                                         >
-                                            {t.historyClearAll}
-                                        </button>
-                                    )}
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                                 <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-2 space-y-1">
                                     {history.length === 0 ? (
@@ -474,9 +485,10 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                         </div>
                                     ) : (
                                         history.map((histAddr) => (
-                                            <div key={histAddr} className="flex group items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-white/5">
-                                                <div 
-                                                    className="flex-1 min-w-0"
+                                            <div key={histAddr} className="flex group items-center gap-3 rounded-lg border border-transparent hover:border-white/10">
+                                                <button
+                                                    type="button"
+                                                    className="flex-1 min-w-0 rounded-lg p-3 text-left transition-colors hover:bg-white/5"
                                                     onClick={() => {
                                                         setAddress(histAddr);
                                                         const parts = histAddr.split('@');
@@ -486,20 +498,20 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                                     }}
                                                 >
                                                     <p className="font-mono text-sm truncate text-gray-200">{histAddr}</p>
-                                                    <p className="textxs text-muted-foreground truncate opacity-50 text-[10px]">
+                                                    <p className="text-[11px] text-purple-200/80 truncate mt-0.5">
                                                         {emails.length > 0 && address === histAddr ? t.historyActive : t.historyRestore}
                                                     </p>
-                                                </div>
+                                                </button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20 hover:text-red-400"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
+                                                    className="mr-2 h-7 w-7 opacity-70 hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
+                                                    onClick={() => {
                                                         const newHist = history.filter(h => h !== histAddr);
                                                         setHistory(newHist);
                                                         localStorage.setItem('dispo_history', JSON.stringify(newHist));
                                                     }}
+                                                    aria-label={`Remove ${histAddr}`}
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>
