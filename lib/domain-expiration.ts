@@ -106,6 +106,10 @@ const getBootstrap = async () => {
 };
 
 const getRdapBaseUrls = async (domain: string) => {
+  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() === 'true';
+  if (!useBootstrap) {
+    return ['https://rdap.org/'];
+  }
   const tld = domain.toLowerCase().split('.').pop();
   if (!tld) return ['https://rdap.org/'];
   const bootstrap = await getBootstrap();
@@ -123,10 +127,14 @@ const fetchExpirationFromRdap = async (domain: string) => {
     try {
       const baseUrl = base.endsWith('/') ? base : `${base}/`;
       const response = await fetch(`${baseUrl}domain/${domain}`, {
+        redirect: 'manual',
         headers: {
           'User-Agent': 'VaultMail/1.0 (domain-expiration-check)'
         }
       });
+      if (response.status >= 300 && response.status < 400) {
+        continue;
+      }
       if (!response.ok) {
         continue;
       }
