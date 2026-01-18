@@ -19,6 +19,25 @@ const RDAP_REQUEST_HEADERS = {
   'sec-fetch-site': 'cross-site',
   'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36'
 };
+const WHOIS_FALLBACK_URLS = [
+  'https://whois.com/whois/',
+  'https://www.whois.com/whois/',
+  'https://who.is/whois/'
+];
+const WHOIS_REQUEST_HEADERS = {
+  accept: 'text/html,text/plain,*/*',
+  'user-agent': 'VaultMail/1.0 (domain-expiration-check)'
+};
+const WHOIS_DATE_PATTERNS = [
+  /registry expiry date:\s*(.+)/i,
+  /expiration date:\s*(.+)/i,
+  /expiry date:\s*(.+)/i,
+  /registrar registration expiration date:\s*(.+)/i,
+  /paid-till:\s*(.+)/i,
+  /expires on:\s*(.+)/i,
+  /expires:\s*(.+)/i,
+  /domain expire date:\s*(.+)/i
+];
 
 type DomainExpirationRecord = {
   domain: string;
@@ -60,6 +79,23 @@ const parseExpirationEvent = (data: {
     );
   });
   return event?.eventDate || null;
+};
+
+const parseWhoisExpiration = (value: string) => {
+  const normalized = value.replace(/<[^>]*>/g, ' ').replace(/[ \t]+/g, ' ');
+  const lines = normalized.split(/\r?\n/);
+  for (const line of lines) {
+    for (const pattern of WHOIS_DATE_PATTERNS) {
+      const match = line.match(pattern);
+      const dateText = match?.[1]?.trim();
+      if (!dateText) continue;
+      const parsed = new Date(dateText);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+      }
+    }
+  }
+  return null;
 };
 
 const parseBootstrapCache = (value: unknown): RdapBootstrapCache | null => {
@@ -122,9 +158,12 @@ const getBootstrap = async () => {
 };
 
 const getRdapBaseUrls = async (domain: string) => {
-  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() === 'true';
+  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() !== 'false';
   const tld = domain.toLowerCase().split('.').pop();
-  if (!useBootstrap || !tld) {
+  if (!tld) {
+    return [DEFAULT_RDAP_BASE_URL];
+  }
+  if (!useBootstrap) {
     return [DEFAULT_RDAP_BASE_URL];
   }
   const bootstrap = await getBootstrap();
@@ -167,6 +206,39 @@ const fetchExpirationFromRdap = async (domain: string) => {
   return null;
 };
 
+const fetchExpirationFromWhois = async (domain: string) => {
+  for (const base of WHOIS_FALLBACK_URLS) {
+    try {
+      const requestUrl = new URL(`${base}${domain}`);
+      const response = await fetch(requestUrl.toString(), {
+        redirect: 'follow',
+        headers: {
+          ...WHOIS_REQUEST_HEADERS
+        }
+      });
+      if (!response.ok) {
+        continue;
+      }
+      const text = await response.text();
+      const expiration = parseWhoisExpiration(text);
+      if (expiration) {
+        return expiration;
+      }
+    } catch (error) {
+      console.error('WHOIS lookup failed:', error);
+    }
+  }
+  return null;
+};
+
+const fetchExpiration = async (domain: string) => {
+  const rdapExpiration = await fetchExpirationFromRdap(domain);
+  if (rdapExpiration) {
+    return rdapExpiration;
+  }
+  return fetchExpirationFromWhois(domain);
+};
+
 export const getStoredDomainExpiration = async (domain: string) => {
   const key = `${DOMAIN_EXPIRATION_PREFIX}${domain.toLowerCase()}`;
   try {
@@ -179,7 +251,7 @@ export const getStoredDomainExpiration = async (domain: string) => {
 };
 
 export const refreshDomainExpiration = async (domain: string) => {
-  const expiresAt = await fetchExpirationFromRdap(domain);
+  const expiresAt = await fetchExpiration(domain);
   const record: DomainExpirationRecord = {
     domain,
     expiresAt,

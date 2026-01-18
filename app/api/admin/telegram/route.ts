@@ -11,6 +11,7 @@ type TelegramSettings = {
   enabled: boolean;
   botToken: string;
   chatId: string;
+  allowedDomains: string[];
   updatedAt: string;
 };
 
@@ -45,6 +46,7 @@ export async function GET() {
     enabled: false,
     botToken: '',
     chatId: '',
+    allowedDomains: [],
     updatedAt: new Date().toISOString()
   };
 
@@ -60,11 +62,15 @@ export async function POST(request: Request) {
   const enabled = Boolean(body?.enabled);
   const botToken = String(body?.botToken || '').trim();
   const chatId = String(body?.chatId || '').trim();
+  const allowedDomains = Array.isArray(body?.allowedDomains)
+    ? body.allowedDomains.map((domain: string) => domain.toLowerCase().trim()).filter(Boolean)
+    : [];
 
   const settings: TelegramSettings = {
     enabled,
     botToken,
     chatId,
+    allowedDomains,
     updatedAt: new Date().toISOString()
   };
 

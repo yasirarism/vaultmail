@@ -8,6 +8,7 @@ type TelegramSettings = {
   enabled: boolean;
   botToken: string;
   chatId: string;
+  allowedDomains?: string[];
 };
 
 type RetentionSettings = {
@@ -57,6 +58,17 @@ const sendTelegramNotification = async (payload: {
 
   if (!settings?.enabled || !settings.botToken || !settings.chatId) {
     return;
+  }
+
+  if (Array.isArray(settings.allowedDomains)) {
+    if (settings.allowedDomains.length === 0) {
+      return;
+    }
+    const recipient = extractEmail(payload.to);
+    const domain = recipient?.split('@').pop()?.toLowerCase();
+    if (!domain || !settings.allowedDomains.includes(domain)) {
+      return;
+    }
   }
 
   const sender = getSenderInfo(payload.from);
