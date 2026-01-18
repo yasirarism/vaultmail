@@ -143,6 +143,30 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     return doc.body.innerHTML || '';
   }, []);
 
+  const normalizeContentId = useCallback((value?: string) => {
+    if (!value) return '';
+    return value.replace(/[<>]/g, '').trim();
+  }, []);
+
+  const resolveInlineImages = useCallback(
+    (html: string, attachments?: EmailAttachment[]) => {
+      if (!html || !attachments || attachments.length === 0) return html;
+      return html.replace(/src=["']cid:([^"']+)["']/gi, (match, cid) => {
+        const normalizedCid = normalizeContentId(cid);
+        const attachment = attachments.find((item) => {
+          const contentId = normalizeContentId(item.contentId);
+          return contentId && contentId === normalizedCid;
+        });
+        if (!attachment?.contentBase64) {
+          return match;
+        }
+        const contentType = attachment.contentType || 'image/png';
+        return `src="data:${contentType};base64,${attachment.contentBase64}"`;
+      });
+    },
+    [normalizeContentId]
+  );
+
   useEffect(() => {
     if (!domain) return;
     let active = true;
@@ -667,13 +691,16 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     
                     {/* Body */}
                     <div className="flex-1 overflow-y-auto p-6 bg-white">
-                         <div 
-                            className="prose prose-base md:prose-lg max-w-none text-black prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
-                            dangerouslySetInnerHTML={{
-                              __html: stripEmailStyles(
+                        <div 
+                          className="prose prose-base md:prose-lg max-w-none text-black prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
+                          dangerouslySetInnerHTML={{
+                            __html: resolveInlineImages(
+                              stripEmailStyles(
                                 selectedEmail.html || `<p>${selectedEmail.text}</p>`
                               ),
-                            }}
+                              selectedEmail.attachments
+                            ),
+                          }}
                         />
                     </div>
                 </div>

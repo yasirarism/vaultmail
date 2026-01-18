@@ -16,17 +16,37 @@ type RetentionSettings = {
 };
 
 const TELEGRAM_SETTINGS_KEY = 'settings:telegram';
+const DEFAULT_MAX_ATTACHMENT_BYTES = 2_000_000;
+const MAX_ATTACHMENT_BYTES =
+  Number(process.env.ATTACHMENT_MAX_BYTES) || DEFAULT_MAX_ATTACHMENT_BYTES;
+
+const estimateBase64Bytes = (value?: string) => {
+  if (!value) return 0;
+  const normalized = value.trim().replace(/\s+/g, '');
+  const padding = normalized.endsWith('==') ? 2 : normalized.endsWith('=') ? 1 : 0;
+  return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding);
+};
 
 const extractAttachmentsFromFormData = async (formData: FormData) => {
   const attachments = [];
   for (const [, value] of formData.entries()) {
     if (value instanceof File) {
+      if (value.size > MAX_ATTACHMENT_BYTES) {
+        attachments.push({
+          filename: value.name,
+          contentType: value.type || 'application/octet-stream',
+          size: value.size,
+          omitted: true
+        });
+        continue;
+      }
       const buffer = Buffer.from(await value.arrayBuffer());
       attachments.push({
         filename: value.name,
         contentType: value.type || 'application/octet-stream',
         size: value.size,
-        contentBase64: buffer.toString('base64')
+        contentBase64: buffer.toString('base64'),
+        omitted: false
       });
     }
   }
@@ -131,6 +151,28 @@ export async function POST(req: Request) {
     if (contentType.includes('application/json')) {
       const body = await req.json();
       ({ from, to, subject, text, html, attachments } = body);
+      if (Array.isArray(attachments)) {
+        attachments = attachments.map((attachment: Record<string, unknown>) => {
+          const base64 = typeof attachment.contentBase64 === 'string' ? attachment.contentBase64 : '';
+          const size =
+            typeof attachment.size === 'number'
+              ? attachment.size
+              : estimateBase64Bytes(base64);
+          if (size > MAX_ATTACHMENT_BYTES) {
+            return {
+              ...attachment,
+              size,
+              contentBase64: undefined,
+              omitted: true
+            };
+          }
+          return {
+            ...attachment,
+            size,
+            omitted: false
+          };
+        });
+      }
     } else if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
       const formData = await req.formData();
       from = formData.get('from') as string;

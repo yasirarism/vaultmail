@@ -13,6 +13,8 @@ type InboxEmail = {
     filename?: string;
     contentType?: string;
     contentBase64?: string;
+    omitted?: boolean;
+    size?: number;
   }>;
 };
 
@@ -104,6 +106,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Invalid attachment index' }, { status: 400 });
     }
     const attachment = selected.attachments?.[index];
+    if (attachment?.omitted) {
+      return NextResponse.json(
+        { error: 'Attachment too large to download' },
+        { status: 413 }
+      );
+    }
     if (!attachment?.contentBase64) {
       return NextResponse.json({ error: 'Attachment not found' }, { status: 404 });
     }
