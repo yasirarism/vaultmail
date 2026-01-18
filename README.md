@@ -70,7 +70,11 @@ We include a pre-configured worker in the `worker/` directory.
     *   Set repository secrets:
         *   `CLOUDFLARE_API_TOKEN`
         *   `CLOUDFLARE_ACCOUNT_ID`
+        *   `WEBHOOK_URL` (required)
+        *   `FORWARD_DOMAINS` (optional)
+        *   `FORWARD_EMAIL` (optional)
     *   Pushing changes under `worker/` will trigger `.github/workflows/worker-deploy.yml`.
+    *   The workflow syncs the listed secrets on deploy so values stay consistent across redeploys.
 
 ## 🛠️ Local Development
 
