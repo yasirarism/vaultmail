@@ -16,10 +16,13 @@ export default {
 
         const parsedFromAddress = email?.from?.value?.[0]?.address;
         const parsedFromName = email?.from?.value?.[0]?.name;
+        const fallbackFromName = parsedFromAddress
+          ? parsedFromAddress.split('@').pop()?.replace(/^mail\./, '')
+          : undefined;
         const parsedFrom =
           parsedFromName && parsedFromAddress
             ? `${parsedFromName} <${parsedFromAddress}>`
-            : parsedFromAddress || message.from;
+            : parsedFromName || fallbackFromName || parsedFromAddress || message.from;
 
         const recipients = Array.isArray(message.to) ? message.to : [message.to];
         const shouldForward =
