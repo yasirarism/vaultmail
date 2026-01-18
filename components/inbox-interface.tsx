@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -54,6 +54,8 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [showDomainMenu, setShowDomainMenu] = useState(false);
   const [domainExpiration, setDomainExpiration] = useState<string | null>(null);
   const [domainStatusLoading, setDomainStatusLoading] = useState(false);
+  const previousEmailIds = useRef<Set<string>>(new Set());
+  const hasLoadedEmails = useRef(false);
 
   const selectedSender = selectedEmail ? getSenderInfo(selectedEmail.from) : null;
   const domainExpirationDate = domainExpiration ? new Date(domainExpiration) : null;
@@ -272,7 +274,16 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       if (data.emails) {
         // Only update if changes to avoid jitter, or just replace for now
         // De-dupe could be handled here
-        setEmails(data.emails);
+        const incoming = data.emails as Email[];
+        const nextIds = new Set(incoming.map((email) => email.id));
+        const newCount = incoming.filter((email) => !previousEmailIds.current.has(email.id))
+          .length;
+        if (hasLoadedEmails.current && newCount > 0) {
+          toast.info(`${t.toastNewEmail} (${newCount})`);
+        }
+        previousEmailIds.current = nextIds;
+        hasLoadedEmails.current = true;
+        setEmails(incoming);
       }
     } catch (e) {
       console.error(e);
@@ -285,6 +296,11 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   useEffect(() => {
     fetchEmails();
   }, [fetchEmails]);
+
+  useEffect(() => {
+    previousEmailIds.current = new Set();
+    hasLoadedEmails.current = false;
+  }, [address]);
 
   // Polling
   useEffect(() => {
