@@ -2,7 +2,7 @@
 
 import { InboxInterface } from "@/components/inbox-interface";
 import { Menu, Shield, Zap, Globe } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -69,8 +69,12 @@ export function HomePage({ initialAddress }: HomePageProps) {
     return t.greetingNight;
   }, [t]);
 
+  const hasShownGreeting = useRef(false);
+
   useEffect(() => {
+    if (hasShownGreeting.current) return;
     toast.info(greeting);
+    hasShownGreeting.current = true;
   }, [greeting]);
 
   return (
@@ -193,10 +197,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
       </div>
 
       <footer className="border-t border-white/5 py-8 mt-12 text-center text-muted-foreground text-sm">
-        <p>
-          © {new Date().getFullYear()} {t.appName}. {t.footerSuffix}{" "}
-          {t.footerRetentionPrefix}: {retentionLabel}.
-        </p>
+        <p>© {new Date().getFullYear()} {t.appName}. {t.footerSuffix}</p>
       </footer>
     </main>
   );
