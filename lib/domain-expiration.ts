@@ -122,7 +122,7 @@ const getBootstrap = async () => {
 };
 
 const getRdapBaseUrls = async (domain: string) => {
-  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() !== 'false';
+  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() === 'true';
   if (!useBootstrap) {
     return [DEFAULT_RDAP_BASE_URL];
   }
