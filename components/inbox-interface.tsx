@@ -57,49 +57,70 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
 
   const downloadEmail = useCallback(() => {
     if (!selectedEmail) return;
-    const sender = getSenderInfo(selectedEmail.from);
-    const content = [
-      `From: ${sender.label}`,
-      `To: ${selectedEmail.to || address}`,
-      `Subject: ${selectedEmail.subject}`,
-      `Date: ${new Date(selectedEmail.receivedAt).toUTCString()}`,
-      '',
-      selectedEmail.text || ''
-    ].join('\n');
-    const fileName = (selectedEmail.subject || 'email')
-      .replace(/[^a-z0-9-_]+/gi, '_')
-      .replace(/^_+|_+$/g, '')
-      .slice(0, 60) || 'email';
-    const blob = new Blob([content], { type: 'message/rfc822;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${fileName}.eml`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    const download = async () => {
+      try {
+        const response = await fetch(
+          `/api/download?address=${encodeURIComponent(address)}&emailId=${encodeURIComponent(
+            selectedEmail.id
+          )}&type=email`
+        );
+        if (!response.ok) {
+          throw new Error('Download failed');
+        }
+        const blob = await response.blob();
+        const disposition = response.headers.get('content-disposition') || '';
+        const match = disposition.match(/filename="([^"]+)"/);
+        const fileName = match?.[1] || 'email.eml';
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error(error);
+        toast.error('Gagal mengunduh email.');
+      }
+    };
+    download();
   }, [address, selectedEmail]);
 
-  const downloadAttachment = useCallback((attachment: EmailAttachment) => {
-    if (!attachment.contentBase64) return;
-    const binary = atob(attachment.contentBase64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    const blob = new Blob([bytes], {
-      type: attachment.contentType || 'application/octet-stream'
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = attachment.filename || 'attachment';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }, []);
+  const downloadAttachment = useCallback(
+    (index: number) => {
+      if (!selectedEmail) return;
+      const download = async () => {
+        try {
+          const response = await fetch(
+            `/api/download?address=${encodeURIComponent(
+              address
+            )}&emailId=${encodeURIComponent(selectedEmail.id)}&type=attachment&index=${index}`
+          );
+          if (!response.ok) {
+            throw new Error('Download failed');
+          }
+          const blob = await response.blob();
+          const disposition = response.headers.get('content-disposition') || '';
+          const match = disposition.match(/filename="([^"]+)"/);
+          const fileName = match?.[1] || 'attachment';
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error(error);
+          toast.error('Gagal mengunduh attachment.');
+        }
+      };
+      download();
+    },
+    [address, selectedEmail]
+  );
 
   const stripEmailStyles = useCallback((html: string) => {
     if (!html) return '';
@@ -543,7 +564,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                   key={`${attachment.filename || 'attachment'}-${index}`}
                                   variant="secondary"
                                   size="sm"
-                                  onClick={() => downloadAttachment(attachment)}
+                                  onClick={() => downloadAttachment(index)}
                                 >
                                   <Download className="mr-2 h-4 w-4" />
                                   {attachment.filename || `Attachment ${index + 1}`}

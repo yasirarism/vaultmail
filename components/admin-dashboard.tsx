@@ -180,12 +180,13 @@ export function AdminDashboard() {
                 Atur bot Telegram untuk mengirim notifikasi inbox baru.
               </p>
             </div>
-            <Button asChild variant="secondary">
-              <Link href="/" className="inline-flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Kembali ke Beranda
-              </Link>
-            </Button>
+            <Link
+              href="/"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Kembali ke Beranda
+            </Link>
           </div>
 
           <div className="mt-8 grid gap-6">

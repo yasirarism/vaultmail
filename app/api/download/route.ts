@@ -1,0 +1,105 @@
+import { NextResponse } from 'next/server';
+import { redis } from '@/lib/redis';
+
+type InboxEmail = {
+  id?: string;
+  from?: string;
+  to?: string;
+  subject?: string;
+  text?: string;
+  receivedAt?: string;
+  attachments?: Array<{
+    filename?: string;
+    contentType?: string;
+    contentBase64?: string;
+  }>;
+};
+
+const parseEmail = (value: unknown): InboxEmail | null => {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as InboxEmail;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value === 'object') {
+    return value as InboxEmail;
+  }
+  return null;
+};
+
+const sanitizeFilename = (value: string, fallback: string) => {
+  const safe = value
+    .replace(/[^a-z0-9-_.]+/gi, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 60);
+  return safe || fallback;
+};
+
+const buildEmailContent = (email: InboxEmail) => {
+  const subject = email.subject || '(No Subject)';
+  return [
+    `From: ${email.from || ''}`,
+    `To: ${email.to || ''}`,
+    `Subject: ${subject}`,
+    `Date: ${email.receivedAt ? new Date(email.receivedAt).toUTCString() : ''}`,
+    '',
+    email.text || ''
+  ].join('\n');
+};
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const address = searchParams.get('address');
+  const emailId = searchParams.get('emailId');
+  const type = searchParams.get('type');
+  const indexParam = searchParams.get('index');
+
+  if (!address || !emailId || !type) {
+    return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+  }
+
+  const key = `inbox:${address.toLowerCase()}`;
+  const emails = await redis.lrange(key, 0, -1);
+  const selected = (emails || [])
+    .map((item) => parseEmail(item))
+    .find((email) => email?.id === emailId);
+
+  if (!selected) {
+    return NextResponse.json({ error: 'Email not found' }, { status: 404 });
+  }
+
+  if (type === 'email') {
+    const content = buildEmailContent(selected);
+    const filename = sanitizeFilename(selected.subject || 'email', 'email');
+    return new NextResponse(content, {
+      headers: {
+        'Content-Type': 'message/rfc822;charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}.eml"`
+      }
+    });
+  }
+
+  if (type === 'attachment') {
+    const index = Number(indexParam);
+    if (Number.isNaN(index)) {
+      return NextResponse.json({ error: 'Invalid attachment index' }, { status: 400 });
+    }
+    const attachment = selected.attachments?.[index];
+    if (!attachment?.contentBase64) {
+      return NextResponse.json({ error: 'Attachment not found' }, { status: 404 });
+    }
+    const filename = sanitizeFilename(attachment.filename || 'attachment', 'attachment');
+    const buffer = Buffer.from(attachment.contentBase64, 'base64');
+    return new NextResponse(buffer, {
+      headers: {
+        'Content-Type': attachment.contentType || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${filename}"`
+      }
+    });
+  }
+
+  return NextResponse.json({ error: 'Invalid download type' }, { status: 400 });
+}

@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { DEFAULT_LOCALE } from "@/lib/i18n";
 import { Toaster } from 'sonner';
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "YS Mail - Secure Disposable Email",
@@ -18,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang={DEFAULT_LOCALE} className="dark">
-      <body className={inter.className}>
+      <body className="font-sans">
         {children}
         <Toaster position="top-right" theme="dark" />
       </body>
