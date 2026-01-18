@@ -7,6 +7,7 @@ type InboxEmail = {
   to?: string;
   subject?: string;
   text?: string;
+  html?: string;
   receivedAt?: string;
   attachments?: Array<{
     filename?: string;
@@ -38,15 +39,30 @@ const sanitizeFilename = (value: string, fallback: string) => {
   return safe || fallback;
 };
 
+const htmlToText = (value: string) =>
+  value
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 const buildEmailContent = (email: InboxEmail) => {
   const subject = email.subject || '(No Subject)';
+  const textBody = email.text?.trim() || '';
+  const htmlBody = email.html?.trim() || '';
+  const useHtml = Boolean(htmlBody);
+  const body = useHtml ? htmlBody : textBody || (htmlBody ? htmlToText(htmlBody) : '');
+  const contentType = useHtml ? 'text/html' : 'text/plain';
   return [
     `From: ${email.from || ''}`,
     `To: ${email.to || ''}`,
     `Subject: ${subject}`,
     `Date: ${email.receivedAt ? new Date(email.receivedAt).toUTCString() : ''}`,
+    'MIME-Version: 1.0',
+    `Content-Type: ${contentType}; charset=utf-8`,
     '',
-    email.text || ''
+    body
   ].join('\n');
 };
 
