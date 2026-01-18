@@ -122,9 +122,12 @@ const getBootstrap = async () => {
 };
 
 const getRdapBaseUrls = async (domain: string) => {
-  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() === 'true';
+  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() !== 'false';
   const tld = domain.toLowerCase().split('.').pop();
-  if (!useBootstrap || !tld) {
+  if (!tld) {
+    return [DEFAULT_RDAP_BASE_URL];
+  }
+  if (!useBootstrap) {
     return [DEFAULT_RDAP_BASE_URL];
   }
   const bootstrap = await getBootstrap();
