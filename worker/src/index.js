@@ -15,8 +15,11 @@ export default {
         const forwardEmail = env.FORWARD_EMAIL;
 
         const parsedFromAddress = email?.from?.value?.[0]?.address;
-        const parsedFromText = email?.from?.text;
-        const parsedFrom = parsedFromAddress || parsedFromText || message.from;
+        const parsedFromName = email?.from?.value?.[0]?.name;
+        const parsedFrom =
+          parsedFromName && parsedFromAddress
+            ? `${parsedFromName} <${parsedFromAddress}>`
+            : parsedFromAddress || message.from;
 
         const recipients = Array.isArray(message.to) ? message.to : [message.to];
         const shouldForward =
