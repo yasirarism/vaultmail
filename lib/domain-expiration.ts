@@ -4,6 +4,7 @@ const DOMAIN_EXPIRATION_PREFIX = 'domain:expiration:';
 const RDAP_BOOTSTRAP_CACHE_KEY = 'domain:rdap:bootstrap';
 const RDAP_BOOTSTRAP_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 const DOMAIN_EXPIRATION_CACHE_SECONDS = 60 * 60 * 24;
+const DEFAULT_RDAP_BASE_URL = 'https://rdap.publicinterestregistry.org/rdap/';
 const RDAP_QUERY_PARAMS = { jscard: '1' };
 const RDAP_REQUEST_HEADERS = {
   accept: '*/*',
@@ -123,16 +124,16 @@ const getBootstrap = async () => {
 const getRdapBaseUrls = async (domain: string) => {
   const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() !== 'false';
   if (!useBootstrap) {
-    return ['https://rdap.org/'];
+    return [DEFAULT_RDAP_BASE_URL];
   }
   const tld = domain.toLowerCase().split('.').pop();
-  if (!tld) return ['https://rdap.org/'];
+  if (!tld) return [DEFAULT_RDAP_BASE_URL];
   const bootstrap = await getBootstrap();
   const services = bootstrap?.services || [];
   const match = services.find(([tlds]) => tlds.map((item) => item.toLowerCase()).includes(tld));
   const urls = match?.[1] || [];
-  const fallback = ['https://rdap.org/'];
-  const merged = [...urls, ...fallback];
+  const fallback = [DEFAULT_RDAP_BASE_URL];
+  const merged = [...fallback, ...urls];
   return merged.filter((value, index) => merged.indexOf(value) === index);
 };
 
