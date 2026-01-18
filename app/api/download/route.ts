@@ -51,7 +51,7 @@ const buildEmailContent = (email: InboxEmail) => {
   const subject = email.subject || '(No Subject)';
   const textBody = email.text?.trim() || '';
   const htmlBody = email.html?.trim() || '';
-  const useHtml = !textBody && htmlBody;
+  const useHtml = Boolean(htmlBody);
   const body = useHtml ? htmlBody : textBody || (htmlBody ? htmlToText(htmlBody) : '');
   const contentType = useHtml ? 'text/html' : 'text/plain';
   return [
