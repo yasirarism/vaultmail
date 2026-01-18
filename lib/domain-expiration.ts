@@ -3,6 +3,7 @@ import { redis } from '@/lib/redis';
 const DOMAIN_EXPIRATION_PREFIX = 'domain:expiration:';
 const RDAP_BOOTSTRAP_CACHE_KEY = 'domain:rdap:bootstrap';
 const RDAP_BOOTSTRAP_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
+const DOMAIN_EXPIRATION_CACHE_SECONDS = 60 * 60 * 24;
 
 type DomainExpirationRecord = {
   domain: string;
@@ -106,7 +107,7 @@ const getBootstrap = async () => {
 };
 
 const getRdapBaseUrls = async (domain: string) => {
-  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() === 'true';
+  const useBootstrap = process.env.RDAP_USE_BOOTSTRAP?.toLowerCase() !== 'false';
   if (!useBootstrap) {
     return ['https://rdap.org/'];
   }
@@ -127,14 +128,11 @@ const fetchExpirationFromRdap = async (domain: string) => {
     try {
       const baseUrl = base.endsWith('/') ? base : `${base}/`;
       const response = await fetch(`${baseUrl}domain/${domain}`, {
-        redirect: 'manual',
+        redirect: 'follow',
         headers: {
           'User-Agent': 'VaultMail/1.0 (domain-expiration-check)'
         }
       });
-      if (response.status >= 300 && response.status < 400) {
-        continue;
-      }
       if (!response.ok) {
         continue;
       }
@@ -172,7 +170,11 @@ export const refreshDomainExpiration = async (domain: string) => {
   };
   const key = `${DOMAIN_EXPIRATION_PREFIX}${domain.toLowerCase()}`;
   try {
-    await redis.set(key, record);
+    if (expiresAt) {
+      await redis.set(key, record, { ex: DOMAIN_EXPIRATION_CACHE_SECONDS });
+    } else {
+      await redis.del(key);
+    }
   } catch (error) {
     console.error('Domain expiration cache write failed:', error);
   }
