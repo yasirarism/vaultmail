@@ -133,7 +133,7 @@ const getRdapBaseUrls = async (domain: string) => {
   const match = services.find(([tlds]) => tlds.map((item) => item.toLowerCase()).includes(tld));
   const urls = match?.[1] || [];
   const fallback = [DEFAULT_RDAP_BASE_URL];
-  const merged = [...fallback, ...urls];
+  const merged = [...urls, ...fallback];
   return merged.filter((value, index) => merged.indexOf(value) === index);
 };
 
