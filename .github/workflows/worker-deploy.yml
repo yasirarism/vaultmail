@@ -21,6 +21,8 @@ jobs:
 
       - name: Deploy worker
         uses: cloudflare/wrangler-action@v3
+        env:
+          WRANGLER_DISABLE_UPDATE_CHECK: "true"
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

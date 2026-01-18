@@ -4,12 +4,12 @@
   "private": true,
   "main": "src/index.js",
   "scripts": {
-    "deploy": "wrangler deploy"
+    "deploy": "WRANGLER_DISABLE_UPDATE_CHECK=1 wrangler deploy"
   },
   "dependencies": {
     "postal-mime": "^1.0.0"
   },
   "devDependencies": {
-    "wrangler": "^3.0.0"
+    "wrangler": "^3.114.16"
   }
 }
