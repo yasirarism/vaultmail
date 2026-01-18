@@ -19,9 +19,13 @@ const RDAP_REQUEST_HEADERS = {
   'sec-fetch-site': 'cross-site',
   'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36'
 };
-const WHOIS_FALLBACK_URL = 'https://r.jina.ai/http://whois.com/whois/';
+const WHOIS_FALLBACK_URLS = [
+  'https://whois.com/whois/',
+  'https://www.whois.com/whois/',
+  'https://who.is/whois/'
+];
 const WHOIS_REQUEST_HEADERS = {
-  accept: 'text/plain,*/*',
+  accept: 'text/html,text/plain,*/*',
   'user-agent': 'VaultMail/1.0 (domain-expiration-check)'
 };
 const WHOIS_DATE_PATTERNS = [
@@ -78,7 +82,8 @@ const parseExpirationEvent = (data: {
 };
 
 const parseWhoisExpiration = (value: string) => {
-  const lines = value.split(/\r?\n/);
+  const normalized = value.replace(/<[^>]*>/g, ' ').replace(/[ \t]+/g, ' ');
+  const lines = normalized.split(/\r?\n/);
   for (const line of lines) {
     for (const pattern of WHOIS_DATE_PATTERNS) {
       const match = line.match(pattern);
@@ -202,23 +207,28 @@ const fetchExpirationFromRdap = async (domain: string) => {
 };
 
 const fetchExpirationFromWhois = async (domain: string) => {
-  try {
-    const requestUrl = new URL(`${WHOIS_FALLBACK_URL}${domain}`);
-    const response = await fetch(requestUrl.toString(), {
-      redirect: 'follow',
-      headers: {
-        ...WHOIS_REQUEST_HEADERS
+  for (const base of WHOIS_FALLBACK_URLS) {
+    try {
+      const requestUrl = new URL(`${base}${domain}`);
+      const response = await fetch(requestUrl.toString(), {
+        redirect: 'follow',
+        headers: {
+          ...WHOIS_REQUEST_HEADERS
+        }
+      });
+      if (!response.ok) {
+        continue;
       }
-    });
-    if (!response.ok) {
-      return null;
+      const text = await response.text();
+      const expiration = parseWhoisExpiration(text);
+      if (expiration) {
+        return expiration;
+      }
+    } catch (error) {
+      console.error('WHOIS lookup failed:', error);
     }
-    const text = await response.text();
-    return parseWhoisExpiration(text);
-  } catch (error) {
-    console.error('WHOIS lookup failed:', error);
-    return null;
   }
+  return null;
 };
 
 const fetchExpiration = async (domain: string) => {

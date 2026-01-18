@@ -80,6 +80,10 @@ const translations = {
     toastDomainRemoved: 'Domain removed',
     toastRetentionUpdated: 'Retention updated',
     toastRetentionFailed: 'Failed to save settings',
+    domainStatusChecking: 'Checking domain status...',
+    domainStatusExpired: 'This domain has expired.',
+    domainStatusEndsOn: 'Domain expires on:',
+    domainStatusUnavailable: 'Domain status is unavailable.',
   },
   id: {
     appName: 'YS Mail',
@@ -151,6 +155,10 @@ const translations = {
     toastDomainRemoved: 'Domain dihapus',
     toastRetentionUpdated: 'Retensi diperbarui',
     toastRetentionFailed: 'Gagal menyimpan pengaturan',
+    domainStatusChecking: 'Mengecek masa aktif domain...',
+    domainStatusExpired: 'Domain ini sudah kedaluwarsa.',
+    domainStatusEndsOn: 'Domain berakhir:',
+    domainStatusUnavailable: 'Masa aktif domain belum tersedia.',
   },
 } as const;
 

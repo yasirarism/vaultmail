@@ -398,20 +398,20 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
             </div>
             <div className="text-xs text-muted-foreground">
               {domainStatusLoading ? (
-                <span>Mengecek masa aktif domain...</span>
+                <span>{t.domainStatusChecking}</span>
               ) : domainExpirationDate ? (
                 isDomainExpired ? (
-                  <span className="text-red-300">Domain ini sudah kedaluwarsa.</span>
+                  <span className="text-red-300">{t.domainStatusExpired}</span>
                 ) : (
                   <span>
-                    Domain berakhir:{' '}
+                    {t.domainStatusEndsOn}{' '}
                     <span className="text-purple-200 font-medium">
                       {domainExpirationDate.toLocaleDateString()}
                     </span>
                   </span>
                 )
               ) : (
-                <span>Masa aktif domain belum tersedia.</span>
+                <span>{t.domainStatusUnavailable}</span>
               )}
             </div>
           </div>
