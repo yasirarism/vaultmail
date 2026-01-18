@@ -7,6 +7,7 @@ type InboxEmail = {
   to?: string;
   subject?: string;
   text?: string;
+  html?: string;
   receivedAt?: string;
   attachments?: Array<{
     filename?: string;
