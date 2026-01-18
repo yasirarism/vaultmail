@@ -35,31 +35,6 @@ export const DEFAULT_DOMAINS = (() => {
 
 export const DEFAULT_EMAIL = envDefaultEmail;
 
-const parseDomainExpirations = () => {
-  const raw = process.env.NEXT_PUBLIC_DOMAIN_EXPIRATIONS?.trim();
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw) as Record<string, string>;
-    return Object.fromEntries(
-      Object.entries(parsed)
-        .map(([domain, value]) => [domain.toLowerCase(), value])
-        .filter(([, value]) => Boolean(value))
-    );
-  } catch {
-    return {};
-  }
-};
-
-const DOMAIN_EXPIRATIONS = parseDomainExpirations();
-
-export const getDomainExpiration = (domain: string) => {
-  const value = DOMAIN_EXPIRATIONS[domain.toLowerCase()];
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date;
-};
-
 export const getDefaultEmailDomain = () => {
   if (!DEFAULT_EMAIL) {
     return DEFAULT_DOMAIN;

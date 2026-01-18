@@ -8,7 +8,7 @@ import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, Ch
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { cn, getSenderInfo } from '@/lib/utils';
-import { DEFAULT_DOMAINS, DEFAULT_EMAIL, getDefaultEmailDomain, getDomainExpiration } from '@/lib/config';
+import { DEFAULT_DOMAINS, DEFAULT_EMAIL, getDefaultEmailDomain } from '@/lib/config';
 import { getTranslations, Locale } from '@/lib/i18n';
 
 // Types
@@ -52,10 +52,12 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [showHistory, setShowHistory] = useState(false);
   const [isAddDomainOpen, setIsAddDomainOpen] = useState(false);
   const [showDomainMenu, setShowDomainMenu] = useState(false);
+  const [domainExpiration, setDomainExpiration] = useState<string | null>(null);
+  const [domainStatusLoading, setDomainStatusLoading] = useState(false);
 
   const selectedSender = selectedEmail ? getSenderInfo(selectedEmail.from) : null;
-  const domainExpiration = getDomainExpiration(domain);
-  const isDomainExpired = domainExpiration ? domainExpiration.getTime() < Date.now() : false;
+  const domainExpirationDate = domainExpiration ? new Date(domainExpiration) : null;
+  const isDomainExpired = domainExpirationDate ? domainExpirationDate.getTime() < Date.now() : false;
 
   const downloadEmail = useCallback(() => {
     if (!selectedEmail) return;
@@ -138,6 +140,42 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     doc.querySelectorAll('style, script, link[rel="stylesheet"]').forEach((node) => node.remove());
     return doc.body.innerHTML || '';
   }, []);
+
+  useEffect(() => {
+    if (!domain) return;
+    let active = true;
+    const fetchExpiration = async () => {
+      setDomainStatusLoading(true);
+      try {
+        const response = await fetch(
+          `/api/domain-expiration?domain=${encodeURIComponent(domain)}`
+        );
+        if (!response.ok) {
+          throw new Error('Failed to load domain expiration');
+        }
+        const data = (await response.json()) as {
+          expiresAt: string | null;
+          checkedAt: string;
+        };
+        if (active) {
+          setDomainExpiration(data.expiresAt ?? null);
+        }
+      } catch (error) {
+        console.error(error);
+        if (active) {
+          setDomainExpiration(null);
+        }
+      } finally {
+        if (active) {
+          setDomainStatusLoading(false);
+        }
+      }
+    };
+    fetchExpiration();
+    return () => {
+      active = false;
+    };
+  }, [domain]);
 
   // Load saved data
   useEffect(() => {
@@ -358,20 +396,24 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                  </div>
             </div>
             </div>
-            {domainExpiration && (
-              <div className="text-xs text-muted-foreground">
-                {isDomainExpired ? (
+            <div className="text-xs text-muted-foreground">
+              {domainStatusLoading ? (
+                <span>Mengecek masa aktif domain...</span>
+              ) : domainExpirationDate ? (
+                isDomainExpired ? (
                   <span className="text-red-300">Domain ini sudah kedaluwarsa.</span>
                 ) : (
                   <span>
                     Domain berakhir:{' '}
                     <span className="text-purple-200 font-medium">
-                      {domainExpiration.toLocaleDateString()}
+                      {domainExpirationDate.toLocaleDateString()}
                     </span>
                   </span>
-                )}
-              </div>
-            )}
+                )
+              ) : (
+                <span>Masa aktif domain belum tersedia.</span>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 items-center">
             {/* Settings Button */}
