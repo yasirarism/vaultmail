@@ -73,8 +73,11 @@ export function HomePage({ initialAddress }: HomePageProps) {
 
   useEffect(() => {
     if (hasShownGreeting.current) return;
-    toast.info(greeting);
-    hasShownGreeting.current = true;
+    const timer = setTimeout(() => {
+      toast.info(greeting);
+      hasShownGreeting.current = true;
+    }, 300);
+    return () => clearTimeout(timer);
   }, [greeting]);
 
   return (
