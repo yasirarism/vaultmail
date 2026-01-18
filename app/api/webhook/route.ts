@@ -8,6 +8,7 @@ type TelegramSettings = {
   enabled: boolean;
   botToken: string;
   chatId: string;
+  allowedDomains?: string[];
 };
 
 type RetentionSettings = {
@@ -15,13 +16,6 @@ type RetentionSettings = {
 };
 
 const TELEGRAM_SETTINGS_KEY = 'settings:telegram';
-const TELEGRAM_NOTIFY_DOMAINS_ENV = 'TELEGRAM_NOTIFY_DOMAINS';
-
-const getTelegramNotifyDomains = () =>
-  (process.env[TELEGRAM_NOTIFY_DOMAINS_ENV] || '')
-    .split(',')
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
 
 const parseRetentionSettings = (value: unknown): RetentionSettings | null => {
   if (!value) return null;
@@ -59,20 +53,22 @@ const sendTelegramNotification = async (payload: {
   subject: string;
   text: string;
 }) => {
-  const notifyDomains = getTelegramNotifyDomains();
-  if (notifyDomains.length > 0) {
-    const recipient = extractEmail(payload.to);
-    const domain = recipient?.split('@').pop()?.toLowerCase();
-    if (!domain || !notifyDomains.includes(domain)) {
-      return;
-    }
-  }
-
   const settingsRaw = await redis.get(TELEGRAM_SETTINGS_KEY);
   const settings = parseSettings(settingsRaw);
 
   if (!settings?.enabled || !settings.botToken || !settings.chatId) {
     return;
+  }
+
+  if (Array.isArray(settings.allowedDomains)) {
+    if (settings.allowedDomains.length === 0) {
+      return;
+    }
+    const recipient = extractEmail(payload.to);
+    const domain = recipient?.split('@').pop()?.toLowerCase();
+    if (!domain || !settings.allowedDomains.includes(domain)) {
+      return;
+    }
   }
 
   const sender = getSenderInfo(payload.from);

@@ -7,11 +7,13 @@ import { toast } from 'sonner';
 import { ArrowLeft, Clock, Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import { DEFAULT_DOMAINS } from '@/lib/config';
 
 type TelegramSettings = {
   enabled: boolean;
   botToken: string;
   chatId: string;
+  allowedDomains?: string[];
 };
 
 type RetentionSettings = {
@@ -28,6 +30,11 @@ export function AdminDashboard() {
   const [enabled, setEnabled] = useState(false);
   const [botToken, setBotToken] = useState('');
   const [chatId, setChatId] = useState('');
+  const availableDomains = useMemo(
+    () => DEFAULT_DOMAINS.map((domain) => domain.toLowerCase()),
+    []
+  );
+  const [allowedDomains, setAllowedDomains] = useState<string[]>(availableDomains);
   const [retentionSeconds, setRetentionSeconds] = useState(86400);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -63,6 +70,11 @@ export function AdminDashboard() {
       setEnabled(Boolean(data.enabled));
       setBotToken(data.botToken || '');
       setChatId(data.chatId || '');
+      setAllowedDomains(
+        Array.isArray(data.allowedDomains) && data.allowedDomains.length > 0
+          ? data.allowedDomains
+          : availableDomains
+      );
       if (retentionData?.seconds) {
         setRetentionSeconds(retentionData.seconds);
       }
@@ -103,7 +115,8 @@ export function AdminDashboard() {
         body: JSON.stringify({
           enabled,
           botToken,
-          chatId
+          chatId,
+          allowedDomains
         })
       });
       if (!response.ok) {
@@ -285,6 +298,39 @@ export function AdminDashboard() {
                     placeholder="-100xxxxxxxxxx"
                     className="mt-3 bg-black/30 text-white placeholder:text-white/40"
                   />
+                </div>
+              </div>
+              <div className="mt-6">
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/60">
+                  Domain yang dikirim ke Telegram
+                </p>
+                <p className="mt-2 text-xs text-white/50">
+                  Pilih domain dari daftar default.
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {availableDomains.map((domain) => {
+                    const checked = allowedDomains.includes(domain);
+                    return (
+                      <label
+                        key={domain}
+                        className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80"
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-purple-400"
+                          checked={checked}
+                          onChange={() => {
+                            setAllowedDomains((prev) =>
+                              checked
+                                ? prev.filter((item) => item !== domain)
+                                : [...prev, domain]
+                            );
+                          }}
+                        />
+                        <span className="font-mono">{domain}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
               <p className="mt-4 text-xs text-white/50">
