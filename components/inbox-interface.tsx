@@ -446,11 +446,12 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
                             <motion.div
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="fixed left-1/2 top-20 z-50 w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl border border-white/10 bg-zinc-900 p-0 shadow-2xl sm:absolute sm:left-auto sm:right-0 sm:top-14 sm:w-80 sm:translate-x-0"
+                                initial={{ opacity: 0, scale: 0.96 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.96 }}
+                                className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:absolute sm:inset-auto sm:right-0 sm:top-14 sm:block sm:p-0"
                             >
+                                <div className="w-full max-w-[22rem] rounded-2xl border border-white/10 bg-white/5 p-0 shadow-2xl backdrop-blur-xl sm:w-80 sm:bg-zinc-900">
                                 <div className="flex justify-between items-center px-4 py-3 border-b border-white/10 bg-zinc-800/50">
                                     <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">{t.historyTitle}</span>
                                     {history.length > 0 && (
@@ -465,7 +466,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                         </button>
                                     )}
                                 </div>
-                                <div className="max-h-72 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                                <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-2 space-y-1">
                                     {history.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground space-y-2">
                                             <History className="h-8 w-8 opacity-20" />
@@ -505,6 +506,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                             </div>
                                         ))
                                     )}
+                                </div>
                                 </div>
                             </motion.div>
                         </>
