@@ -6,14 +6,37 @@ export default {
         const parser = new PostalMime();
         const rawEmail = await new Response(message.raw).arrayBuffer();
         const email = await parser.parse(rawEmail);
-        
-        // Replace with your actual Vercel app URL
-        // If testing locally, you'd need a tunnel (ngrok). For prod, use your vercel.app domain.
-        const TARGET_URL = 'https://vaultmail-one.vercel.app/api/webhook'; 
 
-        const parsedFrom = email?.from?.text || email?.from?.address || message.from;
+        const targetUrl = env.WEBHOOK_URL;
+        const forwardDomains = (env.FORWARD_DOMAINS || '')
+          .split(',')
+          .map((domain) => domain.trim().toLowerCase())
+          .filter(Boolean);
+        const forwardEmail = env.FORWARD_EMAIL;
 
-        const response = await fetch(TARGET_URL, {
+        const parsedFromAddress = email?.from?.value?.[0]?.address;
+        const parsedFromText = email?.from?.text;
+        const parsedFrom = parsedFromAddress || parsedFromText || message.from;
+
+        const recipients = Array.isArray(message.to) ? message.to : [message.to];
+        const shouldForward =
+          Boolean(forwardEmail) &&
+          forwardDomains.length > 0 &&
+          recipients.some((recipient) => {
+            const domain = recipient?.split('@').pop()?.toLowerCase();
+            return domain && forwardDomains.includes(domain);
+          });
+
+        if (shouldForward) {
+          await message.forward(forwardEmail);
+        }
+
+        if (!targetUrl) {
+          console.warn('WEBHOOK_URL is not set; skipping webhook forwarding.');
+          return;
+        }
+
+        const response = await fetch(targetUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
