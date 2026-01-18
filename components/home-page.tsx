@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   DEFAULT_LOCALE,
   getRetentionOptions,
@@ -68,6 +69,10 @@ export function HomePage({ initialAddress }: HomePageProps) {
     return t.greetingNight;
   }, [t]);
 
+  useEffect(() => {
+    toast.info(greeting);
+  }, [greeting]);
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
       {/* Background Blobs */}
@@ -90,11 +95,11 @@ export function HomePage({ initialAddress }: HomePageProps) {
                 variant="ghost"
                 onClick={() => setShowMenu((prev) => !prev)}
                 className={cn(
-                  "h-11 w-11 rounded-full border border-white/10 bg-white/10 text-white",
+                  "h-12 w-12 rounded-full border border-white/10 bg-white/10 text-white",
                   showMenu && "bg-white/10"
                 )}
               >
-                <Menu className="h-6 w-6 text-blue-200" />
+                <Menu className="h-5 w-5 text-blue-200" />
               </Button>
 
               <AnimatePresence>
@@ -153,9 +158,6 @@ export function HomePage({ initialAddress }: HomePageProps) {
       {/* Content */}
           <div className="flex-1 py-12">
          <div className="text-center max-w-2xl mx-auto px-4 mb-12 space-y-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-blue-200/70">
-              {greeting}
-            </p>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/50">
               {t.heroTitle} <br/> {t.heroTitleSuffix}
             </h1>
