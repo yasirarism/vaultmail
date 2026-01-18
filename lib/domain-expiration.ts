@@ -34,8 +34,14 @@ const parseExpirationEvent = (data: {
   events?: Array<{ eventAction?: string; eventDate?: string }>;
 }) => {
   const event = data.events?.find((item) => {
-    const action = item.eventAction?.toLowerCase();
-    return action === 'expiration' || action === 'expiry' || action === 'expiration date';
+    const action = item.eventAction?.toLowerCase() || '';
+    return (
+      action === 'expiration' ||
+      action === 'expiry' ||
+      action === 'expiration date' ||
+      action === 'registration expiration date' ||
+      action.includes('expir')
+    );
   });
   return event?.eventDate || null;
 };
@@ -106,7 +112,9 @@ const getRdapBaseUrls = async (domain: string) => {
   const services = bootstrap?.services || [];
   const match = services.find(([tlds]) => tlds.map((item) => item.toLowerCase()).includes(tld));
   const urls = match?.[1] || [];
-  return urls.length > 0 ? urls : ['https://rdap.org/'];
+  const fallback = ['https://rdap.org/'];
+  const merged = [...urls, ...fallback];
+  return merged.filter((value, index) => merged.indexOf(value) === index);
 };
 
 const fetchExpirationFromRdap = async (domain: string) => {
