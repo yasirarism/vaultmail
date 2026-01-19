@@ -30,7 +30,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid password.' }, { status: 401 });
   }
 
-  cookies().set(COOKIE_NAME, expectedHash, {
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_NAME, expectedHash, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
