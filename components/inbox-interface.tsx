@@ -55,6 +55,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [domainExpiration, setDomainExpiration] = useState<string | null>(null);
   const [domainStatusLoading, setDomainStatusLoading] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
+  const [showFilter, setShowFilter] = useState(false);
   const previousEmailIds = useRef<Set<string>>(new Set());
   const hasLoadedEmails = useRef(false);
 
@@ -377,6 +378,12 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   }, [emails, filterQuery]);
 
   const emailCount = filterQuery ? filteredEmails.length : emails.length;
+
+  useEffect(() => {
+    if (filterQuery) {
+      setShowFilter(true);
+    }
+  }, [filterQuery]);
   
   return (
     <div className="w-full max-w-6xl mx-auto p-4 md:p-8 space-y-8">
@@ -644,21 +651,34 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     <Mail className="h-4 w-4 text-blue-400" /> {t.inboxLabel}
                     <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-muted-foreground">{emailCount}</span>
                 </h3>
-                <Button variant="ghost" size="icon" onClick={() => fetchEmails()} disabled={loading}>
-                    <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowFilter((prev) => !prev)}
+                    aria-pressed={showFilter}
+                    aria-label={t.inboxFilterPlaceholder}
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => fetchEmails()} disabled={loading}>
+                      <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                  </Button>
+                </div>
             </div>
-            <div className="p-4 border-b border-white/5 bg-black/10">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-                <Input
-                  value={filterQuery}
-                  onChange={(event) => setFilterQuery(event.target.value)}
-                  placeholder={t.inboxFilterPlaceholder}
-                  className="pl-9 bg-black/30 border-white/10 text-sm"
-                />
+            {(showFilter || filterQuery) && (
+              <div className="p-4 border-b border-white/5 bg-black/10">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                  <Input
+                    value={filterQuery}
+                    onChange={(event) => setFilterQuery(event.target.value)}
+                    placeholder={t.inboxFilterPlaceholder}
+                    className="pl-9 bg-black/30 border-white/10 text-sm"
+                  />
+                </div>
               </div>
-            </div>
+            )}
             <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
                 <AnimatePresence mode="popLayout">
                     {filteredEmails.length === 0 ? (
