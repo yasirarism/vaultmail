@@ -6,6 +6,8 @@ VaultMail is a privacy-focused disposable email backend rewritten in **FastAPI**
 
 - **FastAPI API** with typed responses.
 - **MongoDB storage** with TTL indexes for automatic retention cleanup.
+- **Admin endpoints** for retention, Telegram notifications, and stats.
+- **Domain expiration** checks with cached WHOIS lookups.
 - **Docker-first** deployment (API + MongoDB).
 
 ## 🧱 Architecture
@@ -42,7 +44,11 @@ uvicorn backend.main:app --reload
 | --- | --- | --- |
 | `MONGODB_URI` | `mongodb://mongo:27017` | MongoDB connection string |
 | `MONGODB_DB` | `vaultmail` | Database name |
-| `RETENTION_SECONDS` | `86400` | Retention window in seconds |
+| `RETENTION_SECONDS` | `86400` | Default retention window in seconds |
+| `ADMIN_PASSWORD` | _(empty)_ | Admin login password |
+| `ATTACHMENT_MAX_BYTES` | `2000000` | Max attachment bytes allowed before omission |
+| `CRON_SECRET` | _(empty)_ | Optional secret for cron endpoint |
+| `DEFAULT_DOMAINS` | `ysweb.biz.id` | Default domains for cron expiration checks |
 
 ## 📚 API Documentation
 
@@ -59,13 +65,13 @@ GET /api/inbox?address=nama@domain.com
   "emails": [
     {
       "id": "uuid",
-      "from_address": "sender@example.com",
-      "to_address": "nama@domain.com",
+      "from": "sender@example.com",
+      "to": "nama@domain.com",
       "subject": "Hello",
       "text": "Plain text",
       "html": "<p>Plain text</p>",
       "attachments": [],
-      "received_at": "2025-01-01T00:00:00.000Z",
+      "receivedAt": "2025-01-01T00:00:00.000Z",
       "read": false
     }
   ]
@@ -90,8 +96,8 @@ POST /api/webhook
   "attachments": [
     {
       "filename": "hello.txt",
-      "content_type": "text/plain",
-      "content_base64": "SGVsbG8h"
+      "contentType": "text/plain",
+      "contentBase64": "SGVsbG8h"
     }
   ]
 }
@@ -123,6 +129,64 @@ GET /api/retention
   "seconds": 86400,
   "updated_at": "2025-01-01T00:00:00.000Z"
 }
+```
+
+### 5) Admin Auth
+
+**Endpoint**
+```
+POST /api/admin/auth
+```
+
+**JSON Body**
+```json
+{ "password": "your-admin-password" }
+```
+
+### 6) Admin Retention
+
+**Endpoints**
+```
+GET /api/admin/retention
+POST /api/admin/retention
+```
+
+**POST Body**
+```json
+{ "seconds": 86400 }
+```
+
+### 7) Admin Telegram
+
+**Endpoints**
+```
+GET /api/admin/telegram
+POST /api/admin/telegram
+```
+
+**POST Body**
+```json
+{
+  "enabled": true,
+  "botToken": "TOKEN",
+  "chatId": "CHAT_ID",
+  "allowedDomains": ["example.com"]
+}
+```
+
+### 8) Admin Stats
+
+**Endpoint**
+```
+GET /api/admin/stats
+```
+
+### 9) Domain Expiration
+
+**Endpoints**
+```
+GET /api/domain-expiration?domain=example.com
+GET /api/cron/domain-expiration
 ```
 
 ## 📜 License
