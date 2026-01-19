@@ -143,7 +143,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
                           Admin Dashboard
                         </a>
                         <a
-                          href="#api-access"
+                          href="/api-access"
                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
                           onClick={() => setShowMenu(false)}
                         >
@@ -206,52 +206,6 @@ export function HomePage({ initialAddress }: HomePageProps) {
             />
          </div>
 
-         <section id="api-access" className="max-w-6xl mx-auto px-4 mt-20">
-            <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-8">
-              <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-white">
-                    <Code2 className="h-5 w-5 text-blue-300" />
-                    <h2 className="text-xl font-semibold">{t.apiAccessTitle}</h2>
-                  </div>
-                  <p className="text-muted-foreground max-w-2xl">
-                    {t.apiAccessSubtitle}
-                  </p>
-                </div>
-                <a
-                  href="https://github.com/yasirarism"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-                >
-                  {t.apiAccessCta}
-                </a>
-              </div>
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                    {t.apiAccessEndpointsTitle}
-                  </p>
-                  <ul className="mt-3 space-y-2 text-xs font-mono text-blue-100">
-                    <li>GET /api/inbox?address=nama@domain.com</li>
-                    <li>GET /api/download?address=nama@domain.com&amp;emailId=uuid&amp;type=email</li>
-                    <li>GET /api/retention</li>
-                  </ul>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                    {t.apiAccessWebhookTitle}
-                  </p>
-                  <p className="mt-3 text-sm text-white/80">
-                    POST /api/webhook
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {t.apiAccessWebhookHint}
-                  </p>
-                </div>
-              </div>
-            </div>
-         </section>
       </div>
 
       <footer className="border-t border-white/5 py-8 mt-12 text-center text-muted-foreground text-sm">
