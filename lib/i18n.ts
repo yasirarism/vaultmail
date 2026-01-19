@@ -42,6 +42,7 @@ const translations = {
     languageLabel: 'Language',
     languageEnglish: 'English',
     languageIndonesian: 'Indonesian',
+    menuApiAccess: 'Developer API Access',
     historyTitle: 'History',
     historyClearAll: 'Clear All',
     historyEmpty: 'No recent addresses',
@@ -81,10 +82,20 @@ const translations = {
     toastRetentionUpdated: 'Retention updated',
     toastRetentionFailed: 'Failed to save settings',
     toastNewEmail: 'New email received',
+    inboxFilterPlaceholder: 'Search inbox messages...',
+    inboxFilterEmpty: 'No messages match this filter.',
     domainStatusChecking: 'Checking domain status...',
     domainStatusExpired: 'This domain has expired.',
     domainStatusEndsOn: 'Domain expires on:',
     domainStatusUnavailable: 'Domain status is unavailable.',
+    apiAccessTitle: 'Developer API Access',
+    apiAccessSubtitle:
+      'Use these endpoints to integrate VaultMail into your workflows.',
+    apiAccessCta: 'View documentation',
+    apiAccessEndpointsTitle: 'Core endpoints',
+    apiAccessWebhookTitle: 'Webhook',
+    apiAccessWebhookHint:
+      'Use this endpoint to forward inbound emails to your app.',
   },
   id: {
     appName: 'YS Mail',
@@ -118,6 +129,7 @@ const translations = {
     languageLabel: 'Bahasa',
     languageEnglish: 'Inggris',
     languageIndonesian: 'Indonesia',
+    menuApiAccess: 'Akses API Developer',
     historyTitle: 'Riwayat',
     historyClearAll: 'Hapus Semua',
     historyEmpty: 'Belum ada alamat',
@@ -157,10 +169,20 @@ const translations = {
     toastRetentionUpdated: 'Retensi diperbarui',
     toastRetentionFailed: 'Gagal menyimpan pengaturan',
     toastNewEmail: 'Email baru masuk',
+    inboxFilterPlaceholder: 'Cari pesan inbox...',
+    inboxFilterEmpty: 'Tidak ada pesan yang cocok dengan filter ini.',
     domainStatusChecking: 'Mengecek masa aktif domain...',
     domainStatusExpired: 'Domain ini sudah kedaluwarsa.',
     domainStatusEndsOn: 'Domain berakhir:',
     domainStatusUnavailable: 'Masa aktif domain belum tersedia.',
+    apiAccessTitle: 'Akses API Developer',
+    apiAccessSubtitle:
+      'Gunakan endpoint berikut untuk integrasi VaultMail ke workflow Anda.',
+    apiAccessCta: 'Lihat dokumentasi',
+    apiAccessEndpointsTitle: 'Endpoint utama',
+    apiAccessWebhookTitle: 'Webhook',
+    apiAccessWebhookHint:
+      'Gunakan endpoint ini untuk meneruskan email masuk ke aplikasi Anda.',
   },
 } as const;
 

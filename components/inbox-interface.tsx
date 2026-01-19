@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, ChevronDown, X, Settings2, Download } from 'lucide-react';
+import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, ChevronDown, X, Settings2, Download, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { cn, getSenderInfo } from '@/lib/utils';
@@ -54,6 +54,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [showDomainMenu, setShowDomainMenu] = useState(false);
   const [domainExpiration, setDomainExpiration] = useState<string | null>(null);
   const [domainStatusLoading, setDomainStatusLoading] = useState(false);
+  const [filterQuery, setFilterQuery] = useState('');
   const previousEmailIds = useRef<Set<string>>(new Set());
   const hasLoadedEmails = useRef(false);
 
@@ -166,6 +167,36 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     },
     [normalizeContentId]
   );
+
+  const highlightVerificationCodes = useCallback((html: string) => {
+    if (!html || typeof window === 'undefined') {
+      return html;
+    }
+    const codeRegex = /\b(\d{4,8})\b/g;
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+    const nodesToUpdate: Text[] = [];
+    while (walker.nextNode()) {
+      const node = walker.currentNode as Text;
+      if (codeRegex.test(node.nodeValue || '')) {
+        nodesToUpdate.push(node);
+      }
+      codeRegex.lastIndex = 0;
+    }
+    nodesToUpdate.forEach((node) => {
+      const text = node.nodeValue || '';
+      const replaced = text.replace(
+        codeRegex,
+        '<mark class="rounded bg-amber-200/90 px-1 py-0.5 font-semibold text-black">$1</mark>'
+      );
+      if (replaced !== text) {
+        const wrapper = doc.createElement('span');
+        wrapper.innerHTML = replaced;
+        node.parentNode?.replaceChild(wrapper, node);
+      }
+    });
+    return doc.body.innerHTML;
+  }, []);
 
   useEffect(() => {
     if (!domain) return;
@@ -332,6 +363,20 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     const interval = setInterval(fetchEmails, 5000);
     return () => clearInterval(interval);
   }, [autoRefresh, fetchEmails]);
+
+  const filteredEmails = useMemo(() => {
+    const query = filterQuery.trim().toLowerCase();
+    if (!query) return emails;
+    return emails.filter((email) => {
+      return (
+        email.subject.toLowerCase().includes(query) ||
+        email.from.toLowerCase().includes(query) ||
+        email.text.toLowerCase().includes(query)
+      );
+    });
+  }, [emails, filterQuery]);
+
+  const emailCount = filterQuery ? filteredEmails.length : emails.length;
   
   return (
     <div className="w-full max-w-6xl mx-auto p-4 md:p-8 space-y-8">
@@ -362,7 +407,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
           <div className="flex-1 flex flex-col gap-2">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                  <Input 
+              <Input 
                       value={address.split('@')[0]}
                       onChange={(e) => {
                           const val = e.target.value.replace(/[^a-zA-Z0-9._-]/g, '');
@@ -437,6 +482,10 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
             </div>
             </div>
             <div className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[11px] text-white/80">
+                <Copy className="h-3 w-3" />
+                {address}
+              </span>
               {domainStatusLoading ? (
                 <span>{t.domainStatusChecking}</span>
               ) : domainExpirationDate ? (
@@ -593,24 +642,35 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
             <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/20">
                 <h3 className="font-semibold flex items-center gap-2">
                     <Mail className="h-4 w-4 text-blue-400" /> {t.inboxLabel}
-                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-muted-foreground">{emails.length}</span>
+                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-muted-foreground">{emailCount}</span>
                 </h3>
                 <Button variant="ghost" size="icon" onClick={() => fetchEmails()} disabled={loading}>
                     <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
                 </Button>
             </div>
+            <div className="p-4 border-b border-white/5 bg-black/10">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                <Input
+                  value={filterQuery}
+                  onChange={(event) => setFilterQuery(event.target.value)}
+                  placeholder={t.inboxFilterPlaceholder}
+                  className="pl-9 bg-black/30 border-white/10 text-sm"
+                />
+              </div>
+            </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
                 <AnimatePresence mode="popLayout">
-                    {emails.length === 0 ? (
+                    {filteredEmails.length === 0 ? (
                         <motion.div 
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                             className="h-full flex flex-col items-center justify-center text-center p-4 text-muted-foreground space-y-2 opacity-50"
                         >
                             <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-                            <p>{t.waitingForIncoming}</p>
+                            <p>{filterQuery ? t.inboxFilterEmpty : t.waitingForIncoming}</p>
                         </motion.div>
                     ) : (
-                        emails.map((email) => {
+                        filteredEmails.map((email) => {
                             const sender = getSenderInfo(email.from);
                             return (
                             <motion.div
@@ -664,7 +724,9 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-medium text-white">{selectedSender?.label}</span>
-                                <span className="text-muted-foreground text-xs">{t.toLabel} {selectedEmail.to || address}</span>
+                                <span className="text-muted-foreground text-xs">
+                                  {t.toLabel} {selectedEmail.to || address}
+                                </span>
                             </div>
                         </div>
                         {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
@@ -694,11 +756,13 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                         <div 
                           className="prose prose-base md:prose-lg max-w-none text-black prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
                           dangerouslySetInnerHTML={{
-                            __html: resolveInlineImages(
-                              stripEmailStyles(
-                                selectedEmail.html || `<p>${selectedEmail.text}</p>`
-                              ),
-                              selectedEmail.attachments
+                            __html: highlightVerificationCodes(
+                              resolveInlineImages(
+                                stripEmailStyles(
+                                  selectedEmail.html || `<p>${selectedEmail.text}</p>`
+                                ),
+                                selectedEmail.attachments
+                              )
                             ),
                           }}
                         />
