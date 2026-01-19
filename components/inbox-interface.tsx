@@ -489,10 +489,6 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
             </div>
             </div>
             <div className="text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[11px] text-white/80">
-                <Copy className="h-3 w-3" />
-                {address}
-              </span>
               {domainStatusLoading ? (
                 <span>{t.domainStatusChecking}</span>
               ) : domainExpirationDate ? (

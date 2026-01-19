@@ -90,7 +90,7 @@ const translations = {
     domainStatusUnavailable: 'Domain status is unavailable.',
     apiAccessTitle: 'Developer API Access',
     apiAccessSubtitle:
-      'Use these endpoints to integrate VaultMail into your workflows.',
+      'Use these endpoints to integrate YS Mail into your workflows.',
     apiAccessCta: 'View documentation',
     apiAccessEndpointsTitle: 'Core endpoints',
     apiAccessWebhookTitle: 'Webhook',
@@ -177,7 +177,7 @@ const translations = {
     domainStatusUnavailable: 'Masa aktif domain belum tersedia.',
     apiAccessTitle: 'Akses API Developer',
     apiAccessSubtitle:
-      'Gunakan endpoint berikut untuk integrasi VaultMail ke workflow Anda.',
+      'Gunakan endpoint berikut untuk integrasi YS Mail ke workflow Anda.',
     apiAccessCta: 'Lihat dokumentasi',
     apiAccessEndpointsTitle: 'Endpoint utama',
     apiAccessWebhookTitle: 'Webhook',
