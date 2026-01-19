@@ -1,105 +1,52 @@
-# VaultMail - Private, Serverless Disposable Mail
+# VaultMail - FastAPI + MongoDB
 
-![VaultMail Banner](public/readme-banner.png)
-
-A premium, privacy-focused disposable email service built with **Next.js** and **Upstash Redis**. Features real-time inbox updates, custom domain support, and configurable privacy settings.
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![Redis](https://img.shields.io/badge/Upstash-Redis-green)
+VaultMail is a privacy-focused disposable email backend rewritten in **FastAPI** with **MongoDB** persistence. It supports inbox retrieval, webhook ingestion, attachment downloads, and retention policies with TTL indexes.
 
 ## ✨ Features
 
--   **🛡️ Privacy First**: Emails are stored in short-lived Redis keys with auto-expiry.
--   **⚙️ Configurable Retention**: Users can set email lifespan from **30 minutes** to **1 week**.
--   **🌐 Custom Domains**: Bring your own domain via Cloudflare or Mailgun (Manage Domains GUI included).
--   **⚡ Real-time**: Instant email delivery and inbox updates.
--   **🎨 Premium UI**: Glassmorphism aesthetic, Dark Mode, and responsive mobile design.
--   **📜 History**: Locally stored history of generated addresses for quick access.
--   **🔗 Pretty URLs**: Shareable links like `https://app.com/user@domain.com`.
+- **FastAPI API** with typed responses.
+- **MongoDB storage** with TTL indexes for automatic retention cleanup.
+- **Docker-first** deployment (API + MongoDB).
 
-## 🏗️ Architecture
+## 🧱 Architecture
 
-1.  **Incoming Mail**: DNS MX Records point to your email routing service (Cloudflare/Mailgun).
-2.  **Webhook**: The service forwards the raw email to `https://your-app.com/api/webhook`.
-3.  **Processing**: The app parses the email, checks user retention settings, and stores it in **Upstash Redis**.
-4.  **Frontend**: The Next.js UI polls the API to display emails for the current address.
+1. Email routing service (Cloudflare/Mailgun/etc) sends JSON payloads to `/api/webhook`.
+2. FastAPI validates and stores messages in MongoDB.
+3. Inbox listing and downloads are served from `/api/inbox` and `/api/download`.
 
-## 🚀 Deployment Guide
+## 🚀 Local Development
 
-### 1. Deploy to Vercel
+### 1) Start with Docker Compose
 
-Clone this repository and deploy it to Vercel.
+```bash
+docker compose up --build
+```
 
-### 2. Configure Database (Upstash Redis)
+API is available at `http://localhost:8000`.
 
-1.  Go to the **Storage** tab in your Vercel Project.
-2.  Click **Connect Store** and select **Upstash Redis** from the Marketplace.
-3.  Link it to your project. This will automagically set:
-    *   `UPSTASH_REDIS_REST_URL`
-    *   `UPSTASH_REDIS_REST_TOKEN`
+### 2) Run API locally
 
-### 3. Configure Email Forwarding
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export MONGODB_URI="mongodb://localhost:27017"
+export MONGODB_DB="vaultmail"
+export RETENTION_SECONDS=86400
+uvicorn backend.main:app --reload
+```
 
-You need a service to receive SMTP traffic and forward it to your app's webhook.
+## 🔧 Environment Variables
 
-#### Recommended: Cloudflare Email Workers (Free)
-We include a pre-configured worker in the `worker/` directory.
+| Variable | Default | Description |
+| --- | --- | --- |
+| `MONGODB_URI` | `mongodb://mongo:27017` | MongoDB connection string |
+| `MONGODB_DB` | `vaultmail` | Database name |
+| `RETENTION_SECONDS` | `86400` | Retention window in seconds |
 
-1.  **Setup Cloudflare**:
-    *   Add your domain to Cloudflare.
-    *   Enable **Email Routing** in the Cloudflare Dashboard.
-
-2.  **Deploy the Worker**:
-    ```bash
-    cd worker
-    npm install
-    # Configure worker environment variables in Cloudflare (or via wrangler)
-    # Required:
-    #   WEBHOOK_URL=https://your-vercel-app.vercel.app/api/webhook
-    # Optional (forward specific domains to a verified Email Routing address):
-    #   FORWARD_DOMAINS=example.com,anotherdomain.com
-    #   FORWARD_EMAIL=verified@yourdomain.com
-    npm run deploy
-    ```
-
-3.  **Route Emails**:
-    *   In Cloudflare Email Routing > **Routes**.
-    *   Create a "Catch-All" route.
-    *   Action: `Send to Worker` -> Destination: `dispomail-forwarder` (or whatever you named it).
-
-4.  **Optional: GitHub Actions Deploy**:
-    *   Set repository secrets:
-        *   `CLOUDFLARE_API_TOKEN`
-        *   `CLOUDFLARE_ACCOUNT_ID`
-        *   `WEBHOOK_URL` (required)
-        *   `FORWARD_DOMAINS` (optional)
-        *   `FORWARD_EMAIL` (optional)
-    *   Pushing changes under `worker/` will trigger `.github/workflows/worker-deploy.yml`.
-    *   The workflow syncs the listed secrets on deploy so values stay consistent across redeploys.
-
-## 🛠️ Local Development
-
-1.  **Install Dependencies**:
-    ```bash
-    npm install
-    ```
-
-2.  **Environment Setup**:
-    Create `.env.local` and add your Upstash Redis credentials:
-    ```env
-    UPSTASH_REDIS_REST_URL="your-url"
-    UPSTASH_REDIS_REST_TOKEN="your-token"
-    ```
-
-3.  **Run Development Server**:
-    ```bash
-    npm run dev
-    ```
-
-## 📚 API Documentation (Temporary Email)
+## 📚 API Documentation
 
 ### 1) Fetch Inbox
-
-Ambil daftar email untuk alamat sementara.
 
 **Endpoint**
 ```
@@ -112,13 +59,13 @@ GET /api/inbox?address=nama@domain.com
   "emails": [
     {
       "id": "uuid",
-      "from": "sender@example.com",
-      "to": "nama@domain.com",
+      "from_address": "sender@example.com",
+      "to_address": "nama@domain.com",
       "subject": "Hello",
       "text": "Plain text",
       "html": "<p>Plain text</p>",
       "attachments": [],
-      "receivedAt": "2025-01-01T00:00:00.000Z",
+      "received_at": "2025-01-01T00:00:00.000Z",
       "read": false
     }
   ]
@@ -126,8 +73,6 @@ GET /api/inbox?address=nama@domain.com
 ```
 
 ### 2) Webhook (Inbound Email)
-
-Email routing service (Cloudflare/Mailgun) mengirim email ke endpoint ini.
 
 **Endpoint**
 ```
@@ -142,7 +87,13 @@ POST /api/webhook
   "subject": "Hello",
   "text": "Plain text message",
   "html": "<p>Plain text message</p>",
-  "attachments": []
+  "attachments": [
+    {
+      "filename": "hello.txt",
+      "content_type": "text/plain",
+      "content_base64": "SGVsbG8h"
+    }
+  ]
 }
 ```
 
@@ -159,7 +110,7 @@ GET /api/download?address=nama@domain.com&emailId=uuid&type=email
 GET /api/download?address=nama@domain.com&emailId=uuid&type=attachment&index=0
 ```
 
-### 4) Retention Settings (Read Only)
+### 4) Retention Settings
 
 **Endpoint**
 ```
@@ -170,10 +121,10 @@ GET /api/retention
 ```json
 {
   "seconds": 86400,
-  "updatedAt": "2025-01-01T00:00:00.000Z"
+  "updated_at": "2025-01-01T00:00:00.000Z"
 }
 ```
 
 ## 📜 License
 
-MIT License. Feel free to fork and deploy your own private email shield.
+MIT License.
