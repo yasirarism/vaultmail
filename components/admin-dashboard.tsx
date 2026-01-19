@@ -8,6 +8,7 @@ import { ArrowLeft, Clock, Loader2, ShieldCheck, ShieldOff } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { DEFAULT_DOMAINS } from '@/lib/config';
+import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 type TelegramSettings = {
   enabled: boolean;
@@ -18,6 +19,10 @@ type TelegramSettings = {
 
 type RetentionSettings = {
   seconds: number;
+};
+
+type BrandingSettings = {
+  appName: string;
 };
 
 type AdminStats = {
@@ -39,6 +44,8 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [retentionSaving, setRetentionSaving] = useState(false);
+  const [brandingSaving, setBrandingSaving] = useState(false);
+  const [appName, setAppName] = useState(DEFAULT_APP_NAME);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState(false);
@@ -57,16 +64,18 @@ export function AdminDashboard() {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const [telegramResponse, retentionResponse] = await Promise.all([
+      const [telegramResponse, retentionResponse, brandingResponse] = await Promise.all([
         fetch('/api/admin/telegram'),
-        fetch('/api/admin/retention')
+        fetch('/api/admin/retention'),
+        fetch('/api/admin/branding')
       ]);
-      if (!telegramResponse.ok || !retentionResponse.ok) {
+      if (!telegramResponse.ok || !retentionResponse.ok || !brandingResponse.ok) {
         throw new Error('Unauthorized or failed to load settings.');
       }
       const data = (await telegramResponse.json()) as TelegramSettings;
       const retentionData =
         (await retentionResponse.json()) as RetentionSettings;
+      const brandingData = (await brandingResponse.json()) as BrandingSettings;
       setEnabled(Boolean(data.enabled));
       setBotToken(data.botToken || '');
       setChatId(data.chatId || '');
@@ -77,6 +86,9 @@ export function AdminDashboard() {
       );
       if (retentionData?.seconds) {
         setRetentionSeconds(retentionData.seconds);
+      }
+      if (brandingData?.appName) {
+        setAppName(brandingData.appName);
       }
     } catch (error) {
       console.error(error);
@@ -149,6 +161,26 @@ export function AdminDashboard() {
       toast.error('Gagal menyimpan retensi.');
     } finally {
       setRetentionSaving(false);
+    }
+  };
+
+  const saveBranding = async () => {
+    setBrandingSaving(true);
+    try {
+      const response = await fetch('/api/admin/branding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appName })
+      });
+      if (!response.ok) {
+        throw new Error('Unauthorized or failed to save branding.');
+      }
+      toast.success('Nama web tersimpan.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal menyimpan nama web.');
+    } finally {
+      setBrandingSaving(false);
     }
   };
 
@@ -243,6 +275,37 @@ export function AdminDashboard() {
                     {latestActivityLabel}
                   </p>
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Nama Website
+                  </h2>
+                  <p className="text-sm text-white/60">
+                    Nama ini akan tampil di header dan footer.
+                  </p>
+                </div>
+                <Button onClick={saveBranding} disabled={brandingSaving}>
+                  {brandingSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Simpan Nama'
+                  )}
+                </Button>
+              </div>
+              <div className="mt-4">
+                <label className="text-xs font-semibold uppercase tracking-widest text-white/60">
+                  Nama Web
+                </label>
+                <Input
+                  value={appName}
+                  onChange={(event) => setAppName(event.target.value)}
+                  placeholder={DEFAULT_APP_NAME}
+                  className="mt-3 bg-black/30 text-white placeholder:text-white/40"
+                />
               </div>
             </div>
 

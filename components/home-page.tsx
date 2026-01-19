@@ -14,6 +14,7 @@ import {
   Locale,
   SUPPORTED_LOCALES,
 } from "@/lib/i18n";
+import { DEFAULT_APP_NAME } from "@/lib/branding";
 
 interface HomePageProps {
   initialAddress?: string;
@@ -25,6 +26,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
   const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
   const [showMenu, setShowMenu] = useState(false);
   const [retentionSeconds, setRetentionSeconds] = useState(86400);
+  const [customAppName, setCustomAppName] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -40,6 +42,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
 
   const t = useMemo(() => getTranslations(locale), [locale]);
   const retentionOptions = useMemo(() => getRetentionOptions(locale), [locale]);
+  const resolvedAppName = customAppName || t.appName;
   const retentionLabel =
     retentionOptions.find((option) => option.value === retentionSeconds)
       ?.label || retentionOptions[2]?.label || "24 Hours";
@@ -59,6 +62,22 @@ export function HomePage({ initialAddress }: HomePageProps) {
     };
 
     loadRetention();
+  }, []);
+
+  useEffect(() => {
+    const loadBranding = async () => {
+      try {
+        const response = await fetch("/api/branding");
+        if (!response.ok) return;
+        const data = (await response.json()) as { appName?: string };
+        const value = data?.appName?.trim();
+        setCustomAppName(value || DEFAULT_APP_NAME);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadBranding();
   }, []);
 
   const greeting = useMemo(() => {
@@ -93,7 +112,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span>{t.appName}</span>
+            <span>{resolvedAppName}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">
@@ -209,7 +228,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
       </div>
 
       <footer className="border-t border-white/5 py-8 mt-12 text-center text-muted-foreground text-sm">
-        <p>© {new Date().getFullYear()} {t.appName}. {t.footerSuffix}</p>
+        <p>© 2026 {resolvedAppName}. Created with ❤️</p>
       </footer>
     </main>
   );
