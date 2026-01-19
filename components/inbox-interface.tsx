@@ -147,7 +147,13 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
 
   const normalizeContentId = useCallback((value?: string) => {
     if (!value) return '';
-    return value.replace(/[<>]/g, '').trim();
+    let normalized = value.replace(/^cid:/i, '').replace(/[<>]/g, '').trim();
+    try {
+      normalized = decodeURIComponent(normalized);
+    } catch {
+      // Ignore malformed URI sequences.
+    }
+    return normalized.toLowerCase();
   }, []);
 
   const resolveInlineImages = useCallback(
@@ -163,7 +169,14 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
           return match;
         }
         const contentType = attachment.contentType || 'image/png';
-        return `src="data:${contentType};base64,${attachment.contentBase64}"`;
+        const base64 = attachment.contentBase64.trim().replace(/\s+/g, '');
+        if (!base64) {
+          return match;
+        }
+        const dataUrl = base64.startsWith('data:')
+          ? base64
+          : `data:${contentType};base64,${base64}`;
+        return `src="${dataUrl}"`;
       });
     },
     [normalizeContentId]
@@ -174,15 +187,21 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       return html;
     }
     const codeRegex = /\b(\d{4,8})\b/g;
+    const keywordRegex =
+      /(otp|one[-\s]?time|verification|verifikasi|security|passcode|kode|auth(?:entication)?|kode\s+otp|kode\s+verifikasi)/i;
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
     const nodesToUpdate: Text[] = [];
     while (walker.nextNode()) {
       const node = walker.currentNode as Text;
-      if (codeRegex.test(node.nodeValue || '')) {
+      const text = node.nodeValue || '';
+      const isStandaloneCode = /^\s*\d{4,8}\s*$/.test(text);
+      const hasKeyword = keywordRegex.test(text);
+      if ((isStandaloneCode || hasKeyword) && codeRegex.test(text)) {
         nodesToUpdate.push(node);
       }
       codeRegex.lastIndex = 0;
+      keywordRegex.lastIndex = 0;
     }
     nodesToUpdate.forEach((node) => {
       const text = node.nodeValue || '';
