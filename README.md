@@ -88,6 +88,8 @@ We include a pre-configured worker in the `worker/` directory.
     ```env
     UPSTASH_REDIS_REST_URL="your-url"
     UPSTASH_REDIS_REST_TOKEN="your-token"
+    # Optional: enable Google AdSense auto ads
+    NEXT_PUBLIC_ADSENSE_CLIENT_ID="ca-pub-xxxxxxxxxxxxxxxx"
     ```
 
 3.  **Run Development Server**:
