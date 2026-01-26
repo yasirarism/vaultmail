@@ -30,7 +30,7 @@ export const DEFAULT_DOMAINS = (() => {
   if (envDomains.length > 0) {
     return [...new Set(envDomains)];
   }
-  return [DEFAULT_DOMAIN_FALLBACK];
+  return [DEFAULT_DOMAIN];
 })();
 
 export const DEFAULT_EMAIL = envDefaultEmail;
