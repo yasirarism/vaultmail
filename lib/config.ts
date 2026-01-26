@@ -19,19 +19,23 @@ const normalizeList = (value: string | undefined) => {
 
 const envDefaultEmail = process.env.NEXT_PUBLIC_DEFAULT_EMAIL?.trim() || '';
 const envDefaultEmailDomain = envDefaultEmail.split('@')[1]?.trim();
+const envDefaultDomain = process.env.NEXT_PUBLIC_DEFAULT_DOMAIN?.trim();
 
-export const DEFAULT_DOMAIN =
-  process.env.NEXT_PUBLIC_DEFAULT_DOMAIN?.trim() ||
-  envDefaultEmailDomain ||
-  DEFAULT_DOMAIN_FALLBACK;
-
-export const DEFAULT_DOMAINS = (() => {
+const resolveDefaultDomains = () => {
   const envDomains = normalizeList(process.env.NEXT_PUBLIC_DEFAULT_DOMAINS);
   if (envDomains.length > 0) {
     return [...new Set(envDomains)];
   }
-  return [DEFAULT_DOMAIN_FALLBACK];
-})();
+  return [envDefaultDomain || envDefaultEmailDomain || DEFAULT_DOMAIN_FALLBACK];
+};
+
+export const DEFAULT_DOMAINS = resolveDefaultDomains();
+
+export const DEFAULT_DOMAIN =
+  envDefaultDomain ||
+  envDefaultEmailDomain ||
+  DEFAULT_DOMAINS[0] ||
+  DEFAULT_DOMAIN_FALLBACK;
 
 export const DEFAULT_EMAIL = envDefaultEmail;
 
