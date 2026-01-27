@@ -1,4 +1,4 @@
-import { redis } from '@/lib/redis';
+import { getCollections } from '@/lib/mongodb';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
@@ -39,8 +39,9 @@ export async function GET() {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const settingsRaw = await redis.get(BRANDING_SETTINGS_KEY);
-  const settings = parseSettings(settingsRaw);
+  const { settings: settingsCollection } = await getCollections();
+  const settingsRecord = await settingsCollection.findOne({ key: BRANDING_SETTINGS_KEY });
+  const settings = parseSettings(settingsRecord?.value);
   const appName = normalizeAppName(settings?.appName) || DEFAULT_APP_NAME;
 
   return NextResponse.json({
@@ -62,7 +63,12 @@ export async function POST(request: Request) {
     updatedAt: new Date().toISOString()
   };
 
-  await redis.set(BRANDING_SETTINGS_KEY, settings);
+  const { settings: settingsCollection } = await getCollections();
+  await settingsCollection.updateOne(
+    { key: BRANDING_SETTINGS_KEY },
+    { $set: { key: BRANDING_SETTINGS_KEY, value: settings } },
+    { upsert: true }
+  );
 
   return NextResponse.json(settings);
 }

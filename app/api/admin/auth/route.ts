@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { redis } from '@/lib/redis';
-import { ADMIN_SESSION_COOKIE, ADMIN_SESSION_PREFIX } from '@/lib/admin-auth';
+import { getCollections } from '@/lib/mongodb';
+import { ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
 
 export async function POST(request: Request) {
   const { password } = await request.json();
@@ -12,11 +12,20 @@ export async function POST(request: Request) {
   }
 
   const token = crypto.randomUUID();
-  const key = `${ADMIN_SESSION_PREFIX}${token}`;
   const maxAge = 60 * 60 * 24 * 7;
+  const expiresAt = new Date(Date.now() + maxAge * 1000);
 
-  await redis.set(key, '1');
-  await redis.expire(key, maxAge);
+  const { adminSessions } = await getCollections();
+  await adminSessions.updateOne(
+    { token },
+    {
+      $set: {
+        token,
+        expiresAt
+      }
+    },
+    { upsert: true }
+  );
 
   const response = NextResponse.json({ success: true });
   response.cookies.set({

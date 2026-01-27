@@ -1,6 +1,5 @@
-import { redis } from '@/lib/redis';
+import { getCollections } from '@/lib/mongodb';
 
-const DOMAIN_EXPIRATION_PREFIX = 'domain:expiration:';
 const DOMAIN_EXPIRATION_CACHE_SECONDS = 60 * 60 * 24;
 const WHOIS_SEARCH_API_BASE_URL = 'https://whois-search.vercel.app/api/lookup';
 const WHOIS_SEARCH_API_HEADERS = {
@@ -66,10 +65,10 @@ const fetchExpirationFromWhoisSearch = async (domain: string) => {
 };
 
 export const getStoredDomainExpiration = async (domain: string) => {
-  const key = `${DOMAIN_EXPIRATION_PREFIX}${domain.toLowerCase()}`;
   try {
-    const recordRaw = await redis.get(key);
-    return parseRecord(recordRaw);
+    const { domainExpirations } = await getCollections();
+    const record = await domainExpirations.findOne({ domain: domain.toLowerCase() });
+    return parseRecord(record);
   } catch (error) {
     console.error('Domain expiration cache read failed:', error);
     return null;
@@ -83,12 +82,24 @@ export const refreshDomainExpiration = async (domain: string) => {
     expiresAt,
     checkedAt: new Date().toISOString()
   };
-  const key = `${DOMAIN_EXPIRATION_PREFIX}${domain.toLowerCase()}`;
   try {
+    const { domainExpirations } = await getCollections();
     if (expiresAt) {
-      await redis.set(key, record, { ex: DOMAIN_EXPIRATION_CACHE_SECONDS });
+      await domainExpirations.updateOne(
+        { domain: domain.toLowerCase() },
+        {
+          $set: {
+            ...record,
+            domain: domain.toLowerCase(),
+            cacheExpiresAt: new Date(
+              Date.now() + DOMAIN_EXPIRATION_CACHE_SECONDS * 1000
+            )
+          }
+        },
+        { upsert: true }
+      );
     } else {
-      await redis.del(key);
+      await domainExpirations.deleteOne({ domain: domain.toLowerCase() });
     }
   } catch (error) {
     console.error('Domain expiration cache write failed:', error);

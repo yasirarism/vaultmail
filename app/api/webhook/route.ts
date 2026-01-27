@@ -1,4 +1,4 @@
-import { redis } from '@/lib/redis';
+import { getCollections } from '@/lib/mongodb';
 import { NextResponse } from 'next/server';
 import { extractEmail, getSenderInfo } from '@/lib/utils';
 import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
@@ -89,8 +89,9 @@ const sendTelegramNotification = async (payload: {
   subject: string;
   text: string;
 }) => {
-  const settingsRaw = await redis.get(TELEGRAM_SETTINGS_KEY);
-  const settings = parseSettings(settingsRaw);
+  const { settings: settingsCollection } = await getCollections();
+  const settingsRecord = await settingsCollection.findOne({ key: TELEGRAM_SETTINGS_KEY });
+  const settings = parseSettings(settingsRecord?.value);
 
   if (!settings?.enabled || !settings.botToken || !settings.chatId) {
     return;
@@ -137,8 +138,9 @@ const sendTelegramNotification = async (payload: {
 };
 
 const getRetentionSeconds = async () => {
-  const settingsRaw = await redis.get(RETENTION_SETTINGS_KEY);
-  const settings = parseRetentionSettings(settingsRaw);
+  const { settings: settingsCollection } = await getCollections();
+  const settingsRecord = await settingsCollection.findOne({ key: RETENTION_SETTINGS_KEY });
+  const settings = parseRetentionSettings(settingsRecord?.value);
   return settings?.seconds || 86400;
 };
 
@@ -208,16 +210,17 @@ export async function POST(req: Request) {
       read: false
     };
 
-    const key = `inbox:${cleanTo}`;
-    
     const retention = await getRetentionSeconds();
+    const expireAt = new Date(Date.now() + retention * 1000);
+    const normalizedAddress = cleanTo.toLowerCase();
     
-    // Store email in a list (LIFO usually better for email? No, Redis list is generic. lpush = prepend)
-    // lpush puts new emails at index 0.
-    await redis.lpush(key, emailData);
-    
-    // Set expiry based on global retention setting.
-    await redis.expire(key, retention);
+    const { emails } = await getCollections();
+    await emails.insertOne({
+      ...emailData,
+      address: normalizedAddress,
+      receivedAt: new Date(emailData.receivedAt),
+      expireAt
+    });
 
     await sendTelegramNotification({
       from,

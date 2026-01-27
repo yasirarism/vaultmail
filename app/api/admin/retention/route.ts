@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { redis } from '@/lib/redis';
+import { getCollections } from '@/lib/mongodb';
 import {
   ADMIN_SESSION_COOKIE,
   RETENTION_SETTINGS_KEY,
@@ -38,8 +38,9 @@ export async function GET() {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const settingsRaw = await redis.get(RETENTION_SETTINGS_KEY);
-  const settings = parseSettings(settingsRaw) || {
+  const { settings: settingsCollection } = await getCollections();
+  const settingsRecord = await settingsCollection.findOne({ key: RETENTION_SETTINGS_KEY });
+  const settings = parseSettings(settingsRecord?.value) || {
     seconds: 86400,
     updatedAt: new Date().toISOString()
   };
@@ -64,7 +65,12 @@ export async function POST(request: Request) {
     updatedAt: new Date().toISOString()
   };
 
-  await redis.set(RETENTION_SETTINGS_KEY, settings);
+  const { settings: settingsCollection } = await getCollections();
+  await settingsCollection.updateOne(
+    { key: RETENTION_SETTINGS_KEY },
+    { $set: { key: RETENTION_SETTINGS_KEY, value: settings } },
+    { upsert: true }
+  );
 
   return NextResponse.json(settings);
 }

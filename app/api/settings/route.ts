@@ -1,4 +1,4 @@
-import { redis } from '@/lib/redis';
+import { getCollections } from '@/lib/mongodb';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
@@ -23,12 +23,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
 
-    await redis.set(
-      RETENTION_SETTINGS_KEY,
-      JSON.stringify({
-        seconds: parseInt(retentionSeconds, 10),
-        updatedAt: new Date().toISOString()
-      })
+    const { settings: settingsCollection } = await getCollections();
+    await settingsCollection.updateOne(
+      { key: RETENTION_SETTINGS_KEY },
+      {
+        $set: {
+          key: RETENTION_SETTINGS_KEY,
+          value: {
+            seconds: parseInt(retentionSeconds, 10),
+            updatedAt: new Date().toISOString()
+          }
+        }
+      },
+      { upsert: true }
     );
 
     return NextResponse.json({ success: true });

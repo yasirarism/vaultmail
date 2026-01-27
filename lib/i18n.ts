@@ -22,7 +22,7 @@ const translations = {
       'Emails arrive instantly via Webhooks. The inbox auto-refreshes in real-time.',
     featurePrivacyTitle: 'Privacy First',
     featurePrivacyDesc:
-      'No tracking. Emails traverse your infrastructure and are stored in Redis with configurable TTL.',
+      'No tracking. Emails traverse your infrastructure and are stored in MongoDB with configurable TTL.',
     featureCustomTitle: 'Custom Domains',
     featureCustomDesc:
       "Point your domain's MX records to your Cloudflare/Mailgun and route emails here.",
@@ -109,7 +109,7 @@ const translations = {
       'Email masuk secara instan via webhook. Inbox auto-refresh secara real-time.',
     featurePrivacyTitle: 'Privasi Utama',
     featurePrivacyDesc:
-      'Tanpa pelacakan. Email diproses di infrastruktur Anda dan disimpan di Redis dengan TTL yang bisa diatur.',
+      'Tanpa pelacakan. Email diproses di infrastruktur Anda dan disimpan di MongoDB dengan TTL yang bisa diatur.',
     featureCustomTitle: 'Domain Kustom',
     featureCustomDesc:
       'Arahkan MX record domain Anda ke Cloudflare/Mailgun dan rute email ke sini.',

@@ -1,4 +1,4 @@
-import { redis } from '@/lib/redis';
+import { getCollections } from '@/lib/mongodb';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
@@ -41,8 +41,9 @@ export async function GET() {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const settingsRaw = await redis.get(TELEGRAM_SETTINGS_KEY);
-  const settings = parseSettings(settingsRaw) || {
+  const { settings: settingsCollection } = await getCollections();
+  const settingsRecord = await settingsCollection.findOne({ key: TELEGRAM_SETTINGS_KEY });
+  const settings = parseSettings(settingsRecord?.value) || {
     enabled: false,
     botToken: '',
     chatId: '',
@@ -74,7 +75,12 @@ export async function POST(request: Request) {
     updatedAt: new Date().toISOString()
   };
 
-  await redis.set(TELEGRAM_SETTINGS_KEY, settings);
+  const { settings: settingsCollection } = await getCollections();
+  await settingsCollection.updateOne(
+    { key: TELEGRAM_SETTINGS_KEY },
+    { $set: { key: TELEGRAM_SETTINGS_KEY, value: settings } },
+    { upsert: true }
+  );
 
   return NextResponse.json(settings);
 }

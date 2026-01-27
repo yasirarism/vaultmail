@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { redis } from '@/lib/redis';
+import { getCollections } from '@/lib/mongodb';
 
 type InboxEmail = {
   id?: string;
@@ -79,11 +79,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
   }
 
-  const key = `inbox:${address.toLowerCase()}`;
-  const emails = await redis.lrange(key, 0, -1);
-  const selected = (emails || [])
-    .map((item) => parseEmail(item))
-    .find((email) => email?.id === emailId);
+  const { emails } = await getCollections();
+  const normalizedAddress = address.toLowerCase();
+  const emailRecord = await emails.findOne({
+    address: normalizedAddress,
+    id: emailId
+  });
+  const selected = parseEmail(emailRecord);
 
   if (!selected) {
     return NextResponse.json({ error: 'Email not found' }, { status: 404 });
