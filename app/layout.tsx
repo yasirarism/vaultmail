@@ -1,13 +1,39 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import { DEFAULT_LOCALE } from "@/lib/i18n";
+import type { Metadata } from 'next';
+import './globals.css';
+import { DEFAULT_LOCALE } from '@/lib/i18n';
 import { Toaster } from 'sonner';
-import AdsenseScript from "@/components/AdsenseScript";
+import AdsenseScript from '@/components/AdsenseScript';
+import { redis } from '@/lib/redis';
+import { BRANDING_SETTINGS_KEY } from '@/lib/admin-auth';
+import { DEFAULT_APP_NAME, normalizeAppName } from '@/lib/branding';
 
-export const metadata: Metadata = {
-  title: "YS Mail - Secure Disposable Email",
-  description: "Self Hosted Temporary email service with custom domains.",
+type BrandingSettings = {
+  appName?: string;
 };
+
+const resolveAppName = async () => {
+  const stored = await redis.get(BRANDING_SETTINGS_KEY);
+  let rawName = '';
+  if (typeof stored === 'string') {
+    try {
+      const parsed = JSON.parse(stored) as BrandingSettings;
+      rawName = parsed?.appName ?? '';
+    } catch {
+      rawName = '';
+    }
+  } else if (typeof stored === 'object' && stored) {
+    rawName = (stored as BrandingSettings).appName ?? '';
+  }
+  return normalizeAppName(rawName) || DEFAULT_APP_NAME;
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const appName = await resolveAppName();
+  return {
+    title: `${appName} - Secure Disposable Email`,
+    description: 'Self Hosted Temporary email service with custom domains.'
+  };
+}
 
 export default function RootLayout({
   children,

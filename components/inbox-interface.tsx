@@ -8,7 +8,7 @@ import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, Ch
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { cn, getSenderInfo } from '@/lib/utils';
-import { DEFAULT_DOMAINS, DEFAULT_EMAIL, getDefaultEmailDomain } from '@/lib/config';
+import { DEFAULT_DOMAIN_FALLBACK, DEFAULT_EMAIL, getDefaultEmailDomain } from '@/lib/config';
 import { getTranslations, Locale } from '@/lib/i18n';
 
 // Types
@@ -41,13 +41,19 @@ interface InboxInterfaceProps {
 
 export function InboxInterface({ initialAddress, locale, retentionLabel }: InboxInterfaceProps) {
   const t = getTranslations(locale);
+  const normalizeDomains = useCallback(
+    (domains: string[]) =>
+      [...new Set(domains.map((entry) => entry.toLowerCase().trim()).filter(Boolean))],
+    []
+  );
   const [address, setAddress] = useState<string>(initialAddress || '');
   const [domain, setDomain] = useState<string>(getDefaultEmailDomain());
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [savedDomains, setSavedDomains] = useState<string[]>(DEFAULT_DOMAINS);
+  const [systemDomains, setSystemDomains] = useState<string[]>([]);
+  const [savedDomains, setSavedDomains] = useState<string[]>([]);
   const [history, setHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [isAddDomainOpen, setIsAddDomainOpen] = useState(false);
@@ -256,15 +262,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
 
   // Load saved data
   useEffect(() => {
-    const savedDoms = localStorage.getItem('dispo_domains');
     const savedHist = localStorage.getItem('dispo_history');
-    
-    if (savedDoms) {
-        setSavedDomains(JSON.parse(savedDoms));
-    } else {
-        // Ensure defaults are set if nothing saved
-        localStorage.setItem('dispo_domains', JSON.stringify(DEFAULT_DOMAINS));
-    }
 
     if (savedHist) setHistory(JSON.parse(savedHist));
     if (!initialAddress) {
@@ -286,6 +284,51 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
          if (parts.length > 1) setDomain(parts[1]);
     }
   }, [initialAddress]);
+
+  useEffect(() => {
+    let active = true;
+    const loadDomains = async () => {
+      try {
+        const response = await fetch('/api/domains');
+        if (!response.ok) {
+          throw new Error('Failed to load domains');
+        }
+        const data = (await response.json()) as { domains?: string[] };
+        const normalized = normalizeDomains(data.domains || []);
+        if (active) {
+          setSystemDomains(normalized.length > 0 ? normalized : [DEFAULT_DOMAIN_FALLBACK]);
+        }
+      } catch (error) {
+        console.error(error);
+        if (active) {
+          setSystemDomains([DEFAULT_DOMAIN_FALLBACK]);
+        }
+      }
+    };
+    loadDomains();
+    return () => {
+      active = false;
+    };
+  }, [normalizeDomains]);
+
+  useEffect(() => {
+    if (systemDomains.length === 0) return;
+    const savedRaw = localStorage.getItem('dispo_domains');
+    const savedList = savedRaw ? JSON.parse(savedRaw) : [];
+    const customDomains = Array.isArray(savedList)
+      ? savedList.filter((item) => !systemDomains.includes(item))
+      : [];
+    const combined = normalizeDomains([...systemDomains, ...customDomains]);
+    setSavedDomains(combined);
+    localStorage.setItem('dispo_domains', JSON.stringify(customDomains));
+  }, [normalizeDomains, systemDomains]);
+
+  useEffect(() => {
+    if (savedDomains.length === 0) return;
+    if (!savedDomains.includes(domain)) {
+      setDomain(savedDomains[0]);
+    }
+  }, [domain, savedDomains]);
 
   // Sync Address to URL (without reloading)
   useEffect(() => {
@@ -648,12 +691,16 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
         <SettingsDialog
             open={isAddDomainOpen}
             onOpenChange={setIsAddDomainOpen}
+            systemDomains={systemDomains}
             savedDomains={savedDomains}
             translations={t}
             onUpdateDomains={(newDomains) => {
-                const combined = [...new Set([...DEFAULT_DOMAINS, ...newDomains])];
+                const customDomains = newDomains.filter(
+                    (item) => !systemDomains.includes(item)
+                );
+                const combined = normalizeDomains([...systemDomains, ...customDomains]);
                 setSavedDomains(combined);
-                localStorage.setItem('dispo_domains', JSON.stringify(combined));
+                localStorage.setItem('dispo_domains', JSON.stringify(customDomains));
             }}
         />
       </div>

@@ -4,27 +4,32 @@ import { Input } from '@/components/ui/input';
 import { X, Trash2, Plus, Globe, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { DEFAULT_DOMAINS } from '@/lib/config';
 import { Translations } from '@/lib/i18n';
-
-const SYSTEM_DOMAINS = DEFAULT_DOMAINS;
 
 interface SettingsDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    systemDomains: string[];
     savedDomains: string[];
     onUpdateDomains: (domains: string[]) => void;
     translations: Translations;
 }
 
-export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomains, translations }: SettingsDialogProps) {
+export function SettingsDialog({
+    open,
+    onOpenChange,
+    systemDomains,
+    savedDomains,
+    onUpdateDomains,
+    translations
+}: SettingsDialogProps) {
     const t = translations;
     const [newDomain, setNewDomain] = useState('');
 
     const handleAddDomain = (e: React.FormEvent) => {
         e.preventDefault();
         const domain = newDomain.trim();
-        if (domain && !savedDomains.includes(domain) && !SYSTEM_DOMAINS.includes(domain)) {
+        if (domain && !savedDomains.includes(domain) && !systemDomains.includes(domain)) {
             onUpdateDomains([...savedDomains, domain]);
             setNewDomain('');
             toast.success(t.toastDomainAdded);
@@ -36,7 +41,7 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
         toast.success(t.toastDomainRemoved);
     };
 
-    const customDomains = savedDomains.filter(d => !SYSTEM_DOMAINS.includes(d));
+    const customDomains = savedDomains.filter(d => !systemDomains.includes(d));
 
     return (
         <AnimatePresence>
@@ -74,7 +79,7 @@ export function SettingsDialog({ open, onOpenChange, savedDomains, onUpdateDomai
                                         <div className="space-y-3">
                                             <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider">{t.systemDomainsTitle}</h4>
                                             <div className="grid gap-2">
-                                                {SYSTEM_DOMAINS.map(domain => (
+                                                {systemDomains.map(domain => (
                                                     <div key={domain} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
                                                         <span className="font-mono text-sm text-gray-300">{domain}</span>
                                                         <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded">{t.defaultBadge}</span>

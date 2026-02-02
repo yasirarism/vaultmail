@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { DEFAULT_DOMAINS } from '@/lib/config';
 import { refreshDomainExpiration } from '@/lib/domain-expiration';
+import { getStoredDomains } from '@/lib/domains';
 
 const getCronSecret = () => process.env.CRON_SECRET?.trim();
 
@@ -13,8 +13,9 @@ export async function GET(req: Request) {
     }
   }
 
+  const domains = await getStoredDomains();
   const results = await Promise.all(
-    DEFAULT_DOMAINS.map((domain) => refreshDomainExpiration(domain))
+    domains.map((domain) => refreshDomainExpiration(domain))
   );
 
   return NextResponse.json({

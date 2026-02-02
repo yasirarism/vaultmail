@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
-import { DEFAULT_DOMAINS } from '@/lib/config';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 type TelegramSettings = {
@@ -47,16 +46,10 @@ const normalizeDomains = (domains: string[]) =>
   [...new Set(domains.map((domain) => domain.toLowerCase().trim()).filter(Boolean))];
 
 export function AdminDashboard() {
-  const defaultDomains = useMemo(
-    () => normalizeDomains(DEFAULT_DOMAINS),
-    []
-  );
   const [enabled, setEnabled] = useState(false);
   const [botToken, setBotToken] = useState('');
   const [chatId, setChatId] = useState('');
-  const [availableDomains, setAvailableDomains] = useState<string[]>(
-    defaultDomains
-  );
+  const [availableDomains, setAvailableDomains] = useState<string[]>([]);
   const [allowedDomains, setAllowedDomains] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState('');
   const [retentionSeconds, setRetentionSeconds] = useState(86400);
@@ -111,17 +104,9 @@ export function AdminDashboard() {
       const incomingAllowed = normalizeDomains(
         Array.isArray(data.allowedDomains) ? data.allowedDomains : []
       );
-      const mergedAvailable = normalizeDomains([
-        ...incomingAvailable,
-        ...incomingAllowed
-      ]);
-      setAvailableDomains(mergedAvailable.length > 0 ? mergedAvailable : defaultDomains);
+      setAvailableDomains(incomingAvailable);
       setAllowedDomains(
-        incomingAllowed.length > 0
-          ? incomingAllowed
-          : mergedAvailable.length > 0
-            ? mergedAvailable
-            : defaultDomains
+        incomingAllowed.length > 0 ? incomingAllowed : incomingAvailable
       );
       if (retentionData?.seconds) {
         setRetentionSeconds(retentionData.seconds);
@@ -264,7 +249,6 @@ export function AdminDashboard() {
   };
 
   const handleRemoveDomain = async (domain: string) => {
-    if (defaultDomains.includes(domain)) return;
     const nextDomains = availableDomains.filter((item) => item !== domain);
     setAvailableDomains(nextDomains);
     setAllowedDomains((prev) => prev.filter((item) => item !== domain));
@@ -397,6 +381,71 @@ export function AdminDashboard() {
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Manajemen Domain
+                  </h2>
+                  <p className="text-sm text-white/60">
+                    Tambahkan domain yang tersedia di aplikasi.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50">
+                  Tambah Domain
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Input
+                    value={newDomain}
+                    onChange={(event) => setNewDomain(event.target.value)}
+                    placeholder="contoh.com"
+                    className="h-9 flex-1 bg-black/30 text-white placeholder:text-white/40"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleAddDomain}
+                    disabled={domainsSaving || !newDomain.trim()}
+                  >
+                    {domainsSaving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Tambah
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {availableDomains.length === 0 ? (
+                    <p className="text-sm text-white/50">
+                      Belum ada domain tersimpan.
+                    </p>
+                  ) : (
+                    availableDomains.map((domain) => (
+                      <div
+                        key={domain}
+                        className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/80"
+                      >
+                        <span className="font-mono">{domain}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveDomain(domain)}
+                          className="h-7 w-7 text-white/60 hover:text-red-300 hover:bg-red-400/10"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-white">
@@ -455,87 +504,38 @@ export function AdminDashboard() {
                   Domain yang dikirim ke Telegram
                 </p>
                 <p className="mt-2 text-xs text-white/50">
-                  Kelola domain di bawah ini lalu pilih yang akan dikirim ke
-                  Telegram.
+                  Pilih domain yang akan dikirim ke Telegram.
                 </p>
-                <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50">
-                    Tambah Domain
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Input
-                      value={newDomain}
-                      onChange={(event) => setNewDomain(event.target.value)}
-                      placeholder="contoh.com"
-                      className="h-9 flex-1 bg-black/30 text-white placeholder:text-white/40"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleAddDomain}
-                      disabled={domainsSaving || !newDomain.trim()}
-                    >
-                      {domainsSaving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Tambah
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                    {availableDomains.map((domain) => (
-                      <div
-                        key={domain}
-                        className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/80"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono">{domain}</span>
-                          {defaultDomains.includes(domain) && (
-                            <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-blue-200">
-                              Default
-                            </span>
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveDomain(domain)}
-                          disabled={defaultDomains.includes(domain)}
-                          className="h-7 w-7 text-white/60 hover:text-red-300 hover:bg-red-400/10 disabled:cursor-not-allowed disabled:text-white/20 disabled:hover:bg-transparent"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {availableDomains.map((domain) => {
-                    const checked = allowedDomains.includes(domain);
-                    return (
-                      <label
-                        key={domain}
-                        className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80"
-                      >
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 accent-purple-400"
-                          checked={checked}
-                          onChange={() => {
-                            setAllowedDomains((prev) =>
-                              checked
-                                ? prev.filter((item) => item !== domain)
-                                : [...prev, domain]
-                            );
-                          }}
-                        />
-                        <span className="font-mono">{domain}</span>
-                      </label>
-                    );
-                  })}
+                  {availableDomains.length === 0 ? (
+                    <p className="text-sm text-white/50">
+                      Tambahkan domain terlebih dahulu.
+                    </p>
+                  ) : (
+                    availableDomains.map((domain) => {
+                      const checked = allowedDomains.includes(domain);
+                      return (
+                        <label
+                          key={domain}
+                          className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80"
+                        >
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 accent-purple-400"
+                            checked={checked}
+                            onChange={() => {
+                              setAllowedDomains((prev) =>
+                                checked
+                                  ? prev.filter((item) => item !== domain)
+                                  : [...prev, domain]
+                              );
+                            }}
+                          />
+                          <span className="font-mono">{domain}</span>
+                        </label>
+                      );
+                    })
+                  )}
                 </div>
               </div>
               <p className="mt-4 text-xs text-white/50">
