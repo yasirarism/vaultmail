@@ -1,6 +1,5 @@
+import { domainExpirationKey } from '@/lib/redis-keys';
 import { redis } from '@/lib/redis';
-
-const DOMAIN_EXPIRATION_PREFIX = 'domain:expiration:';
 const DOMAIN_EXPIRATION_CACHE_SECONDS = 60 * 60 * 24;
 const WHOIS_SEARCH_API_BASE_URL = 'https://whois-search.vercel.app/api/lookup';
 const WHOIS_SEARCH_API_HEADERS = {
@@ -66,7 +65,7 @@ const fetchExpirationFromWhoisSearch = async (domain: string) => {
 };
 
 export const getStoredDomainExpiration = async (domain: string) => {
-  const key = `${DOMAIN_EXPIRATION_PREFIX}${domain.toLowerCase()}`;
+  const key = domainExpirationKey(domain);
   try {
     const recordRaw = await redis.get(key);
     return parseRecord(recordRaw);
@@ -83,7 +82,7 @@ export const refreshDomainExpiration = async (domain: string) => {
     expiresAt,
     checkedAt: new Date().toISOString()
   };
-  const key = `${DOMAIN_EXPIRATION_PREFIX}${domain.toLowerCase()}`;
+  const key = domainExpirationKey(domain);
   try {
     if (expiresAt) {
       await redis.set(key, record, { ex: DOMAIN_EXPIRATION_CACHE_SECONDS });

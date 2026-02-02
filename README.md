@@ -88,6 +88,9 @@ We include a pre-configured worker in the `worker/` directory.
     ```env
     UPSTASH_REDIS_REST_URL="your-url"
     UPSTASH_REDIS_REST_TOKEN="your-token"
+    # Optional: isolate Redis keys per deployment to avoid cross-app conflicts
+    # Example: REDIS_KEY_PREFIX="vaultmail-app-1"
+    REDIS_KEY_PREFIX=""
     # Optional: enable Google AdSense auto ads
     NEXT_PUBLIC_ADSENSE_CLIENT_ID="ca-pub-xxxxxxxxxxxxxxxx"
     ```

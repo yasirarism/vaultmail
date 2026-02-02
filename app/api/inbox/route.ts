@@ -1,3 +1,4 @@
+import { inboxKey } from '@/lib/redis-keys';
 import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
 
@@ -12,8 +13,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const key = `inbox:${address.toLowerCase()}`;
-    const emails = await redis.lrange(key, 0, -1);
+    const emails = await redis.lrange(inboxKey(address), 0, -1);
     return NextResponse.json({ emails: emails || [] });
   } catch (error) {
     console.error('Inbox Error:', error);

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { inboxPattern } from '@/lib/redis-keys';
 import { redis } from '@/lib/redis';
 import { ADMIN_SESSION_COOKIE, isAdminSessionValid } from '@/lib/admin-auth';
 
@@ -39,7 +40,7 @@ export async function GET() {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const keys = (await redis.keys('inbox:*')) ?? [];
+  const keys = (await redis.keys(inboxPattern())) ?? [];
   const inboxCount = keys.length;
 
   if (!keys.length) {
