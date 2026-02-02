@@ -62,6 +62,7 @@ export function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState(false);
+  const [domainToDelete, setDomainToDelete] = useState<string | null>(null);
 
   const retentionOptions = useMemo(
     () => [
@@ -248,15 +249,22 @@ export function AdminDashboard() {
     await saveDomains(nextDomains);
   };
 
-  const handleRemoveDomain = async (domain: string) => {
-    const confirmed = window.confirm(
-      `Yakin mau menghapus domain ${domain} ini?`
-    );
-    if (!confirmed) return;
+  const handleRemoveDomain = (domain: string) => {
+    setDomainToDelete(domain);
+  };
+
+  const confirmRemoveDomain = async () => {
+    if (!domainToDelete) return;
+    const domain = domainToDelete;
     const nextDomains = availableDomains.filter((item) => item !== domain);
     setAvailableDomains(nextDomains);
     setAllowedDomains((prev) => prev.filter((item) => item !== domain));
+    setDomainToDelete(null);
     await saveDomains(nextDomains);
+  };
+
+  const cancelRemoveDomain = () => {
+    setDomainToDelete(null);
   };
 
   useEffect(() => {
@@ -588,7 +596,7 @@ export function AdminDashboard() {
               </div>
             </div>
 
-            <div className="flex justify-end">
+          <div className="flex justify-end">
               <Button onClick={saveSettings} disabled={saving || loading}>
                 {saving || loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -600,6 +608,35 @@ export function AdminDashboard() {
           </div>
         </div>
       </div>
+      {domainToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={cancelRemoveDomain}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-white/10 bg-background p-6 text-white shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold">Delete domain</h3>
+            <p className="mt-2 text-sm text-white/70">
+              Are you sure you want to delete domain{' '}
+              <span className="font-mono text-white">{domainToDelete}</span>?
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button type="button" variant="secondary" onClick={cancelRemoveDomain}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={confirmRemoveDomain}
+                className="bg-red-500/80 text-white hover:bg-red-500"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
