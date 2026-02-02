@@ -87,9 +87,6 @@ We include a pre-configured worker in the `worker/` directory.
     ```env
     MONGODB_URI="your-connection-string"
     MONGODB_DB="vaultmail"
-    # Optional: isolate storage keys per deployment to avoid cross-app conflicts
-    # Example: STORAGE_KEY_PREFIX="vaultmail-app-1"
-    STORAGE_KEY_PREFIX=""
     # Optional: enable Google AdSense auto ads
     NEXT_PUBLIC_ADSENSE_CLIENT_ID="ca-pub-xxxxxxxxxxxxxxxx"
     ```
