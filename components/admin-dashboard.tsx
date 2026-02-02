@@ -213,7 +213,10 @@ export function AdminDashboard() {
     }
   };
 
-  const saveDomains = async (nextDomains: string[]) => {
+  const saveDomains = async (
+    nextDomains: string[],
+    successMessage = 'Daftar domain tersimpan.'
+  ) => {
     setDomainsSaving(true);
     try {
       const response = await fetch('/api/admin/domains', {
@@ -230,7 +233,7 @@ export function AdminDashboard() {
       setAllowedDomains((prev) =>
         prev.filter((domain) => normalized.includes(domain))
       );
-      toast.success('Daftar domain tersimpan.');
+      toast.success(successMessage);
     } catch (error) {
       console.error(error);
       toast.error('Gagal menyimpan domain.');
@@ -246,7 +249,7 @@ export function AdminDashboard() {
     setNewDomain('');
     setAvailableDomains(nextDomains);
     setAllowedDomains((prev) => normalizeDomains([...prev, domain]));
-    await saveDomains(nextDomains);
+    await saveDomains(nextDomains, 'Domain berhasil ditambahkan.');
   };
 
   const handleRemoveDomain = (domain: string) => {
@@ -260,7 +263,7 @@ export function AdminDashboard() {
     setAvailableDomains(nextDomains);
     setAllowedDomains((prev) => prev.filter((item) => item !== domain));
     setDomainToDelete(null);
-    await saveDomains(nextDomains);
+    await saveDomains(nextDomains, 'Domain berhasil dihapus.');
   };
 
   const cancelRemoveDomain = () => {
