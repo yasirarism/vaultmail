@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { redis } from '@/lib/redis';
+import { storage } from '@/lib/storage';
 import {
   ADMIN_SESSION_COOKIE,
   RETENTION_SETTINGS_KEY,
@@ -38,7 +38,7 @@ export async function GET() {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const settingsRaw = await redis.get(RETENTION_SETTINGS_KEY);
+  const settingsRaw = await storage.get(RETENTION_SETTINGS_KEY);
   const settings = parseSettings(settingsRaw) || {
     seconds: 86400,
     updatedAt: new Date().toISOString()
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     updatedAt: new Date().toISOString()
   };
 
-  await redis.set(RETENTION_SETTINGS_KEY, settings);
+  await storage.set(RETENTION_SETTINGS_KEY, settings);
 
   return NextResponse.json(settings);
 }

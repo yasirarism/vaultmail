@@ -1,4 +1,8 @@
-const rawPrefix = process.env.REDIS_KEY_PREFIX || process.env.APP_NAMESPACE || '';
+const rawPrefix =
+  process.env.STORAGE_KEY_PREFIX ||
+  process.env.REDIS_KEY_PREFIX ||
+  process.env.APP_NAMESPACE ||
+  '';
 const normalizedPrefix = rawPrefix.trim().replace(/:+$/g, '');
 export const keyPrefix = normalizedPrefix ? `${normalizedPrefix}:` : '';
 

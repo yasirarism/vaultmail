@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { redis } from '@/lib/redis';
+import { storage } from '@/lib/storage';
 import { BRANDING_SETTINGS_KEY } from '@/lib/admin-auth';
 import { DEFAULT_APP_NAME, normalizeAppName } from '@/lib/branding';
 
@@ -24,7 +24,7 @@ const parseSettings = (value: unknown): BrandingSettings | null => {
 };
 
 export async function GET() {
-  const settingsRaw = await redis.get(BRANDING_SETTINGS_KEY);
+  const settingsRaw = await storage.get(BRANDING_SETTINGS_KEY);
   const settings = parseSettings(settingsRaw);
   const appName = normalizeAppName(settings?.appName) || DEFAULT_APP_NAME;
 

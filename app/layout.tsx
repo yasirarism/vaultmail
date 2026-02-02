@@ -3,7 +3,7 @@ import './globals.css';
 import { DEFAULT_LOCALE } from '@/lib/i18n';
 import { Toaster } from 'sonner';
 import AdsenseScript from '@/components/AdsenseScript';
-import { redis } from '@/lib/redis';
+import { storage } from '@/lib/storage';
 import { BRANDING_SETTINGS_KEY } from '@/lib/admin-auth';
 import { DEFAULT_APP_NAME, normalizeAppName } from '@/lib/branding';
 
@@ -12,7 +12,7 @@ type BrandingSettings = {
 };
 
 const resolveAppName = async () => {
-  const stored = await redis.get(BRANDING_SETTINGS_KEY);
+  const stored = await storage.get(BRANDING_SETTINGS_KEY);
   let rawName = '';
   if (typeof stored === 'string') {
     try {
