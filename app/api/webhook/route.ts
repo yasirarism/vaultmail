@@ -1,7 +1,8 @@
 import { redis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
 import { extractEmail, getSenderInfo } from '@/lib/utils';
-import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
+import { RETENTION_SETTINGS_KEY, TELEGRAM_SETTINGS_KEY } from '@/lib/admin-auth';
+import { inboxKey } from '@/lib/redis-keys';
 import crypto from 'crypto';
 
 type TelegramSettings = {
@@ -15,7 +16,6 @@ type RetentionSettings = {
   seconds: number;
 };
 
-const TELEGRAM_SETTINGS_KEY = 'settings:telegram';
 const DEFAULT_MAX_ATTACHMENT_BYTES = 2_000_000;
 const MAX_ATTACHMENT_BYTES =
   Number(process.env.ATTACHMENT_MAX_BYTES) || DEFAULT_MAX_ATTACHMENT_BYTES;
@@ -208,7 +208,7 @@ export async function POST(req: Request) {
       read: false
     };
 
-    const key = `inbox:${cleanTo}`;
+    const key = inboxKey(cleanTo);
     
     const retention = await getRetentionSeconds();
     
