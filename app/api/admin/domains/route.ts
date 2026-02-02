@@ -5,7 +5,7 @@ import {
   DOMAINS_SETTINGS_KEY,
   isAdminSessionValid
 } from '@/lib/admin-auth';
-import { redis } from '@/lib/redis';
+import { storage } from '@/lib/storage';
 import { getStoredDomains, normalizeDomains } from '@/lib/domains';
 
 type DomainsPayload = {
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   const incoming = Array.isArray(body?.domains) ? body.domains : [];
   const normalized = normalizeDomains(incoming);
 
-  await redis.set(DOMAINS_SETTINGS_KEY, { domains: normalized });
+  await storage.set(DOMAINS_SETTINGS_KEY, { domains: normalized });
 
   return NextResponse.json({ domains: normalized });
 }

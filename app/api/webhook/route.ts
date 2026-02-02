@@ -1,8 +1,8 @@
-import { redis } from '@/lib/redis';
+import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
 import { extractEmail, getSenderInfo } from '@/lib/utils';
 import { RETENTION_SETTINGS_KEY, TELEGRAM_SETTINGS_KEY } from '@/lib/admin-auth';
-import { inboxKey } from '@/lib/redis-keys';
+import { inboxKey } from '@/lib/storage-keys';
 import crypto from 'crypto';
 
 type TelegramSettings = {
@@ -89,7 +89,7 @@ const sendTelegramNotification = async (payload: {
   subject: string;
   text: string;
 }) => {
-  const settingsRaw = await redis.get(TELEGRAM_SETTINGS_KEY);
+  const settingsRaw = await storage.get(TELEGRAM_SETTINGS_KEY);
   const settings = parseSettings(settingsRaw);
 
   if (!settings?.enabled || !settings.botToken || !settings.chatId) {
@@ -137,7 +137,7 @@ const sendTelegramNotification = async (payload: {
 };
 
 const getRetentionSeconds = async () => {
-  const settingsRaw = await redis.get(RETENTION_SETTINGS_KEY);
+  const settingsRaw = await storage.get(RETENTION_SETTINGS_KEY);
   const settings = parseRetentionSettings(settingsRaw);
   return settings?.seconds || 86400;
 };
@@ -214,10 +214,10 @@ export async function POST(req: Request) {
     
     // Store email in a list (LIFO usually better for email? No, Redis list is generic. lpush = prepend)
     // lpush puts new emails at index 0.
-    await redis.lpush(key, emailData);
+    await storage.lpush(key, emailData);
     
     // Set expiry based on global retention setting.
-    await redis.expire(key, retention);
+    await storage.expire(key, retention);
 
     await sendTelegramNotification({
       from,

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { redis } from '@/lib/redis';
+import { storage } from '@/lib/storage';
 import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
 
 type RetentionSettings = {
@@ -23,7 +23,7 @@ const parseSettings = (value: unknown): RetentionSettings | null => {
 };
 
 export async function GET() {
-  const settingsRaw = await redis.get(RETENTION_SETTINGS_KEY);
+  const settingsRaw = await storage.get(RETENTION_SETTINGS_KEY);
   const settings = parseSettings(settingsRaw) || {
     seconds: 86400,
     updatedAt: new Date().toISOString()

@@ -1,4 +1,4 @@
-import { redis } from '@/lib/redis';
+import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
 
-    await redis.set(
+    await storage.set(
       RETENTION_SETTINGS_KEY,
       JSON.stringify({
         seconds: parseInt(retentionSeconds, 10),

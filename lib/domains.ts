@@ -1,4 +1,4 @@
-import { redis } from '@/lib/redis';
+import { storage } from '@/lib/storage';
 import { DOMAINS_SETTINGS_KEY } from '@/lib/admin-auth';
 import { DEFAULT_DOMAIN_FALLBACK } from '@/lib/config';
 
@@ -36,7 +36,7 @@ export const parseDomains = (value: unknown): string[] => {
 };
 
 export const getStoredDomains = async () => {
-  const storedRaw = await redis.get(DOMAINS_SETTINGS_KEY);
+  const storedRaw = await storage.get(DOMAINS_SETTINGS_KEY);
   return normalizeDomains(parseDomains(storedRaw));
 };
 

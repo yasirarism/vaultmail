@@ -1,5 +1,5 @@
-import { domainExpirationKey } from '@/lib/redis-keys';
-import { redis } from '@/lib/redis';
+import { domainExpirationKey } from '@/lib/storage-keys';
+import { storage } from '@/lib/storage';
 const DOMAIN_EXPIRATION_CACHE_SECONDS = 60 * 60 * 24;
 const WHOIS_SEARCH_API_BASE_URL = 'https://whois-search.vercel.app/api/lookup';
 const WHOIS_SEARCH_API_HEADERS = {
@@ -67,7 +67,7 @@ const fetchExpirationFromWhoisSearch = async (domain: string) => {
 export const getStoredDomainExpiration = async (domain: string) => {
   const key = domainExpirationKey(domain);
   try {
-    const recordRaw = await redis.get(key);
+    const recordRaw = await storage.get(key);
     return parseRecord(recordRaw);
   } catch (error) {
     console.error('Domain expiration cache read failed:', error);
@@ -85,9 +85,9 @@ export const refreshDomainExpiration = async (domain: string) => {
   const key = domainExpirationKey(domain);
   try {
     if (expiresAt) {
-      await redis.set(key, record, { ex: DOMAIN_EXPIRATION_CACHE_SECONDS });
+      await storage.set(key, record, { ex: DOMAIN_EXPIRATION_CACHE_SECONDS });
     } else {
-      await redis.del(key);
+      await storage.del(key);
     }
   } catch (error) {
     console.error('Domain expiration cache write failed:', error);

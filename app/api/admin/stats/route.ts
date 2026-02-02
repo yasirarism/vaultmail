@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { inboxPattern } from '@/lib/redis-keys';
-import { redis } from '@/lib/redis';
+import { inboxPattern } from '@/lib/storage-keys';
+import { storage } from '@/lib/storage';
 import { ADMIN_SESSION_COOKIE, isAdminSessionValid } from '@/lib/admin-auth';
 
 type InboxEmail = {
@@ -40,7 +40,7 @@ export async function GET() {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const keys = (await redis.keys(inboxPattern())) ?? [];
+  const keys = (await storage.keys(inboxPattern())) ?? [];
   const inboxCount = keys.length;
 
   if (!keys.length) {
@@ -52,11 +52,11 @@ export async function GET() {
     return NextResponse.json(emptyStats);
   }
 
-  const counts = await Promise.all(keys.map((key) => redis.llen(key)));
+  const counts = await Promise.all(keys.map((key) => storage.llen(key)));
   const messageCount = counts.reduce((total, count) => total + count, 0);
 
   const latestItems = await Promise.all(
-    keys.map((key) => redis.lrange(key, 0, 0))
+    keys.map((key) => storage.lrange(key, 0, 0))
   );
   let latestTimestamp: number | null = null;
 

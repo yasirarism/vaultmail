@@ -1,4 +1,4 @@
-import { redis } from '@/lib/redis';
+import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
@@ -41,7 +41,7 @@ export async function GET() {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const settingsRaw = await redis.get(TELEGRAM_SETTINGS_KEY);
+  const settingsRaw = await storage.get(TELEGRAM_SETTINGS_KEY);
   const settings = parseSettings(settingsRaw) || {
     enabled: false,
     botToken: '',
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     updatedAt: new Date().toISOString()
   };
 
-  await redis.set(TELEGRAM_SETTINGS_KEY, settings);
+  await storage.set(TELEGRAM_SETTINGS_KEY, settings);
 
   return NextResponse.json(settings);
 }

@@ -2,13 +2,13 @@
 
 ![VaultMail Banner](public/readme-banner.png)
 
-A premium, privacy-focused disposable email service built with **Next.js** and **Upstash Redis**. Features real-time inbox updates, custom domain support, and configurable privacy settings.
+A premium, privacy-focused disposable email service built with **Next.js** and **MongoDB**. Features real-time inbox updates, custom domain support, and configurable privacy settings.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![Redis](https://img.shields.io/badge/Upstash-Redis-green)
+![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248)
 
 ## ✨ Features
 
--   **🛡️ Privacy First**: Emails are stored in short-lived Redis keys with auto-expiry.
+-   **🛡️ Privacy First**: Emails are stored in short-lived MongoDB records with auto-expiry logic.
 -   **⚙️ Configurable Retention**: Users can set email lifespan from **30 minutes** to **1 week**.
 -   **🌐 Custom Domains**: Bring your own domain via Cloudflare or Mailgun (Manage Domains GUI included).
 -   **⚡ Real-time**: Instant email delivery and inbox updates.
@@ -20,7 +20,7 @@ A premium, privacy-focused disposable email service built with **Next.js** and *
 
 1.  **Incoming Mail**: DNS MX Records point to your email routing service (Cloudflare/Mailgun).
 2.  **Webhook**: The service forwards the raw email to `https://your-app.com/api/webhook`.
-3.  **Processing**: The app parses the email, checks user retention settings, and stores it in **Upstash Redis**.
+3.  **Processing**: The app parses the email, checks user retention settings, and stores it in **MongoDB**.
 4.  **Frontend**: The Next.js UI polls the API to display emails for the current address.
 
 ## 🚀 Deployment Guide
@@ -29,13 +29,12 @@ A premium, privacy-focused disposable email service built with **Next.js** and *
 
 Clone this repository and deploy it to Vercel.
 
-### 2. Configure Database (Upstash Redis)
+### 2. Configure Database (MongoDB)
 
-1.  Go to the **Storage** tab in your Vercel Project.
-2.  Click **Connect Store** and select **Upstash Redis** from the Marketplace.
-3.  Link it to your project. This will automagically set:
-    *   `UPSTASH_REDIS_REST_URL`
-    *   `UPSTASH_REDIS_REST_TOKEN`
+Provision a MongoDB database (MongoDB Atlas or self-hosted) and set the connection string in Vercel:
+
+*   `MONGODB_URI`
+*   `MONGODB_DB` (optional, defaults to `vaultmail`)
 
 ### 3. Configure Email Forwarding
 
@@ -84,13 +83,10 @@ We include a pre-configured worker in the `worker/` directory.
     ```
 
 2.  **Environment Setup**:
-    Create `.env.local` and add your Upstash Redis credentials:
+    Create `.env.local` and add your MongoDB credentials:
     ```env
-    UPSTASH_REDIS_REST_URL="your-url"
-    UPSTASH_REDIS_REST_TOKEN="your-token"
-    # Optional: isolate Redis keys per deployment to avoid cross-app conflicts
-    # Example: REDIS_KEY_PREFIX="vaultmail-app-1"
-    REDIS_KEY_PREFIX=""
+    MONGODB_URI="your-connection-string"
+    MONGODB_DB="vaultmail"
     # Optional: enable Google AdSense auto ads
     NEXT_PUBLIC_ADSENSE_CLIENT_ID="ca-pub-xxxxxxxxxxxxxxxx"
     ```

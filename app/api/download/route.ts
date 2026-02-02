@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { inboxKey } from '@/lib/redis-keys';
-import { redis } from '@/lib/redis';
+import { inboxKey } from '@/lib/storage-keys';
+import { storage } from '@/lib/storage';
 
 type InboxEmail = {
   id?: string;
@@ -80,7 +80,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
   }
 
-  const emails = await redis.lrange(inboxKey(address), 0, -1);
+  const emails = await storage.lrange(inboxKey(address), 0, -1);
   const selected = (emails || [])
     .map((item) => parseEmail(item))
     .find((email) => email?.id === emailId);
