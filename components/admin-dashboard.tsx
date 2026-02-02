@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import {
   ArrowLeft,
   Clock,
+  Copy,
   Loader2,
   Plus,
   ShieldCheck,
@@ -117,7 +118,7 @@ export function AdminDashboard() {
       }
     } catch (error) {
       console.error(error);
-      toast.error('Gagal memuat setting admin.');
+      toast.error('Failed to load admin settings.');
     } finally {
       setLoading(false);
     }
@@ -163,10 +164,10 @@ export function AdminDashboard() {
         throw new Error('Unauthorized or failed to save settings.');
       }
       setAllowedDomains(filteredAllowed);
-      toast.success('Setting Telegram tersimpan.');
+      toast.success('Telegram settings saved.');
     } catch (error) {
       console.error(error);
-      toast.error('Gagal menyimpan setting Telegram.');
+      toast.error('Failed to save Telegram settings.');
     } finally {
       setSaving(false);
     }
@@ -184,10 +185,10 @@ export function AdminDashboard() {
       if (!response.ok) {
         throw new Error('Unauthorized or failed to save retention.');
       }
-      toast.success('Retensi global tersimpan.');
+      toast.success('Retention settings saved.');
     } catch (error) {
       console.error(error);
-      toast.error('Gagal menyimpan retensi.');
+      toast.error('Failed to save retention settings.');
     } finally {
       setRetentionSaving(false);
     }
@@ -204,10 +205,10 @@ export function AdminDashboard() {
       if (!response.ok) {
         throw new Error('Unauthorized or failed to save branding.');
       }
-      toast.success('Nama web tersimpan.');
+      toast.success('Site name saved.');
     } catch (error) {
       console.error(error);
-      toast.error('Gagal menyimpan nama web.');
+      toast.error('Failed to save site name.');
     } finally {
       setBrandingSaving(false);
     }
@@ -215,7 +216,7 @@ export function AdminDashboard() {
 
   const saveDomains = async (
     nextDomains: string[],
-    successMessage = 'Daftar domain tersimpan.'
+    successMessage = 'Domains saved.'
   ) => {
     setDomainsSaving(true);
     try {
@@ -236,7 +237,7 @@ export function AdminDashboard() {
       toast.success(successMessage);
     } catch (error) {
       console.error(error);
-      toast.error('Gagal menyimpan domain.');
+      toast.error('Failed to save domains.');
     } finally {
       setDomainsSaving(false);
     }
@@ -249,7 +250,7 @@ export function AdminDashboard() {
     setNewDomain('');
     setAvailableDomains(nextDomains);
     setAllowedDomains((prev) => normalizeDomains([...prev, domain]));
-    await saveDomains(nextDomains, 'Domain berhasil ditambahkan.');
+    await saveDomains(nextDomains, 'Domain added.');
   };
 
   const handleRemoveDomain = (domain: string) => {
@@ -263,11 +264,21 @@ export function AdminDashboard() {
     setAvailableDomains(nextDomains);
     setAllowedDomains((prev) => prev.filter((item) => item !== domain));
     setDomainToDelete(null);
-    await saveDomains(nextDomains, 'Domain berhasil dihapus.');
+    await saveDomains(nextDomains, 'Domain deleted.');
   };
 
   const cancelRemoveDomain = () => {
     setDomainToDelete(null);
+  };
+
+  const handleCopyDomain = async (domain: string) => {
+    try {
+      await navigator.clipboard.writeText(domain);
+      toast.success('Domain copied to clipboard.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to copy domain.');
+    }
   };
 
   useEffect(() => {
@@ -444,15 +455,26 @@ export function AdminDashboard() {
                         className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/80"
                       >
                         <span className="font-mono">{domain}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveDomain(domain)}
-                          className="h-7 w-7 text-white/60 hover:text-red-300 hover:bg-red-400/10"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleCopyDomain(domain)}
+                            className="h-7 w-7 text-white/60 hover:text-white hover:bg-white/10"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveDomain(domain)}
+                            className="h-7 w-7 text-white/60 hover:text-red-300 hover:bg-red-400/10"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     ))
                   )}
