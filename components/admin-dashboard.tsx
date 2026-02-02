@@ -4,7 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { ArrowLeft, Clock, Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
+import {
+  ArrowLeft,
+  Clock,
+  Loader2,
+  Plus,
+  ShieldCheck,
+  ShieldOff,
+  Trash2
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { DEFAULT_DOMAINS } from '@/lib/config';
@@ -25,26 +33,38 @@ type BrandingSettings = {
   appName: string;
 };
 
+type DomainsSettings = {
+  domains: string[];
+};
+
 type AdminStats = {
   inboxCount: number;
   messageCount: number;
   latestReceivedAt: string | null;
 };
 
+const normalizeDomains = (domains: string[]) =>
+  [...new Set(domains.map((domain) => domain.toLowerCase().trim()).filter(Boolean))];
+
 export function AdminDashboard() {
+  const defaultDomains = useMemo(
+    () => normalizeDomains(DEFAULT_DOMAINS),
+    []
+  );
   const [enabled, setEnabled] = useState(false);
   const [botToken, setBotToken] = useState('');
   const [chatId, setChatId] = useState('');
-  const availableDomains = useMemo(
-    () => DEFAULT_DOMAINS.map((domain) => domain.toLowerCase()),
-    []
+  const [availableDomains, setAvailableDomains] = useState<string[]>(
+    defaultDomains
   );
-  const [allowedDomains, setAllowedDomains] = useState<string[]>(availableDomains);
+  const [allowedDomains, setAllowedDomains] = useState<string[]>([]);
+  const [newDomain, setNewDomain] = useState('');
   const [retentionSeconds, setRetentionSeconds] = useState(86400);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [retentionSaving, setRetentionSaving] = useState(false);
   const [brandingSaving, setBrandingSaving] = useState(false);
+  const [domainsSaving, setDomainsSaving] = useState(false);
   const [appName, setAppName] = useState(DEFAULT_APP_NAME);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -64,25 +84,44 @@ export function AdminDashboard() {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const [telegramResponse, retentionResponse, brandingResponse] = await Promise.all([
+      const [telegramResponse, retentionResponse, brandingResponse, domainsResponse] =
+        await Promise.all([
         fetch('/api/admin/telegram'),
         fetch('/api/admin/retention'),
-        fetch('/api/admin/branding')
+        fetch('/api/admin/branding'),
+        fetch('/api/admin/domains')
       ]);
-      if (!telegramResponse.ok || !retentionResponse.ok || !brandingResponse.ok) {
+      if (
+        !telegramResponse.ok ||
+        !retentionResponse.ok ||
+        !brandingResponse.ok ||
+        !domainsResponse.ok
+      ) {
         throw new Error('Unauthorized or failed to load settings.');
       }
       const data = (await telegramResponse.json()) as TelegramSettings;
       const retentionData =
         (await retentionResponse.json()) as RetentionSettings;
       const brandingData = (await brandingResponse.json()) as BrandingSettings;
+      const domainsData = (await domainsResponse.json()) as DomainsSettings;
       setEnabled(Boolean(data.enabled));
       setBotToken(data.botToken || '');
       setChatId(data.chatId || '');
+      const incomingAvailable = normalizeDomains(domainsData?.domains || []);
+      const incomingAllowed = normalizeDomains(
+        Array.isArray(data.allowedDomains) ? data.allowedDomains : []
+      );
+      const mergedAvailable = normalizeDomains([
+        ...incomingAvailable,
+        ...incomingAllowed
+      ]);
+      setAvailableDomains(mergedAvailable.length > 0 ? mergedAvailable : defaultDomains);
       setAllowedDomains(
-        Array.isArray(data.allowedDomains) && data.allowedDomains.length > 0
-          ? data.allowedDomains
-          : availableDomains
+        incomingAllowed.length > 0
+          ? incomingAllowed
+          : mergedAvailable.length > 0
+            ? mergedAvailable
+            : defaultDomains
       );
       if (retentionData?.seconds) {
         setRetentionSeconds(retentionData.seconds);
@@ -119,6 +158,9 @@ export function AdminDashboard() {
   const saveSettings = async () => {
     setSaving(true);
     try {
+      const filteredAllowed = allowedDomains.filter((domain) =>
+        availableDomains.includes(domain)
+      );
       const response = await fetch('/api/admin/telegram', {
         method: 'POST',
         headers: {
@@ -128,12 +170,13 @@ export function AdminDashboard() {
           enabled,
           botToken,
           chatId,
-          allowedDomains
+          allowedDomains: filteredAllowed
         })
       });
       if (!response.ok) {
         throw new Error('Unauthorized or failed to save settings.');
       }
+      setAllowedDomains(filteredAllowed);
       toast.success('Setting Telegram tersimpan.');
     } catch (error) {
       console.error(error);
@@ -182,6 +225,50 @@ export function AdminDashboard() {
     } finally {
       setBrandingSaving(false);
     }
+  };
+
+  const saveDomains = async (nextDomains: string[]) => {
+    setDomainsSaving(true);
+    try {
+      const response = await fetch('/api/admin/domains', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domains: nextDomains })
+      });
+      if (!response.ok) {
+        throw new Error('Unauthorized or failed to save domains.');
+      }
+      const data = (await response.json()) as DomainsSettings;
+      const normalized = normalizeDomains(data.domains || []);
+      setAvailableDomains(normalized);
+      setAllowedDomains((prev) =>
+        prev.filter((domain) => normalized.includes(domain))
+      );
+      toast.success('Daftar domain tersimpan.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal menyimpan domain.');
+    } finally {
+      setDomainsSaving(false);
+    }
+  };
+
+  const handleAddDomain = async () => {
+    const domain = newDomain.toLowerCase().trim();
+    if (!domain || availableDomains.includes(domain)) return;
+    const nextDomains = normalizeDomains([...availableDomains, domain]);
+    setNewDomain('');
+    setAvailableDomains(nextDomains);
+    setAllowedDomains((prev) => normalizeDomains([...prev, domain]));
+    await saveDomains(nextDomains);
+  };
+
+  const handleRemoveDomain = async (domain: string) => {
+    if (defaultDomains.includes(domain)) return;
+    const nextDomains = availableDomains.filter((item) => item !== domain);
+    setAvailableDomains(nextDomains);
+    setAllowedDomains((prev) => prev.filter((item) => item !== domain));
+    await saveDomains(nextDomains);
   };
 
   useEffect(() => {
@@ -368,8 +455,63 @@ export function AdminDashboard() {
                   Domain yang dikirim ke Telegram
                 </p>
                 <p className="mt-2 text-xs text-white/50">
-                  Pilih domain dari daftar default.
+                  Kelola domain di bawah ini lalu pilih yang akan dikirim ke
+                  Telegram.
                 </p>
+                <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50">
+                    Tambah Domain
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Input
+                      value={newDomain}
+                      onChange={(event) => setNewDomain(event.target.value)}
+                      placeholder="contoh.com"
+                      className="h-9 flex-1 bg-black/30 text-white placeholder:text-white/40"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAddDomain}
+                      disabled={domainsSaving || !newDomain.trim()}
+                    >
+                      {domainsSaving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Tambah
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    {availableDomains.map((domain) => (
+                      <div
+                        key={domain}
+                        className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/80"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono">{domain}</span>
+                          {defaultDomains.includes(domain) && (
+                            <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-blue-200">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveDomain(domain)}
+                          disabled={defaultDomains.includes(domain)}
+                          className="h-7 w-7 text-white/60 hover:text-red-300 hover:bg-red-400/10 disabled:cursor-not-allowed disabled:text-white/20 disabled:hover:bg-transparent"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {availableDomains.map((domain) => {
                     const checked = allowedDomains.includes(domain);
