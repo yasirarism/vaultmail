@@ -249,6 +249,10 @@ export function AdminDashboard() {
   };
 
   const handleRemoveDomain = async (domain: string) => {
+    const confirmed = window.confirm(
+      `Yakin mau menghapus domain ${domain} ini?`
+    );
+    if (!confirmed) return;
     const nextDomains = availableDomains.filter((item) => item !== domain);
     setAvailableDomains(nextDomains);
     setAllowedDomains((prev) => prev.filter((item) => item !== domain));
