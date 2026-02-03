@@ -32,14 +32,19 @@ export function HomepageLock() {
         body: JSON.stringify({ password })
       });
       if (!response.ok) {
-        throw new Error('Invalid password');
+        const data = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        throw new Error(data?.error || 'Invalid password');
       }
       window.localStorage.setItem('vaultmail_homepage_authed', '1');
       toast.success('Akses diterima. Memuat ulang...');
       window.location.reload();
     } catch (error) {
       console.error(error);
-      toast.error('Password salah atau akses ditolak.');
+      const message =
+        error instanceof Error ? error.message : 'Password salah atau akses ditolak.';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
