@@ -33,6 +33,12 @@ type BrandingSettings = {
   appName: string;
 };
 
+type HomepageLockSettings = {
+  enabled: boolean;
+  hasPassword: boolean;
+  updatedAt?: string;
+};
+
 type DomainsSettings = {
   domains: string[];
 };
@@ -60,6 +66,10 @@ export function AdminDashboard() {
   const [brandingSaving, setBrandingSaving] = useState(false);
   const [domainsSaving, setDomainsSaving] = useState(false);
   const [appName, setAppName] = useState(DEFAULT_APP_NAME);
+  const [homepageLockEnabled, setHomepageLockEnabled] = useState(false);
+  const [homepageLockPassword, setHomepageLockPassword] = useState('');
+  const [homepageLockSaving, setHomepageLockSaving] = useState(false);
+  const [homepageLockHasPassword, setHomepageLockHasPassword] = useState(false);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState(false);
@@ -79,18 +89,25 @@ export function AdminDashboard() {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const [telegramResponse, retentionResponse, brandingResponse, domainsResponse] =
-        await Promise.all([
+      const [
+        telegramResponse,
+        retentionResponse,
+        brandingResponse,
+        domainsResponse,
+        homepageLockResponse
+      ] = await Promise.all([
         fetch('/api/admin/telegram'),
         fetch('/api/admin/retention'),
         fetch('/api/admin/branding'),
-        fetch('/api/admin/domains')
+        fetch('/api/admin/domains'),
+        fetch('/api/admin/homepage-lock')
       ]);
       if (
         !telegramResponse.ok ||
         !retentionResponse.ok ||
         !brandingResponse.ok ||
-        !domainsResponse.ok
+        !domainsResponse.ok ||
+        !homepageLockResponse.ok
       ) {
         throw new Error('Unauthorized or failed to load settings.');
       }
@@ -99,6 +116,8 @@ export function AdminDashboard() {
         (await retentionResponse.json()) as RetentionSettings;
       const brandingData = (await brandingResponse.json()) as BrandingSettings;
       const domainsData = (await domainsResponse.json()) as DomainsSettings;
+      const homepageLockData =
+        (await homepageLockResponse.json()) as HomepageLockSettings;
       setEnabled(Boolean(data.enabled));
       setBotToken(data.botToken || '');
       setChatId(data.chatId || '');
@@ -116,6 +135,8 @@ export function AdminDashboard() {
       if (brandingData?.appName) {
         setAppName(brandingData.appName);
       }
+      setHomepageLockEnabled(Boolean(homepageLockData?.enabled));
+      setHomepageLockHasPassword(Boolean(homepageLockData?.hasPassword));
     } catch (error) {
       console.error(error);
       toast.error('Failed to load admin settings.');
@@ -211,6 +232,37 @@ export function AdminDashboard() {
       toast.error('Failed to save site name.');
     } finally {
       setBrandingSaving(false);
+    }
+  };
+
+  const saveHomepageLock = async () => {
+    if (homepageLockEnabled && !homepageLockPassword.trim() && !homepageLockHasPassword) {
+      toast.error('Masukkan password untuk mengaktifkan homepage lock.');
+      return;
+    }
+    setHomepageLockSaving(true);
+    try {
+      const response = await fetch('/api/admin/homepage-lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enabled: homepageLockEnabled,
+          password: homepageLockPassword || undefined
+        })
+      });
+      if (!response.ok) {
+        throw new Error('Unauthorized or failed to save homepage lock.');
+      }
+      const data = (await response.json()) as HomepageLockSettings;
+      setHomepageLockEnabled(Boolean(data.enabled));
+      setHomepageLockHasPassword(Boolean(data.hasPassword));
+      setHomepageLockPassword('');
+      toast.success('Homepage lock saved.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to save homepage lock.');
+    } finally {
+      setHomepageLockSaving(false);
     }
   };
 
@@ -403,6 +455,65 @@ export function AdminDashboard() {
                   placeholder={DEFAULT_APP_NAME}
                   className="mt-3 bg-black/30 text-white placeholder:text-white/40"
                 />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Homepage Private
+                  </h2>
+                  <p className="text-sm text-white/60">
+                    Kunci homepage dengan password agar hanya yang punya akses
+                    bisa membuka website.
+                  </p>
+                </div>
+                <Button
+                  variant={homepageLockEnabled ? 'default' : 'secondary'}
+                  onClick={() => setHomepageLockEnabled((prev) => !prev)}
+                >
+                  {homepageLockEnabled ? (
+                    <>
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      Aktif
+                    </>
+                  ) : (
+                    <>
+                      <ShieldOff className="mr-2 h-4 w-4" />
+                      Nonaktif
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-semibold uppercase tracking-widest text-white/60">
+                    Password Homepage
+                  </label>
+                  <Input
+                    type="password"
+                    value={homepageLockPassword}
+                    onChange={(event) => setHomepageLockPassword(event.target.value)}
+                    placeholder="Masukkan password baru"
+                    className="mt-3 bg-black/30 text-white placeholder:text-white/40"
+                  />
+                  <p className="mt-2 text-xs text-white/50">
+                    Kosongkan jika tidak ingin mengganti password.
+                  </p>
+                </div>
+                <div className="sm:col-span-2 flex justify-end">
+                  <Button
+                    onClick={saveHomepageLock}
+                    disabled={homepageLockSaving}
+                  >
+                    {homepageLockSaving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Simpan Homepage Lock'
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
 

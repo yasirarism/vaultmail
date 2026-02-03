@@ -23,13 +23,20 @@ export function AdminLogin() {
         body: JSON.stringify({ password })
       });
       if (!response.ok) {
-        throw new Error('Unauthorized');
+        const data = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        throw new Error(data?.error || 'Unauthorized');
       }
       toast.success('Login berhasil.');
       window.location.reload();
     } catch (error) {
       console.error(error);
-      toast.error('Password salah atau tidak diizinkan.');
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Password salah atau tidak diizinkan.';
+      toast.error(message);
     } finally {
       setLoading(false);
     }

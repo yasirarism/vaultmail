@@ -1,14 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Shield, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 export function HomepageLock() {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customAppName, setCustomAppName] = useState<string | null>(null);
+
+  const resolvedAppName = useMemo(
+    () => customAppName || DEFAULT_APP_NAME,
+    [customAppName]
+  );
+
+  useEffect(() => {
+    const wasAuthed = window.localStorage.getItem('vaultmail_homepage_authed');
+    if (wasAuthed) {
+      toast.error('Your session has expired, please relogin again.');
+      window.localStorage.removeItem('vaultmail_homepage_authed');
+    }
+  }, []);
+
+  useEffect(() => {
+    const loadBranding = async () => {
+      try {
+        const response = await fetch('/api/branding');
+        if (!response.ok) return;
+        const data = (await response.json()) as { appName?: string };
+        const value = data?.appName?.trim();
+        setCustomAppName(value || DEFAULT_APP_NAME);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadBranding();
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -24,13 +55,19 @@ export function HomepageLock() {
         body: JSON.stringify({ password })
       });
       if (!response.ok) {
-        throw new Error('Invalid password');
+        const data = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        throw new Error(data?.error || 'Invalid password');
       }
+      window.localStorage.setItem('vaultmail_homepage_authed', '1');
       toast.success('Akses diterima. Memuat ulang...');
       window.location.reload();
     } catch (error) {
       console.error(error);
-      toast.error('Password salah atau akses ditolak.');
+      const message =
+        error instanceof Error ? error.message : 'Password salah atau akses ditolak.';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -46,9 +83,14 @@ export function HomepageLock() {
           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
             <Shield className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Vaultmail Private</h1>
+          <h1 className="text-2xl font-bold text-white">
+            {resolvedAppName} Private
+          </h1>
           <p className="text-sm text-white/60">
-            Homepage dikunci. Masukkan password untuk mengakses inbox.
+            Homepage dikunci. Hubungi owner untuk mendapatkan akses website.
+          </p>
+          <p className="text-xs text-white/50">
+            Masukkan password jika sudah diberikan akses.
           </p>
         </div>
 

@@ -1,12 +1,27 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import crypto from 'crypto';
-
-const COOKIE_NAME = 'vaultmail_homepage_auth';
+import {
+  getHomepageLockSettings,
+  hashHomepagePassword,
+  HOMEPAGE_LOCK_COOKIE
+} from '@/lib/homepage-lock';
+import {
+  checkRateLimit,
+  registerRateLimitFailure,
+  resetRateLimit
+} from '@/lib/auth-rate-limit';
 
 export async function POST(req: Request) {
-  const homepagePassword = process.env.HOMEPAGE_PASSWORD?.trim();
-  if (!homepagePassword) {
+  const rateLimit = await checkRateLimit(req, 'homepage-lock');
+  if (rateLimit.blocked) {
+    return NextResponse.json(
+      { error: 'Terlalu banyak percobaan. Coba lagi dalam 5 menit.' },
+      { status: 429 }
+    );
+  }
+
+  const settings = await getHomepageLockSettings();
+  if (!settings.enabled || !settings.passwordHash) {
     return NextResponse.json(
       { error: 'Homepage lock is not enabled.' },
       { status: 400 }
@@ -20,22 +35,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Password is required.' }, { status: 400 });
   }
 
-  const expectedHash = crypto
-    .createHash('sha256')
-    .update(homepagePassword)
-    .digest('hex');
-  const providedHash = crypto.createHash('sha256').update(provided).digest('hex');
+  const expectedHash = settings.passwordHash;
+  const providedHash = hashHomepagePassword(provided);
 
   if (expectedHash !== providedHash) {
+    const failure = await registerRateLimitFailure(req, 'homepage-lock');
+    if (failure.blocked) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak percobaan. Coba lagi dalam 5 menit.' },
+        { status: 429 }
+      );
+    }
     return NextResponse.json({ error: 'Invalid password.' }, { status: 401 });
   }
 
+  await resetRateLimit(req, 'homepage-lock');
+
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, expectedHash, {
+  cookieStore.set(HOMEPAGE_LOCK_COOKIE, expectedHash, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: 60 * 60,
     path: '/'
   });
 
