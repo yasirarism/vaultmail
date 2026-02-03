@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Globe, Menu, Shield, Wrench, KeyRound, Code2 } from 'lucide-react';
+import { Code2, Globe, KeyRound, Menu, Shield, Wrench } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,12 +10,73 @@ import { getTranslations } from '@/lib/i18n';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 const STORAGE_KEY = 'vaultmail_locale';
-const DEFAULT_TOTP_SECRET = 'FRN7276QJFZOQ7OFI2UIVUVQQ6V3QRIL';
+const TOTP_STEP_SECONDS = 30;
+const TOTP_DIGITS = 6;
 
-export function ToolsPage() {
+const base32Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+const base32ToBytes = (value: string) => {
+  const cleaned = value.toUpperCase().replace(/=+$/, '').replace(/[^A-Z2-7]/g, '');
+  let buffer = 0;
+  let bits = 0;
+  const bytes: number[] = [];
+
+  for (const char of cleaned) {
+    const index = base32Alphabet.indexOf(char);
+    if (index === -1) continue;
+    buffer = (buffer << 5) | index;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((buffer >> bits) & 0xff);
+    }
+  }
+
+  return new Uint8Array(bytes);
+};
+
+const formatTotp = (value: number, digits: number) =>
+  value.toString().padStart(digits, '0');
+
+const generateTotp = async (secret: string, timestamp: number) => {
+  if (!secret.trim()) return '';
+  const keyData = base32ToBytes(secret);
+  if (!keyData.length) return '';
+  const counter = Math.floor(timestamp / 1000 / TOTP_STEP_SECONDS);
+  const buffer = new ArrayBuffer(8);
+  const view = new DataView(buffer);
+  view.setUint32(4, counter);
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-1' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, buffer);
+  const bytes = new Uint8Array(signature);
+  const offset = bytes[bytes.length - 1] & 0x0f;
+  const binary =
+    ((bytes[offset] & 0x7f) << 24) |
+    ((bytes[offset + 1] & 0xff) << 16) |
+    ((bytes[offset + 2] & 0xff) << 8) |
+    (bytes[offset + 3] & 0xff);
+  const otp = binary % 10 ** TOTP_DIGITS;
+  return formatTotp(otp, TOTP_DIGITS);
+};
+
+interface TwoFactorPageProps {
+  initialSecret?: string;
+}
+
+export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [locale, setLocale] = useState<'en' | 'id'>('en');
   const [customAppName, setCustomAppName] = useState<string | null>(null);
+  const [totpSecret, setTotpSecret] = useState(initialSecret);
+  const [totpCode, setTotpCode] = useState('');
+  const [totpError, setTotpError] = useState('');
+  const [remainingSeconds, setRemainingSeconds] = useState(TOTP_STEP_SECONDS);
 
   useEffect(() => {
     const storedLocale = localStorage.getItem(STORAGE_KEY);
@@ -27,6 +88,44 @@ export function ToolsPage() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, locale);
   }, [locale]);
+
+  useEffect(() => {
+    setTotpSecret(initialSecret);
+  }, [initialSecret]);
+
+  useEffect(() => {
+    let isActive = true;
+    let timer: ReturnType<typeof setInterval>;
+
+    const updateCode = async () => {
+      const now = Date.now();
+      const secondsRemaining =
+        TOTP_STEP_SECONDS - (Math.floor(now / 1000) % TOTP_STEP_SECONDS);
+      if (isActive) {
+        setRemainingSeconds(secondsRemaining);
+      }
+      try {
+        const code = await generateTotp(totpSecret, now);
+        if (isActive) {
+          setTotpCode(code);
+          setTotpError(code ? '' : 'Invalid secret');
+        }
+      } catch (error) {
+        if (isActive) {
+          setTotpCode('');
+          setTotpError('Failed to generate code');
+        }
+      }
+    };
+
+    updateCode();
+    timer = setInterval(updateCode, 1000);
+
+    return () => {
+      isActive = false;
+      clearInterval(timer);
+    };
+  }, [totpSecret]);
 
   const t = useMemo(() => getTranslations(locale), [locale]);
   const resolvedAppName = customAppName || t.appName;
@@ -136,46 +235,58 @@ export function ToolsPage() {
         </div>
       </header>
 
-      <section className="max-w-6xl mx-auto px-4 py-16 w-full">
-        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-3">
+      <section className="max-w-5xl mx-auto px-4 py-16 w-full">
+        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8 space-y-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
               <div className="flex items-center gap-2 text-white">
-                <Wrench className="h-5 w-5 text-orange-300" />
-                <h1 className="text-2xl font-semibold">{t.toolsTitle}</h1>
+                <KeyRound className="h-5 w-5 text-orange-300" />
+                <h1 className="text-2xl font-semibold">{t.toolsTwoFaTitle}</h1>
               </div>
               <p className="text-muted-foreground max-w-2xl">
-                {t.toolsSubtitle}
+                {t.toolsTwoFaDesc}
               </p>
             </div>
             <span className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white">
-              {t.toolsTitle}
+              {remainingSeconds}s
             </span>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+
+          <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
             <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <KeyRound className="h-4 w-4 text-orange-200" />
-                <p className="text-sm font-semibold">{t.toolsTwoFaTitle}</p>
-              </div>
+              <label className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+                {t.twoFaSecretLabel}
+              </label>
+              <input
+                value={totpSecret}
+                onChange={(event) => setTotpSecret(event.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition focus:border-blue-400/60"
+                placeholder={t.twoFaSecretPlaceholder}
+              />
               <p className="text-xs text-muted-foreground">
-                {t.toolsTwoFaDesc}
+                {t.twoFaSecretHint}
               </p>
-              <Link
-                href={`/2fa-gen?key=${DEFAULT_TOTP_SECRET}`}
-                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
-              >
-                {t.toolsTwoFaCta}
-              </Link>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.menuTools}
+                {t.twoFaCodeLabel}
               </p>
-              <p className="mt-3 text-sm text-white/80">
-                {t.toolsSubtitle}
+              <p className="text-3xl font-bold text-white tracking-[0.3em]">
+                {totpCode || '------'}
+              </p>
+              <p className="text-xs text-white/60">
+                {totpError ? t.twoFaInvalid : t.twoFaCountdown.replace('{seconds}', `${remainingSeconds}`)}
               </p>
             </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
+            <span>{t.twoFaNotice}</span>
+            <Link
+              href="/tools"
+              className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-white/80 transition hover:bg-white/10"
+            >
+              {t.menuTools}
+            </Link>
           </div>
         </div>
       </section>

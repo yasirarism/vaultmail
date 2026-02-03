@@ -103,6 +103,13 @@ const translations = {
     toolsTwoFaDesc:
       'Generate one-time codes for your accounts without leaving VaultMail.',
     toolsTwoFaCta: 'Open generator',
+    twoFaSecretLabel: 'Secret key',
+    twoFaSecretPlaceholder: 'Enter your 2FA secret...',
+    twoFaSecretHint: 'Supports Base32 secrets from your authenticator setup.',
+    twoFaCodeLabel: 'One-time code',
+    twoFaCountdown: 'Refreshes in {seconds}s',
+    twoFaInvalid: 'Invalid secret',
+    twoFaNotice: 'Keep your secret private. Codes update every 30 seconds.',
   },
   id: {
     appName: 'YS Mail',
@@ -197,6 +204,13 @@ const translations = {
     toolsTwoFaDesc:
       'Buat kode sekali pakai untuk akun Anda tanpa keluar dari VaultMail.',
     toolsTwoFaCta: 'Buka generator',
+    twoFaSecretLabel: 'Kunci rahasia',
+    twoFaSecretPlaceholder: 'Masukkan secret 2FA Anda...',
+    twoFaSecretHint: 'Mendukung secret Base32 dari setup autentikator.',
+    twoFaCodeLabel: 'Kode sekali pakai',
+    twoFaCountdown: 'Refresh dalam {seconds} dtk',
+    twoFaInvalid: 'Secret tidak valid',
+    twoFaNotice: 'Jaga secret tetap aman. Kode berubah tiap 30 detik.',
   },
 } as const;
 
