@@ -290,7 +290,7 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
+          <div className="grid gap-4 md:grid-cols-[1.3fr_1fr_0.9fr]">
             <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
               <label className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
                 {t.twoFaSecretLabel}
@@ -338,22 +338,22 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
                   : t.twoFaCountdown.replace('{seconds}', `${remainingSeconds}`)}
               </p>
             </div>
-          </div>
-          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-              {t.twoFaQrLabel}
-            </p>
-            {qrCodeDataUrl ? (
-              <img
-                src={qrCodeDataUrl}
-                alt={t.twoFaQrLabel}
-                className="h-40 w-40 rounded-lg border border-white/10 bg-white/5 p-2"
-              />
-            ) : (
-              <div className="h-40 w-40 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center text-xs text-white/50">
-                {t.twoFaQrEmpty}
-              </div>
-            )}
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+                {t.twoFaQrLabel}
+              </p>
+              {qrCodeDataUrl ? (
+                <img
+                  src={qrCodeDataUrl}
+                  alt={t.twoFaQrLabel}
+                  className="h-32 w-32 rounded-lg border border-white/10 bg-white/5 p-2"
+                />
+              ) : (
+                <div className="h-32 w-32 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center text-xs text-white/50">
+                  {t.twoFaQrEmpty}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
             <span>{t.twoFaNotice}</span>

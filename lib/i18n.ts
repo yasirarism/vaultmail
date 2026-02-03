@@ -101,7 +101,7 @@ const translations = {
     toolsSubtitle: 'Useful utilities to keep your inbox workflow secure.',
     toolsTwoFaTitle: '2FA Code Generator',
     toolsTwoFaDesc:
-      'Generate one-time codes for your accounts without leaving VaultMail.',
+      'Generate one-time codes for your accounts without leaving the app.',
     toolsTwoFaCta: 'Open generator',
     twoFaSecretLabel: 'Secret key',
     twoFaSecretPlaceholder: 'Enter your 2FA secret...',
@@ -206,7 +206,7 @@ const translations = {
     toolsSubtitle: 'Utility yang membantu menjaga workflow inbox tetap aman.',
     toolsTwoFaTitle: 'Generator Kode 2FA',
     toolsTwoFaDesc:
-      'Buat kode sekali pakai untuk akun Anda tanpa keluar dari VaultMail.',
+      'Buat kode sekali pakai untuk akun Anda tanpa keluar dari aplikasi.',
     toolsTwoFaCta: 'Buka generator',
     twoFaSecretLabel: 'Kunci rahasia',
     twoFaSecretPlaceholder: 'Masukkan secret 2FA Anda...',
