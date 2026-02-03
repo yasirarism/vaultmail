@@ -19,9 +19,10 @@ export function RefundCalculatorPage() {
   const [locale, setLocale] = useState<'en' | 'id'>('en');
   const [customAppName, setCustomAppName] = useState<string | null>(null);
   const [purchasePrice, setPurchasePrice] = useState('0');
-  const [remainingDays, setRemainingDays] = useState('0');
+  const [purchaseDate, setPurchaseDate] = useState('');
+  const [issueDate, setIssueDate] = useState('');
   const [totalDays, setTotalDays] = useState('30');
-  const [refundRate, setRefundRate] = useState('100');
+  const [refundRate, setRefundRate] = useState(0.7);
 
   useEffect(() => {
     const storedLocale = localStorage.getItem(STORAGE_KEY);
@@ -55,12 +56,29 @@ export function RefundCalculatorPage() {
 
   const priceValue = Math.max(Number(purchasePrice) || 0, 0);
   const totalValue = Math.max(Number(totalDays) || 0, 0);
-  const remainingValue = clamp(Number(remainingDays) || 0, 0, totalValue || 0);
-  const rateValue = clamp(Number(refundRate) || 0, 0, 100);
+  const resolvedPurchaseDate = purchaseDate ? new Date(purchaseDate) : null;
+  const resolvedIssueDate = issueDate ? new Date(issueDate) : null;
+  const elapsedDays =
+    resolvedPurchaseDate && resolvedIssueDate
+      ? Math.max(
+          0,
+          Math.ceil(
+            (resolvedIssueDate.getTime() - resolvedPurchaseDate.getTime()) /
+              (1000 * 60 * 60 * 24)
+          )
+        )
+      : 0;
+  const remainingValue = clamp(totalValue - elapsedDays, 0, totalValue || 0);
+  const rateValue = clamp(refundRate, 0.5, 1);
   const usageRatio = totalValue > 0 ? remainingValue / totalValue : 0;
-  const refundAmount = priceValue * usageRatio * (rateValue / 100);
+  const refundAmount = priceValue * usageRatio * rateValue;
   const refundPercentage = priceValue > 0 ? (refundAmount / priceValue) * 100 : 0;
   const retainedAmount = Math.max(priceValue - refundAmount, 0);
+  const formatCurrency = new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  });
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
@@ -177,15 +195,24 @@ export function RefundCalculatorPage() {
             </div>
             <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
               <label className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.refundRemainingLabel}
+                {t.refundPurchaseDateLabel}
               </label>
-              <Input
-                value={remainingDays}
-                onChange={(event) => setRemainingDays(event.target.value)}
-                type="number"
-                min="0"
-                className="bg-black/40 border-white/10 text-sm"
-                placeholder="0"
+              <input
+                type="date"
+                value={purchaseDate}
+                onChange={(event) => setPurchaseDate(event.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white"
+              />
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <label className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+                {t.refundIssueDateLabel}
+              </label>
+              <input
+                type="date"
+                value={issueDate}
+                onChange={(event) => setIssueDate(event.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white"
               />
             </div>
             <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
@@ -201,19 +228,26 @@ export function RefundCalculatorPage() {
                 placeholder="30"
               />
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
-              <label className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.refundRateLabel}
-              </label>
-              <Input
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3 md:col-span-2">
+              <div className="flex items-center justify-between text-xs text-white/60">
+                <label className="font-semibold uppercase tracking-[0.2em] text-white/50">
+                  {t.refundRateLabel}
+                </label>
+                <span>{rateValue.toFixed(2)}</span>
+              </div>
+              <input
+                type="range"
+                min="0.5"
+                max="1"
+                step="0.01"
                 value={refundRate}
-                onChange={(event) => setRefundRate(event.target.value)}
-                type="number"
-                min="0"
-                max="100"
-                className="bg-black/40 border-white/10 text-sm"
-                placeholder="100"
+                onChange={(event) => setRefundRate(Number(event.target.value))}
+                className="w-full accent-emerald-400"
               />
+              <div className="flex items-center justify-between text-[10px] text-white/50">
+                <span>0.50</span>
+                <span>1.00</span>
+              </div>
             </div>
           </div>
 
@@ -223,29 +257,39 @@ export function RefundCalculatorPage() {
                 <CalendarClock className="h-4 w-4 text-blue-200" />
                 <span>{t.refundPreviewTitle}</span>
               </div>
-              <span>{t.refundPreviewRate.replace('{rate}', `${rateValue}`)}</span>
+              <span>{t.refundPreviewRate.replace('{rate}', `${rateValue.toFixed(2)}`)}</span>
             </div>
-            <div className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
-              <div className="space-y-3">
-                <div className="h-3 w-full rounded-full bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-400"
-                    style={{ width: `${refundPercentage}%` }}
-                  />
+            <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
+              <div className="flex flex-col items-center justify-center gap-3">
+                <div
+                  className="h-32 w-32 rounded-full border border-white/10 bg-white/5 flex items-center justify-center"
+                  style={{
+                    background: `conic-gradient(#34d399 ${refundPercentage}%, rgba(255,255,255,0.1) 0)`,
+                  }}
+                >
+                  <div className="h-24 w-24 rounded-full bg-slate-950/80 flex flex-col items-center justify-center text-center">
+                    <span className="text-xs text-white/60">{t.refundRefundLabel}</span>
+                    <span className="text-lg font-semibold text-white">
+                      {refundPercentage.toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-xs text-white/60">
-                  <span>{t.refundRefundLabel}</span>
-                  <span>{refundPercentage.toFixed(1)}%</span>
+                <div className="text-xs text-white/60">
+                  {t.refundRemainingDays.replace('{days}', `${remainingValue}`)}
                 </div>
               </div>
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-1 text-sm text-white/80">
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-2 text-sm text-white/80">
                 <div className="flex items-center justify-between">
                   <span>{t.refundAmountLabel}</span>
-                  <span>{refundAmount.toFixed(2)}</span>
+                  <span>{formatCurrency.format(refundAmount)}</span>
                 </div>
                 <div className="flex items-center justify-between text-white/60 text-xs">
                   <span>{t.refundRetainedLabel}</span>
-                  <span>{retainedAmount.toFixed(2)}</span>
+                  <span>{formatCurrency.format(retainedAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between text-white/60 text-xs">
+                  <span>{t.refundElapsedLabel}</span>
+                  <span>{elapsedDays}</span>
                 </div>
               </div>
             </div>
