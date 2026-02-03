@@ -27,9 +27,23 @@ const isAuthorized = async () => {
   return isAdminSessionValid(sessionToken);
 };
 
+const ensureMongoAvailable = () => {
+  if (!process.env.MONGODB_URI) {
+    return NextResponse.json(
+      { error: 'MONGODB_URI is not set. Configure MongoDB to use homepage lock.' },
+      { status: 500 }
+    );
+  }
+  return null;
+};
+
 export async function GET() {
   if (!(await isAuthorized())) {
     return new NextResponse('Unauthorized', { status: 401 });
+  }
+  const mongoGuard = ensureMongoAvailable();
+  if (mongoGuard) {
+    return mongoGuard;
   }
 
   const settings = await getHomepageLockSettings();
@@ -44,6 +58,10 @@ export async function GET() {
 export async function POST(request: Request) {
   if (!(await isAuthorized())) {
     return new NextResponse('Unauthorized', { status: 401 });
+  }
+  const mongoGuard = ensureMongoAvailable();
+  if (mongoGuard) {
+    return mongoGuard;
   }
 
   const body = (await request.json()) as HomepageLockSettingsPayload;

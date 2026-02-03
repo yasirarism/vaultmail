@@ -52,10 +52,13 @@ export async function POST(req: Request) {
   await resetRateLimit(req, 'homepage-lock');
 
   const cookieStore = await cookies();
+  const forwardedProto = req.headers.get('x-forwarded-proto');
+  const isHttps =
+    forwardedProto === 'https' || new URL(req.url).protocol === 'https:';
   cookieStore.set(HOMEPAGE_LOCK_COOKIE, expectedHash, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: isHttps,
     maxAge: 60 * 60,
     path: '/'
   });
