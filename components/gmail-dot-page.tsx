@@ -2,19 +2,49 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Code2, Globe, Menu, Shield, Wrench } from 'lucide-react';
+import { Code2, Copy, Globe, MailPlus, Menu, Shield, Wrench } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getTranslations } from '@/lib/i18n';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 const STORAGE_KEY = 'vaultmail_locale';
+const MAX_VARIANTS = 128;
 
-export function ApiAccessPage() {
+const normalizeLocalPart = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/@gmail\.com|@googlemail\.com/gi, '')
+    .replace(/\./g, '')
+    .replace(/[^a-z0-9]/g, '');
+
+const buildVariants = (localPart: string) => {
+  if (localPart.length <= 1) return [localPart];
+  const positions = localPart.length - 1;
+  const total = 2 ** positions;
+  const variants: string[] = [];
+  for (let mask = 0; mask < total; mask += 1) {
+    let result = '';
+    for (let i = 0; i < localPart.length; i += 1) {
+      result += localPart[i];
+      if (i < localPart.length - 1 && (mask & (1 << i))) {
+        result += '.';
+      }
+    }
+    variants.push(result);
+    if (variants.length >= MAX_VARIANTS) break;
+  }
+  return variants;
+};
+
+export function GmailDotPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [locale, setLocale] = useState<'en' | 'id'>('en');
   const [customAppName, setCustomAppName] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState('');
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const storedLocale = localStorage.getItem(STORAGE_KEY);
@@ -45,6 +75,19 @@ export function ApiAccessPage() {
 
     loadBranding();
   }, []);
+
+  const localPart = useMemo(() => normalizeLocalPart(inputValue), [inputValue]);
+  const variants = useMemo(() => buildVariants(localPart), [localPart]);
+
+  const handleCopy = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyStatus(value);
+      setTimeout(() => setCopyStatus(null), 1200);
+    } catch (error) {
+      setCopyStatus(null);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
@@ -135,49 +178,63 @@ export function ApiAccessPage() {
         </div>
       </header>
 
-      <section className="max-w-6xl mx-auto px-4 py-16 w-full">
-        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <Code2 className="h-5 w-5 text-blue-300" />
-                <h1 className="text-2xl font-semibold">{t.apiAccessTitle}</h1>
-              </div>
-              <p className="text-muted-foreground max-w-2xl">
-                {t.apiAccessSubtitle}
-              </p>
+      <section className="max-w-5xl mx-auto px-4 py-16 w-full">
+        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8 space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-white">
+              <MailPlus className="h-5 w-5 text-blue-300" />
+              <h1 className="text-2xl font-semibold">{t.gmailDotTitle}</h1>
             </div>
-            <Link
-              href="https://github.com/yasirarism"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              {t.apiAccessCta}
-            </Link>
+            <p className="text-muted-foreground max-w-2xl">{t.gmailDotSubtitle}</p>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.apiAccessEndpointsTitle}
-              </p>
-              <ul className="mt-3 space-y-2 text-xs font-mono text-blue-100">
-                <li>GET /api/inbox?address=nama@domain.com</li>
-                <li>GET /api/download?address=nama@domain.com&amp;emailId=uuid&amp;type=email</li>
-                <li>GET /api/retention</li>
-              </ul>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.apiAccessWebhookTitle}
-              </p>
-              <p className="mt-3 text-sm text-white/80">
-                POST /api/webhook
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {t.apiAccessWebhookHint}
-              </p>
-            </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+            <label className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+              {t.gmailDotInputLabel}
+            </label>
+            <Input
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+              placeholder={t.gmailDotInputPlaceholder}
+              className="bg-black/40 border-white/10 text-sm"
+            />
+            <p className="text-xs text-white/60">
+              {t.gmailDotHint.replace('{count}', `${variants.length}`)}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+              {t.gmailDotResultsLabel}
+            </p>
+            {localPart ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {variants.map((variant) => {
+                  const full = `${variant}@gmail.com`;
+                  return (
+                    <div
+                      key={full}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      <span className="font-mono text-xs text-white/80 truncate">{full}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(full)}
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 text-[10px] font-semibold',
+                          copyStatus === full ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70'
+                        )}
+                      >
+                        <Copy className="h-3 w-3" />
+                        {copyStatus === full ? t.gmailDotCopied : t.gmailDotCopy}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-white/50">{t.gmailDotEmpty}</p>
+            )}
           </div>
         </div>
       </section>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Code2, Globe, Menu, Shield, Wrench } from 'lucide-react';
+import { Calendar, Globe, KeyRound, MailPlus, Menu, Shield, Wrench, Binary, Coins, Key } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,8 +10,9 @@ import { getTranslations } from '@/lib/i18n';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 const STORAGE_KEY = 'vaultmail_locale';
+const DEFAULT_TOTP_SECRET = 'FRN7276QJFZOQ7OFI2UIVUVQQ6V3QRIL';
 
-export function ApiAccessPage() {
+export function ToolsPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [locale, setLocale] = useState<'en' | 'id'>('en');
   const [customAppName, setCustomAppName] = useState<string | null>(null);
@@ -105,7 +106,7 @@ export function ApiAccessPage() {
                         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
                         onClick={() => setShowMenu(false)}
                       >
-                        <Code2 className="h-4 w-4 text-blue-300" />
+                        <Binary className="h-4 w-4 text-blue-300" />
                         {t.menuApiAccess}
                       </Link>
                       <Link
@@ -140,42 +141,114 @@ export function ApiAccessPage() {
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-white">
-                <Code2 className="h-5 w-5 text-blue-300" />
-                <h1 className="text-2xl font-semibold">{t.apiAccessTitle}</h1>
+                <Wrench className="h-5 w-5 text-orange-300" />
+                <h1 className="text-2xl font-semibold">{t.toolsTitle}</h1>
               </div>
               <p className="text-muted-foreground max-w-2xl">
-                {t.apiAccessSubtitle}
+                {t.toolsSubtitle}
               </p>
             </div>
-            <Link
-              href="https://github.com/yasirarism"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              {t.apiAccessCta}
-            </Link>
+            <span className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white">
+              {t.toolsTitle}
+            </span>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.apiAccessEndpointsTitle}
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-white">
+                <KeyRound className="h-4 w-4 text-orange-200" />
+                <p className="text-sm font-semibold">{t.toolsTwoFaTitle}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t.toolsTwoFaDesc}
               </p>
-              <ul className="mt-3 space-y-2 text-xs font-mono text-blue-100">
-                <li>GET /api/inbox?address=nama@domain.com</li>
-                <li>GET /api/download?address=nama@domain.com&amp;emailId=uuid&amp;type=email</li>
-                <li>GET /api/retention</li>
-              </ul>
+              <Link
+                href={`/2fa-gen?key=${DEFAULT_TOTP_SECRET}`}
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+              >
+                {t.toolsTwoFaCta}
+              </Link>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-white">
+                <MailPlus className="h-4 w-4 text-blue-200" />
+                <p className="text-sm font-semibold">{t.toolsGmailDotTitle}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t.toolsGmailDotDesc}
+              </p>
+              <Link
+                href="/gmail-dot"
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+              >
+                {t.toolsGmailDotCta}
+              </Link>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-white">
+                <Coins className="h-4 w-4 text-emerald-200" />
+                <p className="text-sm font-semibold">{t.toolsRefundTitle}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t.toolsRefundDesc}
+              </p>
+              <Link
+                href="/refund-calculator"
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+              >
+                {t.toolsRefundCta}
+              </Link>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-white">
+                <Key className="h-4 w-4 text-purple-200" />
+                <p className="text-sm font-semibold">{t.toolsTokenTitle}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t.toolsTokenDesc}
+              </p>
+              <Link
+                href="/token-generator"
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+              >
+                {t.toolsTokenCta}
+              </Link>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-white">
+                <Calendar className="h-4 w-4 text-blue-200" />
+                <p className="text-sm font-semibold">{t.toolsDayCounterTitle}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t.toolsDayCounterDesc}
+              </p>
+              <Link
+                href="/day-counter"
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+              >
+                {t.toolsDayCounterCta}
+              </Link>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-white">
+                <Binary className="h-4 w-4 text-orange-200" />
+                <p className="text-sm font-semibold">{t.toolsUrlCodecTitle}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t.toolsUrlCodecDesc}
+              </p>
+              <Link
+                href="/url-codec"
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+              >
+                {t.toolsUrlCodecCta}
+              </Link>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/40 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.apiAccessWebhookTitle}
+                {t.menuTools}
               </p>
               <p className="mt-3 text-sm text-white/80">
-                POST /api/webhook
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {t.apiAccessWebhookHint}
+                {t.toolsSubtitle}
               </p>
             </div>
           </div>

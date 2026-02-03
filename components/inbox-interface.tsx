@@ -330,6 +330,15 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     }
   }, [domain, savedDomains]);
 
+  useEffect(() => {
+    if (!address) return;
+    const [localPart, currentDomain] = address.split('@');
+    if (!localPart || currentDomain === domain) return;
+    const nextAddress = `${localPart}@${domain}`;
+    setAddress(nextAddress);
+    localStorage.setItem('dispo_address', nextAddress);
+  }, [address, domain]);
+
   // Sync Address to URL (without reloading)
   useEffect(() => {
       if (address && address.includes('@')) {

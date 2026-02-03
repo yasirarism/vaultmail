@@ -11,10 +11,13 @@ import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 const STORAGE_KEY = 'vaultmail_locale';
 
-export function ApiAccessPage() {
+export function UrlCodecPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [locale, setLocale] = useState<'en' | 'id'>('en');
   const [customAppName, setCustomAppName] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState('');
+  const [outputValue, setOutputValue] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const storedLocale = localStorage.getItem(STORAGE_KEY);
@@ -45,6 +48,22 @@ export function ApiAccessPage() {
 
     loadBranding();
   }, []);
+
+  const handleEncode = () => {
+    setError('');
+    setOutputValue(encodeURIComponent(inputValue));
+  };
+
+  const handleDecode = () => {
+    try {
+      const decoded = decodeURIComponent(inputValue);
+      setOutputValue(decoded);
+      setError('');
+    } catch {
+      setError(t.urlCodecInvalid);
+      setOutputValue('');
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
@@ -135,49 +154,44 @@ export function ApiAccessPage() {
         </div>
       </header>
 
-      <section className="max-w-6xl mx-auto px-4 py-16 w-full">
-        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <Code2 className="h-5 w-5 text-blue-300" />
-                <h1 className="text-2xl font-semibold">{t.apiAccessTitle}</h1>
-              </div>
-              <p className="text-muted-foreground max-w-2xl">
-                {t.apiAccessSubtitle}
-              </p>
+      <section className="max-w-4xl mx-auto px-4 py-16 w-full">
+        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8 space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-white">
+              <Code2 className="h-5 w-5 text-blue-300" />
+              <h1 className="text-2xl font-semibold">{t.urlCodecTitle}</h1>
             </div>
-            <Link
-              href="https://github.com/yasirarism"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              {t.apiAccessCta}
-            </Link>
+            <p className="text-muted-foreground max-w-2xl">{t.urlCodecSubtitle}</p>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.apiAccessEndpointsTitle}
-              </p>
-              <ul className="mt-3 space-y-2 text-xs font-mono text-blue-100">
-                <li>GET /api/inbox?address=nama@domain.com</li>
-                <li>GET /api/download?address=nama@domain.com&amp;emailId=uuid&amp;type=email</li>
-                <li>GET /api/retention</li>
-              </ul>
+
+          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+            <label className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+              {t.urlCodecInputLabel}
+            </label>
+            <textarea
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+              placeholder={t.urlCodecInputPlaceholder}
+              className="w-full min-h-[120px] rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white"
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleEncode}>{t.urlCodecEncode}</Button>
+              <Button variant="secondary" onClick={handleDecode}>
+                {t.urlCodecDecode}
+              </Button>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.apiAccessWebhookTitle}
-              </p>
-              <p className="mt-3 text-sm text-white/80">
-                POST /api/webhook
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {t.apiAccessWebhookHint}
-              </p>
-            </div>
+            {error && <p className="text-xs text-red-300">{error}</p>}
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+              {t.urlCodecResultLabel}
+            </p>
+            <textarea
+              value={outputValue}
+              readOnly
+              className="w-full min-h-[120px] rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white"
+            />
           </div>
         </div>
       </section>
