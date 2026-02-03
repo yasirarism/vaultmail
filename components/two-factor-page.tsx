@@ -338,7 +338,7 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
                   : t.twoFaCountdown.replace('{seconds}', `${remainingSeconds}`)}
               </p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3 flex flex-col items-center text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
                 {t.twoFaQrLabel}
               </p>

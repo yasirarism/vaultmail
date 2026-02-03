@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Globe, Menu, Shield, Wrench, KeyRound, Code2 } from 'lucide-react';
+import { Globe, Menu, Shield, Wrench, KeyRound, Code2, Link as LinkIcon, MailPlus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -152,7 +152,7 @@ export function ToolsPage() {
               {t.toolsTitle}
             </span>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
               <div className="flex items-center gap-2 text-white">
                 <KeyRound className="h-4 w-4 text-orange-200" />
@@ -167,6 +167,36 @@ export function ToolsPage() {
               >
                 {t.toolsTwoFaCta}
               </Link>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-white">
+                <MailPlus className="h-4 w-4 text-blue-200" />
+                <p className="text-sm font-semibold">{t.toolsGmailDotTitle}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t.toolsGmailDotDesc}
+              </p>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/60"
+              >
+                {t.toolsGmailDotCta}
+              </button>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-white">
+                <LinkIcon className="h-4 w-4 text-purple-200" />
+                <p className="text-sm font-semibold">{t.toolsShortenerTitle}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t.toolsShortenerDesc}
+              </p>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/60"
+              >
+                {t.toolsShortenerCta}
+              </button>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/40 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
