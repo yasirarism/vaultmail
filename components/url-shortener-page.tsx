@@ -2,20 +2,33 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Globe, Menu, Shield, Wrench, KeyRound, Code2, Link as LinkIcon, MailPlus } from 'lucide-react';
+import { Code2, Copy, Globe, Link as LinkIcon, Menu, Shield, Wrench } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getTranslations } from '@/lib/i18n';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 const STORAGE_KEY = 'vaultmail_locale';
-const DEFAULT_TOTP_SECRET = 'FRN7276QJFZOQ7OFI2UIVUVQQ6V3QRIL';
 
-export function ToolsPage() {
+const slugAlphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+const generateSlug = (length = 6) => {
+  let result = '';
+  for (let i = 0; i < length; i += 1) {
+    result += slugAlphabet[Math.floor(Math.random() * slugAlphabet.length)];
+  }
+  return result;
+};
+
+export function UrlShortenerPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [locale, setLocale] = useState<'en' | 'id'>('en');
   const [customAppName, setCustomAppName] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState('');
+  const [shortUrl, setShortUrl] = useState('');
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
 
   useEffect(() => {
     const storedLocale = localStorage.getItem(STORAGE_KEY);
@@ -46,6 +59,24 @@ export function ToolsPage() {
 
     loadBranding();
   }, []);
+
+  const handleGenerate = () => {
+    if (!inputValue.trim()) return;
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://short.local';
+    setShortUrl(`${origin}/s/${generateSlug()}`);
+    setCopyStatus('idle');
+  };
+
+  const handleCopy = async () => {
+    if (!shortUrl) return;
+    try {
+      await navigator.clipboard.writeText(shortUrl);
+      setCopyStatus('copied');
+      setTimeout(() => setCopyStatus('idle'), 1200);
+    } catch (error) {
+      setCopyStatus('idle');
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
@@ -136,76 +167,56 @@ export function ToolsPage() {
         </div>
       </header>
 
-      <section className="max-w-6xl mx-auto px-4 py-16 w-full">
-        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <Wrench className="h-5 w-5 text-orange-300" />
-                <h1 className="text-2xl font-semibold">{t.toolsTitle}</h1>
-              </div>
-              <p className="text-muted-foreground max-w-2xl">
-                {t.toolsSubtitle}
-              </p>
+      <section className="max-w-4xl mx-auto px-4 py-16 w-full">
+        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8 space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-white">
+              <LinkIcon className="h-5 w-5 text-purple-300" />
+              <h1 className="text-2xl font-semibold">{t.shortenerTitle}</h1>
             </div>
-            <span className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white">
-              {t.toolsTitle}
-            </span>
+            <p className="text-muted-foreground max-w-2xl">{t.shortenerSubtitle}</p>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <KeyRound className="h-4 w-4 text-orange-200" />
-                <p className="text-sm font-semibold">{t.toolsTwoFaTitle}</p>
+
+          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+            <label className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+              {t.shortenerInputLabel}
+            </label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                value={inputValue}
+                onChange={(event) => setInputValue(event.target.value)}
+                placeholder={t.shortenerInputPlaceholder}
+                className="bg-black/40 border-white/10 text-sm flex-1"
+              />
+              <Button onClick={handleGenerate} className="h-10">
+                {t.shortenerGenerate}
+              </Button>
+            </div>
+            <p className="text-xs text-white/60">{t.shortenerHint}</p>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+              {t.shortenerResultLabel}
+            </p>
+            {shortUrl ? (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                <span className="font-mono text-xs text-white/80">{shortUrl}</span>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 text-[10px] font-semibold',
+                    copyStatus === 'copied' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70'
+                  )}
+                >
+                  <Copy className="h-3 w-3" />
+                  {copyStatus === 'copied' ? t.shortenerCopied : t.shortenerCopy}
+                </button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {t.toolsTwoFaDesc}
-              </p>
-              <Link
-                href={`/2fa-gen?key=${DEFAULT_TOTP_SECRET}`}
-                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
-              >
-                {t.toolsTwoFaCta}
-              </Link>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <MailPlus className="h-4 w-4 text-blue-200" />
-                <p className="text-sm font-semibold">{t.toolsGmailDotTitle}</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t.toolsGmailDotDesc}
-              </p>
-              <Link
-                href="/gmail-dot"
-                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
-              >
-                {t.toolsGmailDotCta}
-              </Link>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <LinkIcon className="h-4 w-4 text-purple-200" />
-                <p className="text-sm font-semibold">{t.toolsShortenerTitle}</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t.toolsShortenerDesc}
-              </p>
-              <Link
-                href="/url-shortener"
-                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
-              >
-                {t.toolsShortenerCta}
-              </Link>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.menuTools}
-              </p>
-              <p className="mt-3 text-sm text-white/80">
-                {t.toolsSubtitle}
-              </p>
-            </div>
+            ) : (
+              <p className="text-sm text-white/50">{t.shortenerEmpty}</p>
+            )}
           </div>
         </div>
       </section>

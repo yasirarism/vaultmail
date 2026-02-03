@@ -2,20 +2,49 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Globe, Menu, Shield, Wrench, KeyRound, Code2, Link as LinkIcon, MailPlus } from 'lucide-react';
+import { Code2, Copy, Globe, MailPlus, Menu, Shield, Wrench } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getTranslations } from '@/lib/i18n';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 const STORAGE_KEY = 'vaultmail_locale';
-const DEFAULT_TOTP_SECRET = 'FRN7276QJFZOQ7OFI2UIVUVQQ6V3QRIL';
+const MAX_VARIANTS = 128;
 
-export function ToolsPage() {
+const normalizeLocalPart = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/@gmail\.com|@googlemail\.com/gi, '')
+    .replace(/\./g, '')
+    .replace(/[^a-z0-9]/g, '');
+
+const buildVariants = (localPart: string) => {
+  if (localPart.length <= 1) return [localPart];
+  const positions = localPart.length - 1;
+  const total = 2 ** positions;
+  const variants: string[] = [];
+  for (let mask = 0; mask < total; mask += 1) {
+    let result = '';
+    for (let i = 0; i < localPart.length; i += 1) {
+      result += localPart[i];
+      if (i < localPart.length - 1 && (mask & (1 << i))) {
+        result += '.';
+      }
+    }
+    variants.push(result);
+    if (variants.length >= MAX_VARIANTS) break;
+  }
+  return variants;
+};
+
+export function GmailDotPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [locale, setLocale] = useState<'en' | 'id'>('en');
   const [customAppName, setCustomAppName] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState('');
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const storedLocale = localStorage.getItem(STORAGE_KEY);
@@ -46,6 +75,19 @@ export function ToolsPage() {
 
     loadBranding();
   }, []);
+
+  const localPart = useMemo(() => normalizeLocalPart(inputValue), [inputValue]);
+  const variants = useMemo(() => buildVariants(localPart), [localPart]);
+
+  const handleCopy = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyStatus(value);
+      setTimeout(() => setCopyStatus(null), 1200);
+    } catch (error) {
+      setCopyStatus(null);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
@@ -136,76 +178,63 @@ export function ToolsPage() {
         </div>
       </header>
 
-      <section className="max-w-6xl mx-auto px-4 py-16 w-full">
-        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <Wrench className="h-5 w-5 text-orange-300" />
-                <h1 className="text-2xl font-semibold">{t.toolsTitle}</h1>
-              </div>
-              <p className="text-muted-foreground max-w-2xl">
-                {t.toolsSubtitle}
-              </p>
+      <section className="max-w-5xl mx-auto px-4 py-16 w-full">
+        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8 space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-white">
+              <MailPlus className="h-5 w-5 text-blue-300" />
+              <h1 className="text-2xl font-semibold">{t.gmailDotTitle}</h1>
             </div>
-            <span className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white">
-              {t.toolsTitle}
-            </span>
+            <p className="text-muted-foreground max-w-2xl">{t.gmailDotSubtitle}</p>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <KeyRound className="h-4 w-4 text-orange-200" />
-                <p className="text-sm font-semibold">{t.toolsTwoFaTitle}</p>
+
+          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+            <label className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+              {t.gmailDotInputLabel}
+            </label>
+            <Input
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+              placeholder={t.gmailDotInputPlaceholder}
+              className="bg-black/40 border-white/10 text-sm"
+            />
+            <p className="text-xs text-white/60">
+              {t.gmailDotHint.replace('{count}', `${variants.length}`)}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+              {t.gmailDotResultsLabel}
+            </p>
+            {localPart ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {variants.map((variant) => {
+                  const full = `${variant}@gmail.com`;
+                  return (
+                    <div
+                      key={full}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      <span className="font-mono text-xs text-white/80 truncate">{full}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(full)}
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 text-[10px] font-semibold',
+                          copyStatus === full ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70'
+                        )}
+                      >
+                        <Copy className="h-3 w-3" />
+                        {copyStatus === full ? t.gmailDotCopied : t.gmailDotCopy}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {t.toolsTwoFaDesc}
-              </p>
-              <Link
-                href={`/2fa-gen?key=${DEFAULT_TOTP_SECRET}`}
-                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
-              >
-                {t.toolsTwoFaCta}
-              </Link>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <MailPlus className="h-4 w-4 text-blue-200" />
-                <p className="text-sm font-semibold">{t.toolsGmailDotTitle}</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t.toolsGmailDotDesc}
-              </p>
-              <Link
-                href="/gmail-dot"
-                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
-              >
-                {t.toolsGmailDotCta}
-              </Link>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <LinkIcon className="h-4 w-4 text-purple-200" />
-                <p className="text-sm font-semibold">{t.toolsShortenerTitle}</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t.toolsShortenerDesc}
-              </p>
-              <Link
-                href="/url-shortener"
-                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
-              >
-                {t.toolsShortenerCta}
-              </Link>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.menuTools}
-              </p>
-              <p className="mt-3 text-sm text-white/80">
-                {t.toolsSubtitle}
-              </p>
-            </div>
+            ) : (
+              <p className="text-sm text-white/50">{t.gmailDotEmpty}</p>
+            )}
           </div>
         </div>
       </section>
