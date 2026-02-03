@@ -30,29 +30,25 @@ export const parseHomepageLockSettings = (
   return null;
 };
 
+let warnedMissingMongo = false;
+
+const warnMissingMongo = () => {
+  if (warnedMissingMongo) return;
+  warnedMissingMongo = true;
+  console.warn(
+    'MONGODB_URI is not set. Homepage lock is disabled until MongoDB is configured.'
+  );
+};
+
 export const getHomepageLockSettings = async (): Promise<HomepageLockSettings> => {
   if (!process.env.MONGODB_URI) {
-    const envPassword = process.env.HOMEPAGE_PASSWORD?.trim();
-    if (envPassword) {
-      return {
-        enabled: true,
-        passwordHash: hashHomepagePassword(envPassword)
-      };
-    }
+    warnMissingMongo();
     return { enabled: false };
   }
   const storedRaw = await storage.get(HOMEPAGE_LOCK_SETTINGS_KEY);
   const stored = parseHomepageLockSettings(storedRaw);
   if (stored) {
     return stored;
-  }
-
-  const envPassword = process.env.HOMEPAGE_PASSWORD?.trim();
-  if (envPassword) {
-    return {
-      enabled: true,
-      passwordHash: hashHomepagePassword(envPassword)
-    };
   }
 
   return { enabled: false };
