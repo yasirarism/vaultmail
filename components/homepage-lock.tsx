@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Shield, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,14 @@ import { toast } from 'sonner';
 export function HomepageLock() {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const wasAuthed = window.localStorage.getItem('vaultmail_homepage_authed');
+    if (wasAuthed) {
+      toast.error('Your session has expired, please relogin again.');
+      window.localStorage.removeItem('vaultmail_homepage_authed');
+    }
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,6 +34,7 @@ export function HomepageLock() {
       if (!response.ok) {
         throw new Error('Invalid password');
       }
+      window.localStorage.setItem('vaultmail_homepage_authed', '1');
       toast.success('Akses diterima. Memuat ulang...');
       window.location.reload();
     } catch (error) {

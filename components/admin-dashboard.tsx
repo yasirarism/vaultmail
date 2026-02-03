@@ -35,6 +35,7 @@ type BrandingSettings = {
 
 type HomepageLockSettings = {
   enabled: boolean;
+  hasPassword: boolean;
   updatedAt?: string;
 };
 
@@ -68,6 +69,7 @@ export function AdminDashboard() {
   const [homepageLockEnabled, setHomepageLockEnabled] = useState(false);
   const [homepageLockPassword, setHomepageLockPassword] = useState('');
   const [homepageLockSaving, setHomepageLockSaving] = useState(false);
+  const [homepageLockHasPassword, setHomepageLockHasPassword] = useState(false);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState(false);
@@ -134,6 +136,7 @@ export function AdminDashboard() {
         setAppName(brandingData.appName);
       }
       setHomepageLockEnabled(Boolean(homepageLockData?.enabled));
+      setHomepageLockHasPassword(Boolean(homepageLockData?.hasPassword));
     } catch (error) {
       console.error(error);
       toast.error('Failed to load admin settings.');
@@ -233,6 +236,10 @@ export function AdminDashboard() {
   };
 
   const saveHomepageLock = async () => {
+    if (homepageLockEnabled && !homepageLockPassword.trim() && !homepageLockHasPassword) {
+      toast.error('Masukkan password untuk mengaktifkan homepage lock.');
+      return;
+    }
     setHomepageLockSaving(true);
     try {
       const response = await fetch('/api/admin/homepage-lock', {
@@ -246,6 +253,9 @@ export function AdminDashboard() {
       if (!response.ok) {
         throw new Error('Unauthorized or failed to save homepage lock.');
       }
+      const data = (await response.json()) as HomepageLockSettings;
+      setHomepageLockEnabled(Boolean(data.enabled));
+      setHomepageLockHasPassword(Boolean(data.hasPassword));
       setHomepageLockPassword('');
       toast.success('Homepage lock saved.');
     } catch (error) {

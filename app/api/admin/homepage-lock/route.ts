@@ -13,6 +13,7 @@ import { storage } from '@/lib/storage';
 
 type HomepageLockPayload = {
   enabled: boolean;
+  hasPassword: boolean;
   updatedAt: string;
 };
 
@@ -35,6 +36,7 @@ export async function GET() {
 
   return NextResponse.json({
     enabled: Boolean(settings.enabled),
+    hasPassword: Boolean(settings.passwordHash),
     updatedAt: settings.updatedAt || new Date().toISOString()
   });
 }
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
 
   const nextSettings = {
     enabled,
-    passwordHash: enabled ? nextPasswordHash : undefined,
+    passwordHash: nextPasswordHash,
     updatedAt: new Date().toISOString()
   };
 
@@ -70,6 +72,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     enabled: nextSettings.enabled,
+    hasPassword: Boolean(nextSettings.passwordHash),
     updatedAt: nextSettings.updatedAt
   });
 }
