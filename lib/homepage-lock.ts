@@ -31,6 +31,16 @@ export const parseHomepageLockSettings = (
 };
 
 export const getHomepageLockSettings = async (): Promise<HomepageLockSettings> => {
+  if (!process.env.MONGODB_URI) {
+    const envPassword = process.env.HOMEPAGE_PASSWORD?.trim();
+    if (envPassword) {
+      return {
+        enabled: true,
+        passwordHash: hashHomepagePassword(envPassword)
+      };
+    }
+    return { enabled: false };
+  }
   const storedRaw = await storage.get(HOMEPAGE_LOCK_SETTINGS_KEY);
   const stored = parseHomepageLockSettings(storedRaw);
   if (stored) {

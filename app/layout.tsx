@@ -12,6 +12,9 @@ type BrandingSettings = {
 };
 
 const resolveAppName = async () => {
+  if (!process.env.MONGODB_URI) {
+    return DEFAULT_APP_NAME;
+  }
   const stored = await storage.get(BRANDING_SETTINGS_KEY);
   let rawName = '';
   if (typeof stored === 'string') {
