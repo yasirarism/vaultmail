@@ -110,6 +110,10 @@ const translations = {
     twoFaCountdown: 'Refreshes in {seconds}s',
     twoFaInvalid: 'Invalid secret',
     twoFaNotice: 'Keep your secret private. Codes update every 30 seconds.',
+    twoFaCopy: 'Copy code',
+    twoFaCopied: 'Copied',
+    twoFaQrLabel: 'QR code',
+    twoFaQrEmpty: 'Enter a secret to generate QR',
   },
   id: {
     appName: 'YS Mail',
@@ -211,6 +215,10 @@ const translations = {
     twoFaCountdown: 'Refresh dalam {seconds} dtk',
     twoFaInvalid: 'Secret tidak valid',
     twoFaNotice: 'Jaga secret tetap aman. Kode berubah tiap 30 detik.',
+    twoFaCopy: 'Salin kode',
+    twoFaCopied: 'Tersalin',
+    twoFaQrLabel: 'QR code',
+    twoFaQrEmpty: 'Isi secret untuk membuat QR',
   },
 } as const;
 

@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Code2, Globe, KeyRound, Menu, Shield, Wrench } from 'lucide-react';
+import QRCode from 'qrcode';
+import { Code2, Copy, Globe, KeyRound, Menu, Shield, Wrench } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -77,6 +78,8 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
   const [totpCode, setTotpCode] = useState('');
   const [totpError, setTotpError] = useState('');
   const [remainingSeconds, setRemainingSeconds] = useState(TOTP_STEP_SECONDS);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
 
   useEffect(() => {
     const storedLocale = localStorage.getItem(STORAGE_KEY);
@@ -145,6 +148,44 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
 
     loadBranding();
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const buildQrCode = async () => {
+      if (!totpSecret.trim()) {
+        if (active) setQrCodeDataUrl('');
+        return;
+      }
+      const issuer = resolvedAppName || 'VaultMail';
+      const encodedIssuer = encodeURIComponent(issuer);
+      const encodedSecret = encodeURIComponent(totpSecret.replace(/\s+/g, ''));
+      const otpAuth = `otpauth://totp/${encodedIssuer}?secret=${encodedSecret}&issuer=${encodedIssuer}`;
+      try {
+        const url = await QRCode.toDataURL(otpAuth, { margin: 1, width: 200 });
+        if (active) setQrCodeDataUrl(url);
+      } catch (error) {
+        if (active) setQrCodeDataUrl('');
+      }
+    };
+
+    buildQrCode();
+
+    return () => {
+      active = false;
+    };
+  }, [resolvedAppName, totpSecret]);
+
+  const handleCopy = async () => {
+    if (!totpCode) return;
+    try {
+      await navigator.clipboard.writeText(totpCode);
+      setCopyStatus('copied');
+      setTimeout(() => setCopyStatus('idle'), 1500);
+    } catch (error) {
+      setCopyStatus('idle');
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
@@ -247,9 +288,6 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
                 {t.toolsTwoFaDesc}
               </p>
             </div>
-            <span className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white">
-              {remainingSeconds}s
-            </span>
           </div>
 
           <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
@@ -271,13 +309,51 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
                 {t.twoFaCodeLabel}
               </p>
-              <p className="text-3xl font-bold text-white tracking-[0.3em]">
-                {totpCode || '------'}
-              </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-3xl font-bold text-white tracking-[0.3em]">
+                  {totpCode || '------'}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold transition',
+                    totpCode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white/5 text-white/40'
+                  )}
+                  disabled={!totpCode}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {copyStatus === 'copied' ? t.twoFaCopied : t.twoFaCopy}
+                </button>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-blue-400 to-purple-500 transition-[width]"
+                  style={{ width: `${(remainingSeconds / TOTP_STEP_SECONDS) * 100}%` }}
+                />
+              </div>
               <p className="text-xs text-white/60">
-                {totpError ? t.twoFaInvalid : t.twoFaCountdown.replace('{seconds}', `${remainingSeconds}`)}
+                {totpError
+                  ? t.twoFaInvalid
+                  : t.twoFaCountdown.replace('{seconds}', `${remainingSeconds}`)}
               </p>
             </div>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+              {t.twoFaQrLabel}
+            </p>
+            {qrCodeDataUrl ? (
+              <img
+                src={qrCodeDataUrl}
+                alt={t.twoFaQrLabel}
+                className="h-40 w-40 rounded-lg border border-white/10 bg-white/5 p-2"
+              />
+            ) : (
+              <div className="h-40 w-40 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center text-xs text-white/50">
+                {t.twoFaQrEmpty}
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
             <span>{t.twoFaNotice}</span>
