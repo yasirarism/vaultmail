@@ -48,7 +48,10 @@ export function HomepageLock() {
           </div>
           <h1 className="text-2xl font-bold text-white">Vaultmail Private</h1>
           <p className="text-sm text-white/60">
-            Homepage dikunci. Masukkan password untuk mengakses inbox.
+            Homepage dikunci. Hubungi owner untuk mendapatkan akses website.
+          </p>
+          <p className="text-xs text-white/50">
+            Masukkan password jika sudah diberikan akses.
           </p>
         </div>
 

@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import crypto from 'crypto';
-
-const COOKIE_NAME = 'vaultmail_homepage_auth';
+import {
+  getHomepageLockSettings,
+  hashHomepagePassword,
+  HOMEPAGE_LOCK_COOKIE
+} from '@/lib/homepage-lock';
 
 export async function POST(req: Request) {
-  const homepagePassword = process.env.HOMEPAGE_PASSWORD?.trim();
-  if (!homepagePassword) {
+  const settings = await getHomepageLockSettings();
+  if (!settings.enabled || !settings.passwordHash) {
     return NextResponse.json(
       { error: 'Homepage lock is not enabled.' },
       { status: 400 }
@@ -20,18 +22,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Password is required.' }, { status: 400 });
   }
 
-  const expectedHash = crypto
-    .createHash('sha256')
-    .update(homepagePassword)
-    .digest('hex');
-  const providedHash = crypto.createHash('sha256').update(provided).digest('hex');
+  const expectedHash = settings.passwordHash;
+  const providedHash = hashHomepagePassword(provided);
 
   if (expectedHash !== providedHash) {
     return NextResponse.json({ error: 'Invalid password.' }, { status: 401 });
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, expectedHash, {
+  cookieStore.set(HOMEPAGE_LOCK_COOKIE, expectedHash, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
