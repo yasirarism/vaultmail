@@ -76,6 +76,8 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
   const [customAppName, setCustomAppName] = useState<string | null>(null);
   const [totpSecret, setTotpSecret] = useState(initialSecret);
   const [totpCode, setTotpCode] = useState('');
+  const [previousCode, setPreviousCode] = useState('');
+  const [nextCode, setNextCode] = useState('');
   const [totpError, setTotpError] = useState('');
   const [remainingSeconds, setRemainingSeconds] = useState(TOTP_STEP_SECONDS);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
@@ -108,14 +110,22 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
         setRemainingSeconds(secondsRemaining);
       }
       try {
-        const code = await generateTotp(totpSecret, now);
+        const [prev, current, next] = await Promise.all([
+          generateTotp(totpSecret, now - TOTP_STEP_SECONDS * 1000),
+          generateTotp(totpSecret, now),
+          generateTotp(totpSecret, now + TOTP_STEP_SECONDS * 1000),
+        ]);
         if (isActive) {
-          setTotpCode(code);
-          setTotpError(code ? '' : 'Invalid secret');
+          setPreviousCode(prev);
+          setTotpCode(current);
+          setNextCode(next);
+          setTotpError(current ? '' : 'Invalid secret');
         }
       } catch (error) {
         if (isActive) {
+          setPreviousCode('');
           setTotpCode('');
+          setNextCode('');
           setTotpError('Failed to generate code');
         }
       }
@@ -309,22 +319,31 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
                 {t.twoFaCodeLabel}
               </p>
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-3xl font-bold text-white tracking-[0.3em]">
-                  {totpCode || '------'}
-                </p>
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className={cn(
-                    'inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold transition',
-                    totpCode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white/5 text-white/40'
-                  )}
-                  disabled={!totpCode}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  {copyStatus === 'copied' ? t.twoFaCopied : t.twoFaCopy}
-                </button>
+              <div className="space-y-3">
+                <CodeRow label={t.twoFaPrevious} value={previousCode} />
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
+                      {t.twoFaCurrent}
+                    </p>
+                    <p className="text-3xl font-bold text-white tracking-[0.3em]">
+                      {totpCode || '------'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold transition',
+                      totpCode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white/5 text-white/40'
+                    )}
+                    disabled={!totpCode}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    {copyStatus === 'copied' ? t.twoFaCopied : t.twoFaCopy}
+                  </button>
+                </div>
+                <CodeRow label={t.twoFaNext} value={nextCode} />
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
                 <div
@@ -367,5 +386,16 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
         </div>
       </section>
     </main>
+  );
+}
+
+function CodeRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between text-xs text-white/60">
+      <span>{label}</span>
+      <span className="font-mono text-sm text-white/80 tracking-[0.2em]">
+        {value || '------'}
+      </span>
+    </div>
   );
 }
