@@ -10,11 +10,70 @@ import { getTranslations } from '@/lib/i18n';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 const STORAGE_KEY = 'vaultmail_locale';
+const DEFAULT_TOTP_SECRET = 'FRN7276QJFZOQ7OFI2UIVUVQQ6V3QRIL';
+const TOTP_STEP_SECONDS = 30;
+const TOTP_DIGITS = 6;
+
+const base32Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+const base32ToBytes = (value: string) => {
+  const cleaned = value.toUpperCase().replace(/=+$/, '').replace(/[^A-Z2-7]/g, '');
+  let buffer = 0;
+  let bits = 0;
+  const bytes: number[] = [];
+
+  for (const char of cleaned) {
+    const index = base32Alphabet.indexOf(char);
+    if (index === -1) continue;
+    buffer = (buffer << 5) | index;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((buffer >> bits) & 0xff);
+    }
+  }
+
+  return new Uint8Array(bytes);
+};
+
+const formatTotp = (value: number, digits: number) =>
+  value.toString().padStart(digits, '0');
+
+const generateTotp = async (secret: string, timestamp: number) => {
+  if (!secret.trim()) return '';
+  const keyData = base32ToBytes(secret);
+  if (!keyData.length) return '';
+  const counter = Math.floor(timestamp / 1000 / TOTP_STEP_SECONDS);
+  const buffer = new ArrayBuffer(8);
+  const view = new DataView(buffer);
+  view.setUint32(4, counter);
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-1' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, buffer);
+  const bytes = new Uint8Array(signature);
+  const offset = bytes[bytes.length - 1] & 0x0f;
+  const binary =
+    ((bytes[offset] & 0x7f) << 24) |
+    ((bytes[offset + 1] & 0xff) << 16) |
+    ((bytes[offset + 2] & 0xff) << 8) |
+    (bytes[offset + 3] & 0xff);
+  const otp = binary % 10 ** TOTP_DIGITS;
+  return formatTotp(otp, TOTP_DIGITS);
+};
 
 export function ToolsPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [locale, setLocale] = useState<'en' | 'id'>('en');
   const [customAppName, setCustomAppName] = useState<string | null>(null);
+  const [totpSecret, setTotpSecret] = useState(DEFAULT_TOTP_SECRET);
+  const [totpCode, setTotpCode] = useState('');
+  const [totpError, setTotpError] = useState('');
+  const [remainingSeconds, setRemainingSeconds] = useState(TOTP_STEP_SECONDS);
 
   useEffect(() => {
     const storedLocale = localStorage.getItem(STORAGE_KEY);
@@ -22,6 +81,39 @@ export function ToolsPage() {
       setLocale(storedLocale);
     }
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    let timer: NodeJS.Timeout;
+
+    const updateCode = async () => {
+      const now = Date.now();
+      const secondsRemaining = TOTP_STEP_SECONDS - (Math.floor(now / 1000) % TOTP_STEP_SECONDS);
+      if (mounted) {
+        setRemainingSeconds(secondsRemaining);
+      }
+      try {
+        const code = await generateTotp(totpSecret, now);
+        if (mounted) {
+          setTotpCode(code);
+          setTotpError(code ? '' : 'Invalid secret');
+        }
+      } catch (error) {
+        if (mounted) {
+          setTotpCode('');
+          setTotpError('Failed to generate code');
+        }
+      }
+    };
+
+    updateCode();
+    timer = setInterval(updateCode, 1000);
+
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, [totpSecret]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, locale);
@@ -152,7 +244,7 @@ export function ToolsPage() {
             </span>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 text-white">
@@ -163,14 +255,33 @@ export function ToolsPage() {
                     {t.toolsTwoFaDesc}
                   </p>
                 </div>
-                <Link
-                  href="https://yasir.eu.org/2fa-gen?key=FRN7276QJFZOQ7OFI2UIVUVQQ6V3QRIL"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
-                >
-                  {t.toolsTwoFaCta}
-                </Link>
+                <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80">
+                  {remainingSeconds}s
+                </span>
+              </div>
+              <div className="grid gap-3">
+                <label className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+                  Secret Key
+                </label>
+                <input
+                  value={totpSecret}
+                  onChange={(event) => setTotpSecret(event.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition focus:border-blue-400/60"
+                  placeholder={DEFAULT_TOTP_SECRET}
+                />
+                <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
+                      {t.toolsTwoFaCta}
+                    </p>
+                    <p className="text-xl font-bold text-white">
+                      {totpCode || '------'}
+                    </p>
+                  </div>
+                  <span className="text-xs text-white/60">
+                    {totpError || `${remainingSeconds}s`}
+                  </span>
+                </div>
               </div>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/40 p-4">
