@@ -43,6 +43,7 @@ const translations = {
     languageEnglish: 'English',
     languageIndonesian: 'Indonesian',
     menuApiAccess: 'Developer API Access',
+    menuTools: 'Tools',
     historyTitle: 'History',
     historyClearAll: 'Clear All',
     historyEmpty: 'No recent addresses',
@@ -96,6 +97,12 @@ const translations = {
     apiAccessWebhookTitle: 'Webhook',
     apiAccessWebhookHint:
       'Use this endpoint to forward inbound emails to your app.',
+    toolsTitle: 'Tools',
+    toolsSubtitle: 'Useful utilities to keep your inbox workflow secure.',
+    toolsTwoFaTitle: '2FA Code Generator',
+    toolsTwoFaDesc:
+      'Generate one-time codes for your accounts without leaving VaultMail.',
+    toolsTwoFaCta: 'Open generator',
   },
   id: {
     appName: 'YS Mail',
@@ -130,6 +137,7 @@ const translations = {
     languageEnglish: 'Inggris',
     languageIndonesian: 'Indonesia',
     menuApiAccess: 'Akses API Developer',
+    menuTools: 'Tools',
     historyTitle: 'Riwayat',
     historyClearAll: 'Hapus Semua',
     historyEmpty: 'Belum ada alamat',
@@ -183,6 +191,12 @@ const translations = {
     apiAccessWebhookTitle: 'Webhook',
     apiAccessWebhookHint:
       'Gunakan endpoint ini untuk meneruskan email masuk ke aplikasi Anda.',
+    toolsTitle: 'Tools',
+    toolsSubtitle: 'Utility yang membantu menjaga workflow inbox tetap aman.',
+    toolsTwoFaTitle: 'Generator Kode 2FA',
+    toolsTwoFaDesc:
+      'Buat kode sekali pakai untuk akun Anda tanpa keluar dari VaultMail.',
+    toolsTwoFaCta: 'Buka generator',
   },
 } as const;
 

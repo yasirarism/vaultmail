@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Code2, Globe, Menu, Shield, Wrench } from 'lucide-react';
+import { Globe, Menu, Shield, Wrench, KeyRound, Code2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -11,7 +11,7 @@ import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 const STORAGE_KEY = 'vaultmail_locale';
 
-export function ApiAccessPage() {
+export function ToolsPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [locale, setLocale] = useState<'en' | 'id'>('en');
   const [customAppName, setCustomAppName] = useState<string | null>(null);
@@ -140,42 +140,43 @@ export function ApiAccessPage() {
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-white">
-                <Code2 className="h-5 w-5 text-blue-300" />
-                <h1 className="text-2xl font-semibold">{t.apiAccessTitle}</h1>
+                <Wrench className="h-5 w-5 text-orange-300" />
+                <h1 className="text-2xl font-semibold">{t.toolsTitle}</h1>
               </div>
               <p className="text-muted-foreground max-w-2xl">
-                {t.apiAccessSubtitle}
+                {t.toolsSubtitle}
               </p>
             </div>
-            <Link
-              href="https://github.com/yasirarism"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              {t.apiAccessCta}
-            </Link>
+            <span className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white">
+              {t.toolsTitle}
+            </span>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.apiAccessEndpointsTitle}
-              </p>
-              <ul className="mt-3 space-y-2 text-xs font-mono text-blue-100">
-                <li>GET /api/inbox?address=nama@domain.com</li>
-                <li>GET /api/download?address=nama@domain.com&amp;emailId=uuid&amp;type=email</li>
-                <li>GET /api/retention</li>
-              </ul>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 text-white">
+                    <KeyRound className="h-4 w-4 text-orange-200" />
+                    <p className="text-sm font-semibold">{t.toolsTwoFaTitle}</p>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {t.toolsTwoFaDesc}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="shrink-0 rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+                >
+                  {t.toolsTwoFaCta}
+                </button>
+              </div>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/40 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.apiAccessWebhookTitle}
+                {t.menuTools}
               </p>
               <p className="mt-3 text-sm text-white/80">
-                POST /api/webhook
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {t.apiAccessWebhookHint}
+                {t.toolsSubtitle}
               </p>
             </div>
           </div>
