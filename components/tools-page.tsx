@@ -163,12 +163,14 @@ export function ToolsPage() {
                     {t.toolsTwoFaDesc}
                   </p>
                 </div>
-                <button
-                  type="button"
+                <Link
+                  href="https://yasir.eu.org/2fa-gen?key=FRN7276QJFZOQ7OFI2UIVUVQQ6V3QRIL"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="shrink-0 rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
                 >
                   {t.toolsTwoFaCta}
-                </button>
+                </Link>
               </div>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/40 p-4">
