@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, Globe, KeyRound, MailPlus, Menu, Shield, Wrench, Binary, Coins, Key } from 'lucide-react';
+import { Calendar, Globe, KeyRound, MailPlus, Menu, Shield, Wrench, Binary, Coins, Key, ShieldAlert } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -241,6 +241,21 @@ export function ToolsPage() {
                 className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
               >
                 {t.toolsUrlCodecCta}
+              </Link>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-white">
+                <ShieldAlert className="h-4 w-4 text-red-200" />
+                <p className="text-sm font-semibold">{t.toolsBreachTitle}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t.toolsBreachDesc}
+              </p>
+              <Link
+                href="/email-breach"
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+              >
+                {t.toolsBreachCta}
               </Link>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/40 p-4">
