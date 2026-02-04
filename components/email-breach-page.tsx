@@ -18,6 +18,23 @@ export function EmailBreachPage() {
   const [customAppName, setCustomAppName] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [breaches, setBreaches] = useState<string[]>([]);
+  const [details, setDetails] = useState<
+    Array<{
+      breach?: string;
+      details?: string;
+      domain?: string;
+      industry?: string;
+      logo?: string;
+      passwordRisk?: string;
+      references?: string;
+      searchable?: string;
+      verified?: string;
+      exposedData?: string;
+      exposedDate?: string;
+      exposedRecords?: number;
+      added?: string;
+    }>
+  >([]);
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -58,6 +75,7 @@ export function EmailBreachPage() {
     if (!validEmail) {
       setError(t.breachInvalid);
       setBreaches([]);
+      setDetails([]);
       setMessage('');
       setStatus('idle');
       return;
@@ -66,14 +84,34 @@ export function EmailBreachPage() {
     setError('');
     setMessage('');
     setBreaches([]);
+    setDetails([]);
     try {
       const response = await fetch(`/api/breach-check?email=${encodeURIComponent(trimmed)}`);
       if (!response.ok) {
         throw new Error('Request failed');
       }
-      const data = (await response.json()) as { breaches?: string[] };
+      const data = (await response.json()) as {
+        breaches?: string[];
+        details?: Array<{
+          breach?: string;
+          details?: string;
+          domain?: string;
+          industry?: string;
+          logo?: string;
+          passwordRisk?: string;
+          references?: string;
+          searchable?: string;
+          verified?: string;
+          exposedData?: string;
+          exposedDate?: string;
+          exposedRecords?: number;
+          added?: string;
+        }>;
+      };
       const foundBreaches = Array.isArray(data?.breaches) ? data.breaches : [];
+      const foundDetails = Array.isArray(data?.details) ? data.details : [];
       setBreaches(foundBreaches);
+      setDetails(foundDetails);
       setStatus('done');
       setMessage(foundBreaches.length ? t.breachExposed : t.breachSafe);
     } catch (error) {
@@ -213,6 +251,59 @@ export function EmailBreachPage() {
                   </li>
                 ))}
               </ul>
+            )}
+            {details.length > 0 && (
+              <div className="grid gap-3">
+                {details.map((item, index) => (
+                  <div
+                    key={`${item.breach ?? 'breach'}-${index}`}
+                    className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/80 space-y-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.logo ? (
+                        <img src={item.logo} alt={item.breach ?? 'Breach'} className="h-8 w-8 rounded" />
+                      ) : null}
+                      <div>
+                        <p className="text-base font-semibold text-white">{item.breach ?? t.breachUnknown}</p>
+                        {item.domain && <p className="text-xs text-white/60">{item.domain}</p>}
+                      </div>
+                    </div>
+                    {item.details && <p className="text-xs text-white/70">{item.details}</p>}
+                    <div className="grid gap-1 text-xs text-white/60">
+                      {item.exposedDate && (
+                        <p>
+                          {t.breachExposedDate}: {item.exposedDate}
+                        </p>
+                      )}
+                      {typeof item.exposedRecords === 'number' && (
+                        <p>
+                          {t.breachExposedRecords}: {item.exposedRecords.toLocaleString()}
+                        </p>
+                      )}
+                      {item.exposedData && (
+                        <p>
+                          {t.breachExposedData}: {item.exposedData}
+                        </p>
+                      )}
+                      {item.passwordRisk && (
+                        <p>
+                          {t.breachPasswordRisk}: {item.passwordRisk}
+                        </p>
+                      )}
+                      {item.references && (
+                        <Link
+                          href={item.references}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-200 hover:text-blue-100"
+                        >
+                          {t.breachReference}
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
             {!message && !error && (
               <p className="text-xs text-white/50">{t.breachEmpty}</p>

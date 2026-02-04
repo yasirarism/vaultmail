@@ -1,43 +1,53 @@
 import { NextResponse } from 'next/server';
 
-const normalizeBreaches = (data: unknown) => {
+type BreachDetail = {
+  breach?: string;
+  details?: string;
+  domain?: string;
+  industry?: string;
+  logo?: string;
+  password_risk?: string;
+  references?: string;
+  searchable?: string;
+  verified?: string;
+  exposed_data?: string;
+  exposed_date?: string;
+  exposed_records?: number;
+  added?: string;
+};
+
+const normalizeResponse = (data: unknown) => {
   const record = data as {
-    breaches?: unknown;
-    Breaches?: unknown;
-    data?: { breaches?: unknown };
+    BreachesSummary?: { site?: string | null };
+    ExposedBreaches?: { breaches_details?: BreachDetail[] | null };
   };
-  const raw =
-    (Array.isArray(record?.breaches) && record.breaches) ||
-    (Array.isArray(record?.Breaches) && record.Breaches) ||
-    (Array.isArray(record?.data?.breaches) && record.data.breaches) ||
-    [];
-  return raw
-    .map((item) => {
-      if (typeof item === 'string') return item;
-      if (item && typeof item === 'object') {
-        const entry = item as {
-          Name?: string;
-          name?: string;
-          breach?: string;
-          Breach?: string;
-          title?: string;
-          site?: string;
-          domain?: string;
-        };
-        return (
-          entry.Name ||
-          entry.name ||
-          entry.breach ||
-          entry.Breach ||
-          entry.title ||
-          entry.site ||
-          entry.domain ||
-          ''
-        );
-      }
-      return '';
-    })
-    .filter((value) => value);
+  const site = record?.BreachesSummary?.site?.trim() ?? '';
+  const breaches = site
+    ? site
+        .split(/[;,]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
+  const details = Array.isArray(record?.ExposedBreaches?.breaches_details)
+    ? record.ExposedBreaches.breaches_details
+        .filter(Boolean)
+        .map((entry) => ({
+          breach: entry?.breach?.trim() || undefined,
+          details: entry?.details || undefined,
+          domain: entry?.domain || undefined,
+          industry: entry?.industry || undefined,
+          logo: entry?.logo || undefined,
+          passwordRisk: entry?.password_risk || undefined,
+          references: entry?.references || undefined,
+          searchable: entry?.searchable || undefined,
+          verified: entry?.verified || undefined,
+          exposedData: entry?.xposed_data || undefined,
+          exposedDate: entry?.xposed_date || undefined,
+          exposedRecords: entry?.xposed_records ?? undefined,
+          added: entry?.added || undefined,
+        }))
+    : [];
+  return { breaches, details };
 };
 
 export async function GET(request: Request) {
@@ -49,7 +59,7 @@ export async function GET(request: Request) {
 
   try {
     const response = await fetch(
-      `https://api.xposedornot.com/v1/check-email/${encodeURIComponent(email)}`,
+      `https://api.xposedornot.com/v1/breach-analytics?email=${encodeURIComponent(email)}`,
       {
         headers: {
           'User-Agent': 'VaultMail',
@@ -60,8 +70,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Upstream error' }, { status: 502 });
     }
     const data = await response.json();
-    const breaches = normalizeBreaches(data);
-    return NextResponse.json({ breaches });
+    const { breaches, details } = normalizeResponse(data);
+    return NextResponse.json({ breaches, details });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch breach data' }, { status: 500 });
   }
