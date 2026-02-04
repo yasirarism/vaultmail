@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import QRCode from 'qrcode';
 import { Code2, Copy, Globe, KeyRound, Menu, Shield, Wrench } from 'lucide-react';
 
@@ -82,6 +83,10 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
   const [remainingSeconds, setRemainingSeconds] = useState(TOTP_STEP_SECONDS);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentKeyParam = searchParams?.get('key') ?? '';
 
   useEffect(() => {
     const storedLocale = localStorage.getItem(STORAGE_KEY);
@@ -97,6 +102,18 @@ export function TwoFactorPage({ initialSecret = '' }: TwoFactorPageProps) {
   useEffect(() => {
     setTotpSecret(initialSecret);
   }, [initialSecret]);
+
+  useEffect(() => {
+    if (totpSecret === currentKeyParam) return;
+    const params = new URLSearchParams(searchParams?.toString());
+    if (totpSecret.trim()) {
+      params.set('key', totpSecret);
+    } else {
+      params.delete('key');
+    }
+    const nextQuery = params.toString();
+    router.replace(`${pathname}${nextQuery ? `?${nextQuery}` : ''}`, { scroll: false });
+  }, [currentKeyParam, pathname, router, searchParams, totpSecret]);
 
   useEffect(() => {
     let isActive = true;
