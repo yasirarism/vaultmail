@@ -10,6 +10,7 @@ type BreachDetail = {
   references?: string;
   searchable?: string;
   verified?: string;
+  xposed_data?: string;
   exposed_data?: string;
   exposed_date?: string;
   exposed_records?: number;
@@ -41,7 +42,7 @@ const normalizeResponse = (data: unknown) => {
           references: entry?.references || undefined,
           searchable: entry?.searchable || undefined,
           verified: entry?.verified || undefined,
-          exposedData: entry?.xposed_data || undefined,
+          exposedData: entry?.xposed_data || entry?.exposed_data || undefined,
           exposedDate: entry?.xposed_date || undefined,
           exposedRecords: entry?.xposed_records ?? undefined,
           added: entry?.added || undefined,

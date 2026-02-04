@@ -13,10 +13,10 @@ const translations = {
   en: {
     appName: 'YS Mail',
     github: 'GitHub',
-    heroTitle: 'Disposable Email',
-    heroTitleSuffix: 'for Developers',
+    heroTitle: 'Instant Inbox',
+    heroTitleSuffix: 'Built for Builders',
     heroSubtitle:
-      'Secure, serverless temporary email service. Bring your own domain or use the default.',
+      'Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.',
     featureInstantTitle: 'Instant & Real-time',
     featureInstantDesc:
       'Emails arrive instantly via Webhooks. The inbox auto-refreshes in real-time.',
@@ -207,10 +207,10 @@ const translations = {
   id: {
     appName: 'YS Mail',
     github: 'GitHub',
-    heroTitle: 'Email Sementara',
-    heroTitleSuffix: 'untuk Developer',
+    heroTitle: 'Inbox Instan',
+    heroTitleSuffix: 'Untuk Para Builder',
     heroSubtitle:
-      'Layanan email sementara yang aman dan serverless. Gunakan domain sendiri atau domain bawaan.',
+      'Buat inbox sementara yang aman dalam hitungan detik. Gunakan domain sendiri atau domain bawaan.',
     featureInstantTitle: 'Instan & Real-time',
     featureInstantDesc:
       'Email masuk secara instan via webhook. Inbox auto-refresh secara real-time.',
