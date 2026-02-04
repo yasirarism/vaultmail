@@ -12,7 +12,9 @@ type BreachDetail = {
   verified?: string;
   xposed_data?: string;
   exposed_data?: string;
+  xposed_date?: string;
   exposed_date?: string;
+  xposed_records?: number;
   exposed_records?: number;
   added?: string;
 };
@@ -43,8 +45,8 @@ const normalizeResponse = (data: unknown) => {
           searchable: entry?.searchable || undefined,
           verified: entry?.verified || undefined,
           exposedData: entry?.xposed_data || entry?.exposed_data || undefined,
-          exposedDate: entry?.xposed_date || undefined,
-          exposedRecords: entry?.xposed_records ?? undefined,
+          exposedDate: entry?.xposed_date || entry?.exposed_date || undefined,
+          exposedRecords: entry?.xposed_records ?? entry?.exposed_records ?? undefined,
           added: entry?.added || undefined,
         }))
     : [];
