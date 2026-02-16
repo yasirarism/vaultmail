@@ -29,9 +29,9 @@ A premium, privacy-focused disposable email service built with **Next.js** and *
 
 Clone this repository and deploy it to Vercel.
 
-### 1B. Deploy to Cloudflare (Next.js 16 compatible)
+### 1B. Deploy to Cloudflare
 
-Cloudflare Pages adapter (`@cloudflare/next-on-pages`) saat ini belum mendukung Next.js 16 sepenuhnya. Untuk project ini, gunakan **OpenNext + Cloudflare Workers** (tetap satu ekosistem Cloudflare).
+Untuk Next.js 16 di repo ini, jalur yang direkomendasikan adalah **OpenNext + Cloudflare Workers**.
 
 1. Install dependencies:
    ```bash
@@ -49,12 +49,16 @@ Cloudflare Pages adapter (`@cloudflare/next-on-pages`) saat ini belum mendukung 
    ```bash
    npm run build:cloudflare
    ```
-4. Deploy ke Cloudflare:
+4. Deploy ke Cloudflare Workers:
    ```bash
    npm run deploy:cloudflare
    ```
 
-> Jika Anda **wajib** pakai Cloudflare Pages (bukan Workers), opsi stabil saat ini adalah downgrade Next.js ke versi yang didukung `@cloudflare/next-on-pages`.
+#### Cloudflare Pages notes
+
+- `wrangler.toml` pada root sekarang memakai format **Pages** (`pages_build_output_dir`) supaya build pipeline Pages tidak menganggap konfigurasi invalid.
+- Jika Anda tetap memakai command Pages default `npx @cloudflare/next-on-pages@1`, pastikan menyalakan Node.js compatibility (`nodejs_compat`) pada project Pages untuk menghindari runtime warning Node built-ins.
+- Jika build Pages mentok limit bundle Functions 25 MiB, gunakan jalur OpenNext Workers di atas (lebih cocok untuk app dynamic besar seperti ini).
 
 ### 2. Configure Database (MongoDB)
 

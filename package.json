@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:cloudflare": "opennextjs-cloudflare build",
-    "deploy:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare deploy",
+    "deploy:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare deploy -- --config wrangler.worker.toml",
     "start": "next start",
     "lint": "eslint"
   },
