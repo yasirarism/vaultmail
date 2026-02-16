@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { inboxKey } from '@/lib/storage-keys';
 import { storage } from '@/lib/storage';
 
+export const runtime = 'edge';
+
 type InboxEmail = {
   id?: string;
   from?: string;

@@ -8,6 +8,8 @@ import {
 } from '@/lib/admin-auth';
 import { DEFAULT_APP_NAME, normalizeAppName } from '@/lib/branding';
 
+export const runtime = 'edge';
+
 type BrandingSettings = {
   appName: string;
   updatedAt: string;

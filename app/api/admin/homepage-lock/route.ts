@@ -11,6 +11,8 @@ import {
 } from '@/lib/homepage-lock';
 import { storage } from '@/lib/storage';
 
+export const runtime = 'edge';
+
 type HomepageLockPayload = {
   enabled: boolean;
   hasPassword: boolean;
@@ -70,7 +72,7 @@ export async function POST(request: Request) {
 
   const settings = await getHomepageLockSettings();
   const nextPasswordHash = password
-    ? hashHomepagePassword(password)
+    ? await hashHomepagePassword(password)
     : settings.passwordHash;
 
   if (enabled && !nextPasswordHash) {

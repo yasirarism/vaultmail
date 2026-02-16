@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import { extractEmail, getSenderInfo } from '@/lib/utils';
 import { RETENTION_SETTINGS_KEY, TELEGRAM_SETTINGS_KEY } from '@/lib/admin-auth';
 import { inboxKey } from '@/lib/storage-keys';
-import crypto from 'crypto';
+
+export const runtime = 'edge';
 
 type TelegramSettings = {
   enabled: boolean;
@@ -195,7 +196,7 @@ export async function POST(req: Request) {
       return new NextResponse('Invalid recipient', { status: 400 });
     }
 
-    const emailId = crypto.randomUUID();
+    const emailId = globalThis.crypto.randomUUID();
     const emailData = {
       id: emailId,
       from,

@@ -3,6 +3,8 @@ import { storage } from '@/lib/storage';
 import { BRANDING_SETTINGS_KEY } from '@/lib/admin-auth';
 import { DEFAULT_APP_NAME, normalizeAppName } from '@/lib/branding';
 
+export const runtime = 'edge';
+
 type BrandingSettings = {
   appName: string;
   updatedAt: string;

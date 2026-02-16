@@ -7,6 +7,8 @@ import {
   isAdminSessionValid
 } from '@/lib/admin-auth';
 
+export const runtime = 'edge';
+
 export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();

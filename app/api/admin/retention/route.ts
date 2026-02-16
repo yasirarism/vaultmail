@@ -7,6 +7,8 @@ import {
   isAdminSessionValid
 } from '@/lib/admin-auth';
 
+export const runtime = 'edge';
+
 type RetentionSettings = {
   seconds: number;
   updatedAt: string;

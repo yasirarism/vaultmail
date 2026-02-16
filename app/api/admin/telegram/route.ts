@@ -7,6 +7,8 @@ import {
   TELEGRAM_SETTINGS_KEY
 } from '@/lib/admin-auth';
 
+export const runtime = 'edge';
+
 type TelegramSettings = {
   enabled: boolean;
   botToken: string;
