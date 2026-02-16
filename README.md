@@ -29,6 +29,33 @@ A premium, privacy-focused disposable email service built with **Next.js** and *
 
 Clone this repository and deploy it to Vercel.
 
+### 1B. Deploy to Cloudflare (Next.js 16 compatible)
+
+Cloudflare Pages adapter (`@cloudflare/next-on-pages`) saat ini belum mendukung Next.js 16 sepenuhnya. Untuk project ini, gunakan **OpenNext + Cloudflare Workers** (tetap satu ekosistem Cloudflare).
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Login Wrangler dan set secret runtime:
+   ```bash
+   npx wrangler login
+   npx wrangler secret put MONGODB_URI
+   npx wrangler secret put MONGODB_DB
+   # Optional
+   npx wrangler secret put NEXT_PUBLIC_ADSENSE_CLIENT_ID
+   ```
+3. Build adapter OpenNext:
+   ```bash
+   npm run build:cloudflare
+   ```
+4. Deploy ke Cloudflare:
+   ```bash
+   npm run deploy:cloudflare
+   ```
+
+> Jika Anda **wajib** pakai Cloudflare Pages (bukan Workers), opsi stabil saat ini adalah downgrade Next.js ke versi yang didukung `@cloudflare/next-on-pages`.
+
 ### 2. Configure Database (MongoDB)
 
 Provision a MongoDB database (MongoDB Atlas or self-hosted) and set the connection string in Vercel:
