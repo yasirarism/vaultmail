@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cf:build": "SKIP_POSTBUILD_PREPARE=1 opennextjs-cloudflare build",
+    "cf:preview": "SKIP_POSTBUILD_PREPARE=1 opennextjs-cloudflare build && node scripts/prepare-pages-output.mjs && wrangler dev --config wrangler.worker.toml",
+    "cf:deploy": "SKIP_POSTBUILD_PREPARE=1 opennextjs-cloudflare build && node scripts/prepare-pages-output.mjs && wrangler deploy --config wrangler.worker.toml",
+    "cf:pages:build": "SKIP_POSTBUILD_PREPARE=1 opennextjs-cloudflare build && node scripts/prepare-pages-output.mjs",
+    "postbuild": "node scripts/prepare-pages-output.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -14,7 +19,7 @@
     "framer-motion": "^12.24.0",
     "lucide-react": "^0.562.0",
     "mongodb": "^6.19.0",
-    "next": "16.1.1",
+    "next": "^16.1.5",
     "qrcode": "^1.5.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -22,15 +27,18 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.16.5",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.23",
     "eslint": "^9",
-    "eslint-config-next": "16.1.1",
+    "eslint-config-next": "^16.1.5",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.67.0",
+    "@cloudflare/next-on-pages": "file:tools/next-on-pages-shim"
   }
 }

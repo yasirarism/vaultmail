@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { storage } from '@/lib/storage';
 import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
+export const runtime = 'edge';
 
 type RetentionSettings = {
   seconds: number;

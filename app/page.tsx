@@ -5,6 +5,7 @@ import {
   getHomepageLockSettings,
   HOMEPAGE_LOCK_COOKIE,
 } from "@/lib/homepage-lock";
+export const runtime = 'edge';
 
 export const dynamic = "force-dynamic";
 

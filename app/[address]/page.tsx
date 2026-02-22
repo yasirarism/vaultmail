@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { HomePage } from "@/components/home-page";
+export const runtime = 'edge';
 
 export default async function Page({
     params,

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { inboxPattern } from '@/lib/storage-keys';
 import { storage } from '@/lib/storage';
 import { ADMIN_SESSION_COOKIE, isAdminSessionValid } from '@/lib/admin-auth';
+export const runtime = 'edge';
 
 type InboxEmail = {
   receivedAt?: string;

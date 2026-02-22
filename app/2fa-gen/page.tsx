@@ -1,4 +1,5 @@
 import { TwoFactorPage } from '@/components/two-factor-page';
+export const runtime = 'edge';
 
 interface TwoFactorRouteProps {
   searchParams?: Promise<{ key?: string }>;

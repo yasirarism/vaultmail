@@ -10,6 +10,7 @@ import {
   registerRateLimitFailure,
   resetRateLimit
 } from '@/lib/auth-rate-limit';
+export const runtime = 'edge';
 
 export async function POST(req: Request) {
   const rateLimit = await checkRateLimit(req, 'homepage-lock');
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
   }
 
   const expectedHash = settings.passwordHash;
-  const providedHash = hashHomepagePassword(provided);
+  const providedHash = await hashHomepagePassword(provided);
 
   if (expectedHash !== providedHash) {
     const failure = await registerRateLimitFailure(req, 'homepage-lock');

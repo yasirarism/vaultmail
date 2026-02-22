@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { storage } from '@/lib/storage';
 import { ADMIN_SESSION_COOKIE, ADMIN_SESSION_PREFIX } from '@/lib/admin-auth';
+import { readEnv } from '@/lib/env';
 import {
   checkRateLimit,
   registerRateLimitFailure,
   resetRateLimit
 } from '@/lib/auth-rate-limit';
+export const runtime = 'edge';
 
 export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(request, 'admin-login');
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
   }
 
   const { password } = await request.json();
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminPassword = readEnv('ADMIN_PASSWORD');
 
   if (!adminPassword || password !== adminPassword) {
     const failure = await registerRateLimitFailure(request, 'admin-login');

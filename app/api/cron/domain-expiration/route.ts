@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { refreshDomainExpiration } from '@/lib/domain-expiration';
 import { getStoredDomains } from '@/lib/domains';
+import { readEnv } from '@/lib/env';
 
-const getCronSecret = () => process.env.CRON_SECRET?.trim();
+export const runtime = 'edge';
+
+const getCronSecret = () => readEnv('CRON_SECRET')?.trim();
 
 export async function GET(req: Request) {
   const secret = getCronSecret();

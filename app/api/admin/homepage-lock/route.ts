@@ -10,6 +10,8 @@ import {
   hashHomepagePassword
 } from '@/lib/homepage-lock';
 import { storage } from '@/lib/storage';
+import { hasEnv } from '@/lib/env';
+export const runtime = 'edge';
 
 type HomepageLockPayload = {
   enabled: boolean;
@@ -28,7 +30,7 @@ const isAuthorized = async () => {
 };
 
 const ensureMongoAvailable = () => {
-  if (!process.env.MONGODB_URI) {
+  if (!hasEnv('MONGODB_URI')) {
     return NextResponse.json(
       { error: 'MONGODB_URI is not set. Configure MongoDB to use homepage lock.' },
       { status: 500 }
@@ -70,7 +72,7 @@ export async function POST(request: Request) {
 
   const settings = await getHomepageLockSettings();
   const nextPasswordHash = password
-    ? hashHomepagePassword(password)
+    ? await hashHomepagePassword(password)
     : settings.passwordHash;
 
   if (enabled && !nextPasswordHash) {

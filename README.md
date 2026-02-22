@@ -29,6 +29,100 @@ A premium, privacy-focused disposable email service built with **Next.js** and *
 
 Clone this repository and deploy it to Vercel.
 
+### 1b. Deploy to Cloudflare (Workers runtime for Pages-compatible setup)
+
+Cloudflare Pages does not currently support Next.js 16 SSR directly with `next-on-pages`.
+This repo now includes **OpenNext for Cloudflare**, which is the supported path for Cloudflare deployments.
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Build the Cloudflare worker bundle:
+   ```bash
+   npm run cf:build
+   ```
+3. Login and deploy to **Cloudflare Workers**:
+   ```bash
+   npx wrangler login
+   npm run cf:deploy
+   ```
+
+### Cloudflare Pages deployment (important)
+
+If your Cloudflare Pages project is still using the legacy build command:
+
+```bash
+npx @cloudflare/next-on-pages@1
+```
+
+this repository includes a local compatibility shim for that command which delegates to `npm run cf:pages:build` (OpenNext output), avoiding the legacy oversized Pages Functions bundle path.
+
+Use this instead:
+
+- **Preferred build command**: `npm run cf:pages:build`
+- **Build output directory**: `.vercel/output/static`
+
+This repo now prepares `.cf-pages` automatically in a `postbuild` hook, with support for both:
+- OpenNext output (`.open-next`) and
+- legacy `next-on-pages` output (`.vercel/output/static`).
+
+So even if your Pages project is still temporarily set to `npx @cloudflare/next-on-pages@1`, the configured `.vercel/output/static` output directory will exist. We also mirror output to `.cf-pages` for local inspection.
+
+Required environment variables (choose one storage backend):
+
+### Option A: Cloudflare D1 (recommended for Cloudflare deploys)
+
+Bind your D1 database with binding name **`DB`**:
+
+- **Cloudflare Pages Dashboard**: Project → Settings → Functions → D1 bindings → Add binding (`DB`).
+- **If dashboard Add button is disabled / not working**: use Wrangler CLI:
+  ```bash
+  # Get your D1 database ID
+  npx wrangler d1 list
+
+  # Attach D1 binding to your Pages project
+  npx wrangler pages project d1 set --project-name <YOUR_PAGES_PROJECT> --binding DB --database-id <YOUR_D1_DATABASE_ID>
+  ```
+
+> This repo intentionally does not hardcode a D1 `database_id` in `wrangler.toml`, so you can bind D1 per-project without editing committed config each time.
+
+- Optional env: `STORAGE_BACKEND=d1` (forces D1 as primary backend).
+
+### Option B: MongoDB (Vercel/Node-compatible)
+
+- `MONGODB_URI`
+- `MONGODB_DB` (optional, default `vaultmail`)
+- Optional env: `STORAGE_BACKEND=mongodb` (forces MongoDB as primary backend).
+
+Other optional env:
+
+- `NEXT_PUBLIC_ADSENSE_CLIENT_ID`
+
+### Create D1 schema (first time)
+
+After creating your D1 DB and binding it as `DB` (dashboard or CLI), run:
+
+```bash
+npx wrangler d1 execute vaultmail --remote --command "CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value_json TEXT NOT NULL, expires_at INTEGER);"
+npx wrangler d1 execute vaultmail --remote --command "CREATE TABLE IF NOT EXISTS list_meta (key TEXT PRIMARY KEY, expires_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);"
+npx wrangler d1 execute vaultmail --remote --command "CREATE TABLE IF NOT EXISTS list_items (id INTEGER PRIMARY KEY AUTOINCREMENT, list_key TEXT NOT NULL, value_json TEXT NOT NULL, created_at INTEGER NOT NULL);"
+```
+
+> The app also auto-creates these tables at runtime when D1 binding is available.
+
+For local Cloudflare runtime testing:
+
+```bash
+npm run cf:preview
+```
+
+To simulate the Pages build output locally:
+
+```bash
+npm run cf:pages:build
+```
+
 ### 2. Configure Database (MongoDB)
 
 Provision a MongoDB database (MongoDB Atlas or self-hosted) and set the connection string in Vercel:

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getStoredDomainExpiration, refreshDomainExpiration } from '@/lib/domain-expiration';
+export const runtime = 'edge';
 
 const MAX_AGE_HOURS = 24;
 

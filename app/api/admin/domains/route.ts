@@ -7,6 +7,7 @@ import {
 } from '@/lib/admin-auth';
 import { storage } from '@/lib/storage';
 import { getStoredDomains, normalizeDomains } from '@/lib/domains';
+export const runtime = 'edge';
 
 type DomainsPayload = {
   domains: string[];
