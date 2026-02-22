@@ -69,11 +69,34 @@ This repo now prepares `.cf-pages` automatically in a `postbuild` hook, with sup
 
 So even if your Pages project is still temporarily set to `npx @cloudflare/next-on-pages@1`, the configured `.vercel/output/static` output directory will exist. We also mirror output to `.cf-pages` for local inspection.
 
-Required Cloudflare Worker environment variables:
+Required environment variables (choose one storage backend):
+
+### Option A: Cloudflare D1 (recommended for Cloudflare deploys)
+
+- Set Worker/Page binding `DB` to your D1 database in `wrangler.toml` / `wrangler.worker.toml`.
+- Optional env: `STORAGE_BACKEND=d1` (forces D1 as primary backend).
+
+### Option B: MongoDB (Vercel/Node-compatible)
 
 - `MONGODB_URI`
 - `MONGODB_DB` (optional, default `vaultmail`)
-- `NEXT_PUBLIC_ADSENSE_CLIENT_ID` (optional)
+- Optional env: `STORAGE_BACKEND=mongodb` (forces MongoDB as primary backend).
+
+Other optional env:
+
+- `NEXT_PUBLIC_ADSENSE_CLIENT_ID`
+
+### Create D1 schema (first time)
+
+After creating your D1 DB and binding it as `DB`, run:
+
+```bash
+npx wrangler d1 execute vaultmail --remote --command "CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value_json TEXT NOT NULL, expires_at INTEGER);"
+npx wrangler d1 execute vaultmail --remote --command "CREATE TABLE IF NOT EXISTS list_meta (key TEXT PRIMARY KEY, expires_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);"
+npx wrangler d1 execute vaultmail --remote --command "CREATE TABLE IF NOT EXISTS list_items (id INTEGER PRIMARY KEY AUTOINCREMENT, list_key TEXT NOT NULL, value_json TEXT NOT NULL, created_at INTEGER NOT NULL);"
+```
+
+> The app also auto-creates these tables at runtime when D1 binding is available.
 
 For local Cloudflare runtime testing:
 

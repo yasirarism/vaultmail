@@ -2,3 +2,8 @@ name = "vaultmail"
 pages_build_output_dir = ".vercel/output/static"
 compatibility_date = "2026-02-22"
 compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vaultmail"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"

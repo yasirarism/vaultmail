@@ -6,3 +6,8 @@ compatibility_flags = ["nodejs_compat"]
 [assets]
 binding = "ASSETS"
 directory = ".open-next/assets"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vaultmail"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
