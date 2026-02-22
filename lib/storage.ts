@@ -1,5 +1,7 @@
-const uri = process.env.MONGODB_URI || '';
-const dbName = process.env.MONGODB_DB || 'vaultmail';
+import { readEnv } from '@/lib/env';
+
+const uri = readEnv('MONGODB_URI') || '';
+const dbName = readEnv('MONGODB_DB') || 'vaultmail';
 
 type MongoClient = import('mongodb').MongoClient;
 type MongoDb = import('mongodb').Db;

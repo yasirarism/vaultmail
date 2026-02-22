@@ -6,13 +6,14 @@ import AdsenseScript from '@/components/AdsenseScript';
 import { storage } from '@/lib/storage';
 import { BRANDING_SETTINGS_KEY } from '@/lib/admin-auth';
 import { DEFAULT_APP_NAME, normalizeAppName } from '@/lib/branding';
+import { hasEnv } from '@/lib/env';
 
 type BrandingSettings = {
   appName?: string;
 };
 
 const resolveAppName = async () => {
-  if (!process.env.MONGODB_URI) {
+  if (!hasEnv('MONGODB_URI')) {
     return DEFAULT_APP_NAME;
   }
   const stored = await storage.get(BRANDING_SETTINGS_KEY);

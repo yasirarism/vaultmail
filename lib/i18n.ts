@@ -1,8 +1,10 @@
+import { readEnv } from '@/lib/env';
+
 export const SUPPORTED_LOCALES = ['en', 'id'] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
 export const DEFAULT_LOCALE = (() => {
-  const envLocale = process.env.NEXT_PUBLIC_DEFAULT_LOCALE?.trim().toLowerCase();
+  const envLocale = readEnv('NEXT_PUBLIC_DEFAULT_LOCALE')?.trim().toLowerCase();
   if (envLocale && SUPPORTED_LOCALES.includes(envLocale as Locale)) {
     return envLocale as Locale;
   }

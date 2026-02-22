@@ -1,5 +1,6 @@
 import { storage } from '@/lib/storage';
 import { HOMEPAGE_LOCK_SETTINGS_KEY } from '@/lib/admin-auth';
+import { hasEnv } from '@/lib/env';
 
 export const HOMEPAGE_LOCK_COOKIE = 'vaultmail_homepage_auth';
 
@@ -49,7 +50,7 @@ const warnMissingMongo = () => {
 };
 
 export const getHomepageLockSettings = async (): Promise<HomepageLockSettings> => {
-  if (!process.env.MONGODB_URI) {
+  if (!hasEnv('MONGODB_URI')) {
     warnMissingMongo();
     return { enabled: false };
   }

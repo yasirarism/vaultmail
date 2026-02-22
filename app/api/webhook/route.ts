@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { extractEmail, getSenderInfo } from '@/lib/utils';
 import { RETENTION_SETTINGS_KEY, TELEGRAM_SETTINGS_KEY } from '@/lib/admin-auth';
 import { inboxKey } from '@/lib/storage-keys';
+import { readEnv } from '@/lib/env';
 export const runtime = 'edge';
 
 type TelegramSettings = {
@@ -18,7 +19,7 @@ type RetentionSettings = {
 
 const DEFAULT_MAX_ATTACHMENT_BYTES = 2_000_000;
 const MAX_ATTACHMENT_BYTES =
-  Number(process.env.ATTACHMENT_MAX_BYTES) || DEFAULT_MAX_ATTACHMENT_BYTES;
+  Number(readEnv('ATTACHMENT_MAX_BYTES')) || DEFAULT_MAX_ATTACHMENT_BYTES;
 
 const estimateBase64Bytes = (value?: string) => {
   if (!value) return 0;
