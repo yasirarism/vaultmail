@@ -56,7 +56,7 @@ If your Cloudflare Pages project is still using the legacy build command:
 npx @cloudflare/next-on-pages@1
 ```
 
-please replace it. That path is deprecated for Next.js 16 and can exceed Pages Functions size limits.
+this repository includes a local compatibility shim for that command which delegates to `npm run cf:pages:build` (OpenNext output), avoiding the legacy oversized Pages Functions bundle path.
 
 Use this instead:
 
