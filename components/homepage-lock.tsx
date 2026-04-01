@@ -1,21 +1,19 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Shield, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
 
-export function HomepageLock() {
+type HomepageLockProps = {
+  appName?: string;
+};
+
+export function HomepageLock({ appName = DEFAULT_APP_NAME }: HomepageLockProps) {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [customAppName, setCustomAppName] = useState<string | null>(null);
-
-  const resolvedAppName = useMemo(
-    () => customAppName || DEFAULT_APP_NAME,
-    [customAppName]
-  );
 
   useEffect(() => {
     const wasAuthed = window.localStorage.getItem('vaultmail_homepage_authed');
@@ -25,21 +23,6 @@ export function HomepageLock() {
     }
   }, []);
 
-  useEffect(() => {
-    const loadBranding = async () => {
-      try {
-        const response = await fetch('/api/branding');
-        if (!response.ok) return;
-        const data = (await response.json()) as { appName?: string };
-        const value = data?.appName?.trim();
-        setCustomAppName(value || DEFAULT_APP_NAME);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    loadBranding();
-  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -84,7 +67,7 @@ export function HomepageLock() {
             <Shield className="h-7 w-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white">
-            {resolvedAppName} Private
+            {appName} Private
           </h1>
           <p className="text-sm text-white/60">
             Homepage dikunci. Hubungi owner untuk mendapatkan akses website.
