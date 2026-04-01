@@ -6,6 +6,7 @@ import {
   getHomepageLockSettings,
   HOMEPAGE_LOCK_COOKIE,
 } from "@/lib/homepage-lock";
+import { getStoredAppName } from "@/lib/branding-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,10 @@ export default async function Page({
     redirect('/');
   }
 
-  const settings = await getHomepageLockSettings();
+  const [settings, appName] = await Promise.all([
+    getHomepageLockSettings(),
+    getStoredAppName(),
+  ]);
 
   if (settings.enabled && settings.passwordHash) {
     const cookieStore = await cookies();
@@ -30,7 +34,7 @@ export default async function Page({
     const isAuthorized = authCookie?.value === settings.passwordHash;
 
     if (!isAuthorized) {
-      return <HomepageLock />;
+      return <HomepageLock appName={appName} />;
     }
   }
 
