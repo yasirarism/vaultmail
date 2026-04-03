@@ -236,7 +236,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
       </div>
 
       <footer className="border-t border-white/5 py-8 mt-12 text-center text-muted-foreground text-sm">
-        <p>© 2026 {resolvedAppName}. Created with ❤️</p>
+        <p>© 2026 {resolvedAppName}. Modified with ❤️ by Yasir</p>
       </footer>
     </main>
   );

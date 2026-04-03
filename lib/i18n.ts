@@ -13,8 +13,8 @@ const translations = {
   en: {
     appName: 'YS Mail',
     github: 'GitHub',
-    heroTitle: 'Instant Inbox',
-    heroTitleSuffix: 'Built for Builders',
+    heroTitle: 'Temp Mail',
+    heroTitleSuffix: 'For Developer',
     heroSubtitle:
       'Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.',
     featureInstantTitle: 'Instant & Real-time',
@@ -22,10 +22,10 @@ const translations = {
       'Emails arrive instantly via Webhooks. The inbox auto-refreshes in real-time.',
     featurePrivacyTitle: 'Privacy First',
     featurePrivacyDesc:
-      'No tracking. Emails traverse your infrastructure and are stored in Redis with configurable TTL.',
+      'No tracking. Emails traverse your infrastructure and are stored in MongoDB with configurable TTL.',
     featureCustomTitle: 'Custom Domains',
     featureCustomDesc:
-      "Point your domain's MX records to your Cloudflare/Mailgun and route emails here.",
+      "Point your domain's MX records to Cloudflare Email Routing and forward emails through your Cloudflare Workers API webhook.",
     greetingMorning: 'Good morning',
     greetingAfternoon: 'Good afternoon',
     greetingEvening: 'Good evening',
@@ -36,7 +36,7 @@ const translations = {
     inboxHintPrefix: 'Waiting for emails at this address.',
     inboxHintSuffix: 'Messages auto-delete after',
     syncing: 'Syncing...',
-    live: 'Live',
+    live: 'Server Online',
     usernamePlaceholder: 'username',
     settingsTitle: 'Settings',
     languageLabel: 'Language',
@@ -52,6 +52,8 @@ const translations = {
     copy: 'Copy',
     newAlias: 'New',
     inboxLabel: 'Inbox',
+    inboxCountTotal: 'Total',
+    inboxCountUnread: 'Unread',
     waitingForIncoming: 'Waiting for incoming mail...',
     selectEmail: 'Select an email to read',
     toLabel: 'to',
@@ -207,8 +209,8 @@ const translations = {
   id: {
     appName: 'YS Mail',
     github: 'GitHub',
-    heroTitle: 'Inbox Instan',
-    heroTitleSuffix: 'Untuk Para Builder',
+    heroTitle: 'Temp Mail',
+    heroTitleSuffix: 'For Developer',
     heroSubtitle:
       'Buat inbox sementara yang aman dalam hitungan detik. Gunakan domain sendiri atau domain bawaan.',
     featureInstantTitle: 'Instan & Real-time',
@@ -216,10 +218,10 @@ const translations = {
       'Email masuk secara instan via webhook. Inbox auto-refresh secara real-time.',
     featurePrivacyTitle: 'Privasi Utama',
     featurePrivacyDesc:
-      'Tanpa pelacakan. Email diproses di infrastruktur Anda dan disimpan di Redis dengan TTL yang bisa diatur.',
+      'Tanpa pelacakan. Email diproses di infrastruktur Anda dan disimpan di MongoDB dengan TTL yang bisa diatur.',
     featureCustomTitle: 'Domain Kustom',
     featureCustomDesc:
-      'Arahkan MX record domain Anda ke Cloudflare/Mailgun dan rute email ke sini.',
+      'Arahkan MX record domain Anda ke Cloudflare Email Routing lalu teruskan email melalui API Cloudflare Workers webhook Anda.',
     greetingMorning: 'Selamat pagi',
     greetingAfternoon: 'Selamat siang',
     greetingEvening: 'Selamat sore',
@@ -230,7 +232,7 @@ const translations = {
     inboxHintPrefix: 'Menunggu email di alamat ini.',
     inboxHintSuffix: 'Pesan otomatis terhapus setelah',
     syncing: 'Sinkron...',
-    live: 'Live',
+    live: 'Server Online',
     usernamePlaceholder: 'username',
     settingsTitle: 'Pengaturan',
     languageLabel: 'Bahasa',
@@ -246,6 +248,8 @@ const translations = {
     copy: 'Salin',
     newAlias: 'Baru',
     inboxLabel: 'Inbox',
+    inboxCountTotal: 'Total',
+    inboxCountUnread: 'Belum dibaca',
     waitingForIncoming: 'Menunggu email masuk...',
     selectEmail: 'Pilih email untuk dibaca',
     toLabel: 'ke',

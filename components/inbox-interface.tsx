@@ -62,6 +62,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [domainStatusLoading, setDomainStatusLoading] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
   const [showFilter, setShowFilter] = useState(false);
+  const [readEmailIds, setReadEmailIds] = useState<Set<string>>(new Set());
   const previousEmailIds = useRef<Set<string>>(new Set());
   const hasLoadedEmails = useRef(false);
 
@@ -213,7 +214,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       const text = node.nodeValue || '';
       const replaced = text.replace(
         codeRegex,
-        '<mark class="rounded bg-amber-200/90 px-1 py-0.5 font-semibold text-black">$1</mark>'
+        '<mark data-copy-code="$1" class="rounded bg-amber-200/90 px-1 py-0.5 font-semibold text-black cursor-pointer select-all" title="Tap to copy OTP">$1</mark>'
       );
       if (replaced !== text) {
         const wrapper = doc.createElement('span');
@@ -403,11 +404,6 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
         // De-dupe could be handled here
         const incoming = data.emails as Email[];
         const nextIds = new Set(incoming.map((email) => email.id));
-        const newCount = incoming.filter((email) => !previousEmailIds.current.has(email.id))
-          .length;
-        if (hasLoadedEmails.current && newCount > 0) {
-          toast.info(`${t.toastNewEmail} (${newCount})`);
-        }
         previousEmailIds.current = nextIds;
         hasLoadedEmails.current = true;
         setEmails(incoming);
@@ -429,6 +425,32 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     hasLoadedEmails.current = false;
   }, [address]);
 
+  useEffect(() => {
+    if (!address) return;
+    const storageKey = `dispo_read_${address}`;
+    const savedReadIds = localStorage.getItem(storageKey);
+    if (!savedReadIds) {
+      setReadEmailIds(new Set());
+      return;
+    }
+    try {
+      const parsed = JSON.parse(savedReadIds);
+      if (Array.isArray(parsed)) {
+        setReadEmailIds(new Set(parsed));
+      } else {
+        setReadEmailIds(new Set());
+      }
+    } catch {
+      setReadEmailIds(new Set());
+    }
+  }, [address]);
+
+  useEffect(() => {
+    if (!address) return;
+    const storageKey = `dispo_read_${address}`;
+    localStorage.setItem(storageKey, JSON.stringify(Array.from(readEmailIds)));
+  }, [address, readEmailIds]);
+
   // Polling
   useEffect(() => {
     if (!autoRefresh) return;
@@ -449,6 +471,27 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   }, [emails, filterQuery]);
 
   const emailCount = filterQuery ? filteredEmails.length : emails.length;
+  const unreadCount = emails.filter((email) => !readEmailIds.has(email.id)).length;
+
+  const openEmail = (email: Email) => {
+    setSelectedEmail(email);
+    setReadEmailIds((prev) => {
+      if (prev.has(email.id)) return prev;
+      const next = new Set(prev);
+      next.add(email.id);
+      return next;
+    });
+  };
+
+  const handleEmailBodyClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    const codeElement = target.closest('[data-copy-code]');
+    if (!codeElement) return;
+    const code = codeElement.getAttribute('data-copy-code');
+    if (!code) return;
+    navigator.clipboard.writeText(code);
+    toast.success(`OTP copied: ${code}`);
+  };
 
   useEffect(() => {
     if (filterQuery) {
@@ -720,7 +763,12 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
             <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/20">
                 <h3 className="font-semibold flex items-center gap-2">
                     <Mail className="h-4 w-4 text-blue-400" /> {t.inboxLabel}
-                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-muted-foreground">{emailCount}</span>
+                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-muted-foreground">
+                      {t.inboxCountTotal}: {emailCount}
+                    </span>
+                    <span className="text-xs bg-blue-500/20 px-2 py-0.5 rounded-full text-blue-100">
+                      {t.inboxCountUnread}: {unreadCount}
+                    </span>
                 </h3>
                 <div className="flex items-center gap-1">
                   <Button
@@ -770,14 +818,17 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
-                                onClick={() => setSelectedEmail(email)}
+                                onClick={() => openEmail(email)}
                                 className={cn(
                                     "p-4 rounded-xl cursor-pointer transition-all border border-transparent hover:bg-white/5",
-                                    selectedEmail?.id === email.id ? "bg-white/10 border-blue-500/30" : "bg-black/20"
+                                    selectedEmail?.id === email.id ? "bg-white/10 border-blue-500/30" : "bg-black/20",
+                                    !readEmailIds.has(email.id) && "border-blue-400/30 bg-blue-500/10"
                                 )}
                             >
                                 <div className="flex justify-between items-start mb-1">
-                                    <span className="font-medium truncate max-w-[150px] text-sm">{sender.label}</span>
+                                    <span className={cn("truncate max-w-[150px] text-sm", readEmailIds.has(email.id) ? "font-medium" : "font-semibold text-white")}>
+                                      {sender.label}
+                                    </span>
                                     <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                                         {formatDistanceToNow(new Date(email.receivedAt), { addSuffix: true })}
                                     </span>
@@ -844,7 +895,8 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     
                     {/* Body */}
                     <div className="flex-1 overflow-y-auto p-6 bg-white">
-                        <div 
+                        <div
+                          onClick={handleEmailBodyClick}
                           className="prose prose-base md:prose-lg max-w-none text-black prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
                           dangerouslySetInnerHTML={{
                             __html: highlightVerificationCodes(
