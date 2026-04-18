@@ -72,3 +72,35 @@
     border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
+
+/* Neomorph theme styles */
+:root[data-theme='neomorph'] {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 96%;
+    --card: 222 32% 15%;
+    --card-foreground: 210 40% 96%;
+    --popover: 222 32% 15%;
+    --popover-foreground: 210 40% 96%;
+    --secondary: 222 30% 18%;
+    --muted: 222 30% 18%;
+    --border: 223 22% 20%;
+    --input: 223 22% 20%;
+}
+
+:root[data-theme='neomorph'] .glass {
+    background: linear-gradient(145deg, rgba(39, 51, 77, 0.75), rgba(20, 27, 41, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: none;
+    box-shadow:
+      8px 8px 16px rgba(5, 8, 13, 0.6),
+      -8px -8px 16px rgba(56, 72, 104, 0.2);
+}
+
+:root[data-theme='neomorph'] .glass-card {
+    background: linear-gradient(145deg, #232f47, #1a2436);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: none;
+    box-shadow:
+      14px 14px 28px rgba(7, 10, 15, 0.6),
+      -14px -14px 28px rgba(57, 74, 107, 0.2);
+}

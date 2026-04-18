@@ -1,7 +1,7 @@
 'use client';
 
 import { InboxInterface } from "@/components/inbox-interface";
-import { Menu, Shield, Zap, Globe, Code2, Wrench } from "lucide-react";
+import { Menu, Shield, Zap, Globe, Code2, Wrench, Palette } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -21,10 +21,12 @@ interface HomePageProps {
 }
 
 const STORAGE_KEY = 'vaultmail_locale';
+const THEME_STORAGE_KEY = 'vaultmail_theme';
 
 export function HomePage({ initialAddress }: HomePageProps) {
   const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
   const [showMenu, setShowMenu] = useState(false);
+  const [theme, setTheme] = useState<'glass' | 'neomorph'>('glass');
   const [retentionSeconds, setRetentionSeconds] = useState(86400);
   const [customAppName, setCustomAppName] = useState<string | null>(null);
 
@@ -33,12 +35,26 @@ export function HomePage({ initialAddress }: HomePageProps) {
     if (stored && SUPPORTED_LOCALES.includes(stored as Locale)) {
       setLocale(stored as Locale);
     }
+
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (storedTheme === 'neomorph' || storedTheme === 'glass') {
+      setTheme(storedTheme);
+    }
   }, []);
 
   useEffect(() => {
     document.documentElement.lang = locale;
     localStorage.setItem(STORAGE_KEY, locale);
   }, [locale]);
+
+  useEffect(() => {
+    if (theme === 'neomorph') {
+      document.documentElement.setAttribute('data-theme', 'neomorph');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   const t = useMemo(() => getTranslations(locale), [locale]);
   const retentionOptions = useMemo(() => getRetentionOptions(locale), [locale]);
@@ -142,6 +158,17 @@ export function HomePage({ initialAddress }: HomePageProps) {
                         <div className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                           Menu
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTheme((prev) => (prev === 'glass' ? 'neomorph' : 'glass'));
+                            setShowMenu(false);
+                          }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
+                        >
+                          <Palette className="h-4 w-4 text-pink-300" />
+                          {theme === 'glass' ? 'Switch to Neomorph' : 'Switch to Glass'}
+                        </button>
                         <button
                           type="button"
                           onClick={() => {

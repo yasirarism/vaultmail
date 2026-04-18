@@ -18,9 +18,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const themeInitScript = `
+    try {
+      var savedTheme = localStorage.getItem('vaultmail_theme');
+      if (savedTheme === 'neomorph') {
+        document.documentElement.setAttribute('data-theme', 'neomorph');
+      }
+    } catch (e) {}
+  `;
+
   return (
     <html lang={DEFAULT_LOCALE} className="dark">
       <body className="font-sans">
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <AdsenseScript />
         {children}
         <Toaster position="top-right" theme="dark" />
