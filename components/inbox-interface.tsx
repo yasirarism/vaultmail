@@ -63,6 +63,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [filterQuery, setFilterQuery] = useState('');
   const [showFilter, setShowFilter] = useState(false);
   const [readEmailIds, setReadEmailIds] = useState<Set<string>>(new Set());
+  const [deletingEmailId, setDeletingEmailId] = useState<string | null>(null);
   const previousEmailIds = useRef<Set<string>>(new Set());
   const hasLoadedEmails = useRef(false);
 
@@ -493,6 +494,41 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     toast.success(`OTP copied: ${code}`);
   };
 
+  const deleteEmail = useCallback(
+    async (emailId: string) => {
+      if (!address) return;
+      setDeletingEmailId(emailId);
+      try {
+        const response = await fetch(
+          `/api/inbox?address=${encodeURIComponent(address)}&emailId=${encodeURIComponent(
+            emailId
+          )}`,
+          { method: 'DELETE' }
+        );
+        if (!response.ok) {
+          throw new Error('Delete failed');
+        }
+        setEmails((prev) => prev.filter((item) => item.id !== emailId));
+        setReadEmailIds((prev) => {
+          if (!prev.has(emailId)) return prev;
+          const next = new Set(prev);
+          next.delete(emailId);
+          return next;
+        });
+        if (selectedEmail?.id === emailId) {
+          setSelectedEmail(null);
+        }
+        toast.success('Pesan berhasil dihapus.');
+      } catch (error) {
+        console.error(error);
+        toast.error('Gagal menghapus pesan.');
+      } finally {
+        setDeletingEmailId(null);
+      }
+    },
+    [address, selectedEmail?.id]
+  );
+
   useEffect(() => {
     if (filterQuery) {
       setShowFilter(true);
@@ -834,7 +870,28 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                     </span>
                                 </div>
                                 <h4 className="text-sm font-semibold truncate text-blue-100">{email.subject}</h4>
-                                <p className="text-xs text-muted-foreground truncate mt-1">{email.text.slice(0, 50)}...</p>
+                                <div className="mt-1 flex items-center gap-2">
+                                  <p className="flex-1 text-xs text-muted-foreground truncate">
+                                    {email.text.slice(0, 50)}...
+                                  </p>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      deleteEmail(email.id);
+                                    }}
+                                    disabled={deletingEmailId === email.id}
+                                    className="h-6 w-6 text-white/50 hover:bg-red-500/20 hover:text-red-300"
+                                  >
+                                    {deletingEmailId === email.id ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    )}
+                                  </Button>
+                                </div>
                             </motion.div>
                         )})
                     )}
@@ -851,6 +908,20 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <h1 className="text-xl font-bold text-white">{selectedEmail.subject}</h1>
                             <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteEmail(selectedEmail.id)}
+                                disabled={deletingEmailId === selectedEmail.id}
+                                className="text-red-200 hover:bg-red-500/20 hover:text-red-100"
+                              >
+                                {deletingEmailId === selectedEmail.id ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                )}
+                                Hapus
+                              </Button>
                               <Button variant="ghost" size="sm" onClick={downloadEmail}>
                                 <Download className="mr-2 h-4 w-4" />
                                 Download Email

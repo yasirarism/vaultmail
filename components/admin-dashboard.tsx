@@ -74,6 +74,10 @@ export function AdminDashboard() {
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState(false);
   const [domainToDelete, setDomainToDelete] = useState<string | null>(null);
+  const [maintenanceAddress, setMaintenanceAddress] = useState('');
+  const [cleanupRunning, setCleanupRunning] = useState(false);
+  const [deleteInboxRunning, setDeleteInboxRunning] = useState(false);
+  const [deleteAllRunning, setDeleteAllRunning] = useState(false);
 
   const retentionOptions = useMemo(
     () => [
@@ -333,6 +337,77 @@ export function AdminDashboard() {
     }
   };
 
+  const runCleanup = async () => {
+    setCleanupRunning(true);
+    try {
+      const response = await fetch('/api/admin/inbox-maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cleanup' })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to run cleanup');
+      }
+      const data = (await response.json()) as { deleted?: number };
+      toast.success(`Cleanup selesai. ${data.deleted || 0} pesan dihapus.`);
+      fetchStats();
+    } catch (error) {
+      console.error(error);
+      toast.error('Cleanup inbox gagal dijalankan.');
+    } finally {
+      setCleanupRunning(false);
+    }
+  };
+
+  const deleteInboxMessages = async () => {
+    const address = maintenanceAddress.trim().toLowerCase();
+    if (!address) {
+      toast.error('Masukkan alamat inbox yang mau dihapus.');
+      return;
+    }
+    setDeleteInboxRunning(true);
+    try {
+      const response = await fetch('/api/admin/inbox-maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete-inbox', address })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete inbox');
+      }
+      const data = (await response.json()) as { deleted?: number };
+      toast.success(`Inbox ${address} dihapus (${data.deleted || 0} pesan).`);
+      fetchStats();
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal menghapus pesan inbox.');
+    } finally {
+      setDeleteInboxRunning(false);
+    }
+  };
+
+  const deleteAllMessages = async () => {
+    setDeleteAllRunning(true);
+    try {
+      const response = await fetch('/api/admin/inbox-maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete-all' })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete all inbox');
+      }
+      const data = (await response.json()) as { deleted?: number };
+      toast.success(`Semua inbox dihapus (${data.deleted || 0} pesan).`);
+      fetchStats();
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal menghapus semua inbox.');
+    } finally {
+      setDeleteAllRunning(false);
+    }
+  };
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -424,6 +499,64 @@ export function AdminDashboard() {
                     {latestActivityLabel}
                   </p>
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Cleanup & Delete Inbox
+                  </h2>
+                  <p className="text-sm text-white/60">
+                    Jalankan cleanup manual kalau auto-delete belum menghapus pesan lama.
+                  </p>
+                </div>
+                <Button onClick={runCleanup} disabled={cleanupRunning}>
+                  {cleanupRunning ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Jalankan Cleanup'
+                  )}
+                </Button>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+                <Input
+                  value={maintenanceAddress}
+                  onChange={(event) => setMaintenanceAddress(event.target.value)}
+                  placeholder="email@domain.com"
+                  className="bg-black/30 text-white placeholder:text-white/40"
+                />
+                <Button
+                  type="button"
+                  onClick={deleteInboxMessages}
+                  disabled={deleteInboxRunning || !maintenanceAddress.trim()}
+                  className="bg-red-500/80 text-white hover:bg-red-500"
+                >
+                  {deleteInboxRunning ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Delete Inbox'
+                  )}
+                </Button>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={deleteAllMessages}
+                  disabled={deleteAllRunning}
+                  className="border border-red-300/30 text-red-200 hover:bg-red-500/10"
+                >
+                  {deleteAllRunning ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Semua Pesan
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
 
