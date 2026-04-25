@@ -60,6 +60,16 @@ const cleanupExpiredList = async (key: string) => {
   return meta;
 };
 
+const cleanupEmptyListMeta = async (key: string) => {
+  const db = await getDb();
+  const listMeta = db.collection<ListMetaDocument>('list_meta');
+  const listItems = db.collection<ListItemDocument>('list_items');
+  const count = await listItems.countDocuments({ key }, { limit: 1 });
+  if (count === 0) {
+    await listMeta.deleteOne({ _id: key });
+  }
+};
+
 const patternToRegex = (pattern: string) => {
   const escaped = pattern.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&');
   const regexBody = escaped.replace(/\*/g, '.*');
@@ -163,6 +173,42 @@ export const storage = {
     const meta = await cleanupExpiredList(key);
     if (!meta) return 0;
     return listItems.countDocuments({ key });
+  },
+
+  async ldeleteByIds(key: string, ids: string[]) {
+    if (ids.length === 0) return 0;
+    const db = await getDb();
+    const listItems = db.collection<ListItemDocument>('list_items');
+    const result = await listItems.deleteMany({
+      key,
+      'value.id': { $in: ids }
+    });
+    await cleanupEmptyListMeta(key);
+    return result.deletedCount ?? 0;
+  },
+
+  async ldeleteOlderThanIsoDate(
+    key: string,
+    isoDate: string,
+    fieldPath = 'value.receivedAt'
+  ) {
+    const db = await getDb();
+    const listItems = db.collection<ListItemDocument>('list_items');
+    const result = await listItems.deleteMany({
+      key,
+      [fieldPath]: { $lt: isoDate }
+    });
+    await cleanupEmptyListMeta(key);
+    return result.deletedCount ?? 0;
+  },
+
+  async lclear(key: string) {
+    const db = await getDb();
+    const listMeta = db.collection<ListMetaDocument>('list_meta');
+    const listItems = db.collection<ListItemDocument>('list_items');
+    const result = await listItems.deleteMany({ key });
+    await listMeta.deleteOne({ _id: key });
+    return result.deletedCount ?? 0;
   },
 
   async keys(pattern: string) {
