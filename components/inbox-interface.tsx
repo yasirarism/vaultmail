@@ -401,6 +401,14 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       setLoading(true);
       const res = await fetch(`/api/inbox?address=${encodeURIComponent(address)}&t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
+      if (data?.imapError) {
+        toast.error(`IMAP sync error: ${data.imapMessage || 'Unknown error'}`);
+        console.warn('[IMAP_SYNC_ERROR]', {
+          address,
+          checkedAt: data.checkedAt,
+          message: data.imapMessage || 'Unknown error'
+        });
+      }
       if (data.emails) {
         // Only update if changes to avoid jitter, or just replace for now
         // De-dupe could be handled here

@@ -72,7 +72,11 @@ export async function GET(req: Request) {
     return NextResponse.json({ emails: emails || [] }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('Inbox Error:', error);
-    return NextResponse.json({ emails: [] }, { status: 200, headers: { 'Cache-Control': 'no-store' } });
+    const message = error instanceof Error ? error.message : 'Unknown inbox error';
+    return NextResponse.json(
+      { emails: [], imapError: true, imapMessage: message, checkedAt: new Date().toISOString() },
+      { status: 200, headers: { 'Cache-Control': 'no-store' } }
+    );
   }
 }
 
