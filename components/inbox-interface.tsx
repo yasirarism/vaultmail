@@ -143,14 +143,11 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     if (!html) return '';
 
     if (typeof window === 'undefined') {
-      return html
-        .replace(/<style[\s\S]*?<\/style>/gi, '')
-        .replace(/<script[\s\S]*?<\/script>/gi, '')
-        .replace(/<link[^>]*rel=["']?stylesheet["']?[^>]*>/gi, '');
+      return html.replace(/<script[\s\S]*?<\/script>/gi, '');
     }
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    doc.querySelectorAll('style, script, link[rel="stylesheet"]').forEach((node) => node.remove());
+    doc.querySelectorAll('script').forEach((node) => node.remove());
     return doc.body.innerHTML || '';
   }, []);
 

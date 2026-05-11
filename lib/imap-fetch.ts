@@ -300,8 +300,14 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
         continue;
       }
 
-      const messageId = headers.get('message-id') || `${uid}:${headers.get('date') || ''}:${headers.get('subject') || ''}`;
-      const sourceId = `imap:${createHash('sha1').update(messageId).digest('hex')}`;
+      const messageIdentity = [
+        headers.get('message-id') || '',
+        headers.get('date') || '',
+        headers.get('from') || '',
+        headers.get('to') || headers.get('delivered-to') || '',
+        headers.get('subject') || ''
+      ].join('|');
+      const sourceId = `imap:${createHash('sha1').update(messageIdentity).digest('hex')}`;
       if (existingSourceIds.has(sourceId)) {
         debug.duplicateFiltered += 1;
         continue;
