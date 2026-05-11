@@ -2,6 +2,7 @@ import { inboxKey } from '@/lib/storage-keys';
 import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
 import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
+import { fetchFromImap } from '@/lib/imap-fetch';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,23 @@ export async function GET(req: Request) {
 
   try {
     await cleanupExpiredMessages(address);
+
+    const existing = await storage.lrange(inboxKey(address), 0, -1);
+    const existingSourceIds = new Set(
+      (existing || [])
+        .map((item) => (item && typeof item === 'object' ? (item as { sourceId?: string }).sourceId : undefined))
+        .filter((value): value is string => Boolean(value))
+    );
+
+    const imapEmails = await fetchFromImap(address, existingSourceIds);
+    if (imapEmails.length > 0) {
+      for (const email of imapEmails) {
+        await storage.lpush(inboxKey(address), email);
+      }
+      const retentionSeconds = await getRetentionSeconds();
+      await storage.expire(inboxKey(address), retentionSeconds);
+    }
+
     const emails = await storage.lrange(inboxKey(address), 0, -1);
     return NextResponse.json({ emails: emails || [] });
   } catch (error) {
