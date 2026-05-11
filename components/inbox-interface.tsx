@@ -192,15 +192,22 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   );
 
   const getListPreviewText = useCallback((email: Email) => {
-    const source = (email.text || email.html || '').replace(/<(?:style|script)[\s\S]*?<\\\/(?:style|script)>/gi, ' ');
-    const noTags = source.replace(/<[^>]+>/g, ' ');
-    const cleaned = noTags
+    const source = email.html || email.text || '';
+    const plain = (() => {
+      if (typeof window === 'undefined') {
+        return source.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ');
+      }
+      const doc = new DOMParser().parseFromString(source, 'text/html');
+      doc.querySelectorAll('script, style').forEach((n) => n.remove());
+      return doc.body.textContent || '';
+    })();
+    const cleaned = plain
       .split('\n')
       .filter((line) => !/^(delivered-to|from|to|cc|subject|date|message-id):/i.test(line.trim()))
       .join(' ')
       .replace(/\s+/g, ' ')
       .trim();
-    return cleaned || email.subject || email.from || '(No preview available)';
+    return cleaned || '(No preview available)';
   }, []);
 
   const highlightVerificationCodes = useCallback((html: string) => {
@@ -1019,19 +1026,16 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     
                     {/* Body */}
                     <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 bg-white">
-                        <div
-                          onClick={handleEmailBodyClick}
-                          className="email-content max-w-none overflow-x-hidden break-words text-black [&_img]:max-w-full [&_a]:text-green-600 [&_a]:underline hover:[&_a]:text-green-700 [&_pre]:bg-transparent [&_pre]:p-0 [&_pre]:shadow-none [&_blockquote]:border-0 [&_blockquote]:pl-0 [&_*]:text-inherit"
-                          dangerouslySetInnerHTML={{
-                            __html: highlightVerificationCodes(
-                              resolveInlineImages(
-                                stripEmailStyles(
-                                  selectedEmail.html || `<p>${selectedEmail.text}</p>`
-                                ),
-                                selectedEmail.attachments
-                              )
-                            ),
-                          }}
+                        <iframe
+                          title="email-preview"
+                          className="h-full w-full border-0"
+                          sandbox="allow-popups allow-popups-to-escape-sandbox"
+                          srcDoc={highlightVerificationCodes(
+                            resolveInlineImages(
+                              stripEmailStyles(selectedEmail.html || `<p>${selectedEmail.text}</p>`),
+                              selectedEmail.attachments
+                            )
+                          )}
                         />
                     </div>
                 </div>
