@@ -99,7 +99,7 @@ const collectRecipientText = (headers: Map<string, string>) => {
     headers.get('x-original-to') || '',
     headers.get('envelope-to') || ''
   ];
-  return decodeMimeEncodedWords(values.join(' ').toLowerCase());
+  return decodeMimeEncodedWords(values.join(' ')).toLowerCase();
 };
 
 
