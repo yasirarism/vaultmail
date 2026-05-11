@@ -123,3 +123,20 @@
     font-size: 16px;
   }
 }
+
+.email-content a,
+.email-content button {
+  max-width: 100% !important;
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.email-content [style*="width"],
+.email-content [width] {
+  max-width: 100% !important;
+}
+
+.email-content * {
+  min-width: 0 !important;
+}

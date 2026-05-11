@@ -399,7 +399,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     if (!address) return;
     try {
       setLoading(true);
-      const res = await fetch(`/api/inbox?address=${encodeURIComponent(address)}`);
+      const res = await fetch(`/api/inbox?address=${encodeURIComponent(address)}&t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.emails) {
         // Only update if changes to avoid jitter, or just replace for now
