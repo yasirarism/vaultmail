@@ -246,8 +246,10 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
         headers.get('envelope-to') || ''
       ].join(' ');
       const recipientAddresses = extractEmailAddresses(`${recipientRaw} ${recipientText}`);
+      const fetchResponseText = res.toLowerCase();
       const matchesAddress = recipientAddresses.includes(normalizedAddress)
-        || recipientText.includes(normalizedAddress);
+        || recipientText.includes(normalizedAddress)
+        || fetchResponseText.includes(normalizedAddress);
       if (!matchesAddress) {
         debug.recipientFiltered += 1;
         continue;
