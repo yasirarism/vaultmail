@@ -102,6 +102,14 @@ const collectRecipientText = (headers: Map<string, string>) => {
   return decodeMimeEncodedWords(values.join(' ').toLowerCase());
 };
 
+
+const parseReceivedAt = (rawDate?: string) => {
+  if (!rawDate) return new Date().toISOString();
+  const ts = Date.parse(rawDate);
+  if (!Number.isFinite(ts)) return new Date().toISOString();
+  return new Date(ts).toISOString();
+};
+
 const normalizeBodyText = (raw: string, transferEncoding?: string) => {
   const trimmed = raw.trim();
   const encoding = (transferEncoding || '').toLowerCase();
@@ -182,7 +190,6 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
   const cfg = await readConfig();
   if (!cfg.enabled || !cfg.host || !cfg.user || !cfg.password || !cfg.tls) return [] as ImapEmail[];
 
-  const domain = address.split('@')[1]?.toLowerCase();
   const socket = tls.connect({ host: cfg.host, port: cfg.port, servername: cfg.host, rejectUnauthorized: cfg.rejectUnauthorized });
   await new Promise<void>((resolve, reject) => { socket.once('data', () => resolve()); socket.once('error', reject); });
 
@@ -210,11 +217,9 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       );
       const literals = extractLiterals(res);
       const headers = parseHeaders(literals[0] || '');
+      const from = decodeMimeEncodedWords(headers.get('from') || 'Unknown Sender');
       const to = decodeMimeEncodedWords(headers.get('to') || headers.get('delivered-to') || '');
-      const recipientText = collectRecipientText(headers);
-      const matchesExact = recipientText.includes(address.toLowerCase());
-      const matchesDomain = domain ? recipientText.includes(`@${domain}`) : false;
-      if (!matchesExact && !matchesDomain) continue;
+      // Jangan hard-filter per recipient/sender domain: tampilkan semua email dari mailbox IMAP.
 
       const messageId = headers.get('message-id') || `${uid}:${headers.get('date') || ''}:${headers.get('subject') || ''}`;
       const sourceId = `imap:${createHash('sha1').update(messageId).digest('hex')}`;
@@ -227,13 +232,13 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       out.push({
         id: randomUUID(),
         sourceId,
-        from: decodeMimeEncodedWords(headers.get('from') || 'Unknown Sender'),
+        from,
         to,
         subject: decodeMimeEncodedWords(headers.get('subject') || '(No Subject)'),
         text: safeText,
         html: safeText,
         attachments: [],
-        receivedAt: headers.get('date') ? new Date(headers.get('date')!).toISOString() : new Date().toISOString(),
+        receivedAt: parseReceivedAt(headers.get('date')),
         read: false
       });
       if (Number.isFinite(uidNum) && uidNum > maxSeenUid) maxSeenUid = uidNum;
