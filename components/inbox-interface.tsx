@@ -188,6 +188,18 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     [normalizeContentId]
   );
 
+  const getListPreviewText = useCallback((email: Email) => {
+    const source = (email.text || email.html || '').replace(/<(?:style|script)[\s\S]*?<\\\/(?:style|script)>/gi, ' ');
+    const noTags = source.replace(/<[^>]+>/g, ' ');
+    const cleaned = noTags
+      .split('\n')
+      .filter((line) => !/^(delivered-to|from|to|cc|subject|date|message-id):/i.test(line.trim()))
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return cleaned || '(No preview available)';
+  }, []);
+
   const highlightVerificationCodes = useCallback((html: string) => {
     if (!html || typeof window === 'undefined') {
       return html;
@@ -901,7 +913,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 <h4 className="text-sm font-semibold truncate text-blue-100">{email.subject}</h4>
                                 <div className="mt-1 flex items-center gap-2">
                                   <p className="flex-1 text-xs text-muted-foreground truncate">
-                                    {email.text.slice(0, 50)}...
+                                    {getListPreviewText(email).slice(0, 90)}
                                   </p>
                                   <Button
                                     type="button"
@@ -1006,7 +1018,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 bg-white">
                         <div
                           onClick={handleEmailBodyClick}
-                          className="email-content prose prose-sm md:prose-base lg:prose-lg max-w-none overflow-x-hidden break-words text-black prose-img:max-w-full prose-pre:overflow-x-auto prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
+                          className="email-content prose prose-sm md:prose-base lg:prose-lg max-w-none overflow-x-hidden break-words text-black prose-img:max-w-full prose-pre:overflow-x-auto prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none prose-blockquote:border-l-0 prose-blockquote:pl-0 prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
                           dangerouslySetInnerHTML={{
                             __html: highlightVerificationCodes(
                               resolveInlineImages(
