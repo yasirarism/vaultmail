@@ -203,7 +203,6 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
     let maxSeenUid = lastUid;
     for (const uid of ids) {
       const uidNum = Number(uid);
-      if (Number.isFinite(uidNum) && uidNum > maxSeenUid) maxSeenUid = uidNum;
       const res = await runImapCommand(
         socket,
         `f${uid}`,
@@ -237,6 +236,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
         receivedAt: headers.get('date') ? new Date(headers.get('date')!).toISOString() : new Date().toISOString(),
         read: false
       });
+      if (Number.isFinite(uidNum) && uidNum > maxSeenUid) maxSeenUid = uidNum;
     }
     if (maxSeenUid > lastUid) {
       await storage.set(lastUidKey(address), String(maxSeenUid));

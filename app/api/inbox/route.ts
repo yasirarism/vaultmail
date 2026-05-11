@@ -55,11 +55,16 @@ export async function GET(req: Request) {
     );
 
     const imapEmails = await fetchFromImap(address, existingSourceIds);
-    if (imapEmails.length > 0) {
-      for (const email of imapEmails) {
+    const retentionSeconds = await getRetentionSeconds();
+    const thresholdMs = Date.now() - retentionSeconds * 1000;
+    const freshImapEmails = imapEmails.filter((email) => {
+      const ts = new Date(email.receivedAt).getTime();
+      return Number.isFinite(ts) && ts >= thresholdMs;
+    });
+    if (freshImapEmails.length > 0) {
+      for (const email of freshImapEmails) {
         await storage.lpush(inboxKey(address), email);
       }
-      const retentionSeconds = await getRetentionSeconds();
       await storage.expire(inboxKey(address), retentionSeconds);
     }
 
