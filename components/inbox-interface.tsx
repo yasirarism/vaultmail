@@ -197,7 +197,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       .join(' ')
       .replace(/\s+/g, ' ')
       .trim();
-    return cleaned || '(No preview available)';
+    return cleaned || email.subject || email.from || '(No preview available)';
   }, []);
 
   const highlightVerificationCodes = useCallback((html: string) => {
@@ -1018,7 +1018,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 bg-white">
                         <div
                           onClick={handleEmailBodyClick}
-                          className="email-content prose prose-sm md:prose-base lg:prose-lg max-w-none overflow-x-hidden break-words text-black prose-img:max-w-full prose-pre:overflow-x-auto prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none prose-blockquote:border-l-0 prose-blockquote:pl-0 prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
+                          className="email-content max-w-none overflow-x-hidden break-words text-black [&_img]:max-w-full [&_a]:text-green-600 [&_a]:underline hover:[&_a]:text-green-700 [&_pre]:bg-transparent [&_pre]:p-0 [&_pre]:shadow-none [&_blockquote]:border-l-0 [&_blockquote]:pl-0"
                           dangerouslySetInnerHTML={{
                             __html: highlightVerificationCodes(
                               resolveInlineImages(
