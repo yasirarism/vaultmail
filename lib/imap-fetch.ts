@@ -51,6 +51,8 @@ const readConfig = async (): Promise<ImapConfig> => {
   };
 };
 
+const lastUidKey = (address: string) => `imap:lastuid:${address.toLowerCase()}`;
+
 const parseHeaders = (raw: string) => {
   const lines = raw.split(/\r?\n/);
   const map = new Map<string, string>();
@@ -187,16 +189,25 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
   try {
     await runImapCommand(socket, 'a1', `LOGIN "${cfg.user.replace(/"/g, '')}" "${cfg.password.replace(/"/g, '')}"`);
     await runImapCommand(socket, 'a2', "SELECT INBOX");
-    const search = await runImapCommand(socket, 'a3', 'SEARCH ALL');
+    const lastUidRaw = await storage.get(lastUidKey(address));
+    const lastUid = Number(lastUidRaw || 0);
+    const search = await runImapCommand(
+      socket,
+      'a3',
+      lastUid > 0 ? `UID SEARCH UID ${lastUid + 1}:*` : 'UID SEARCH ALL'
+    );
     const idsLine = search.split('\n').find((l) => l.includes('* SEARCH')) || '';
     const ids = idsLine.replace(/.*\* SEARCH\s*/, '').trim().split(/\s+/).filter(Boolean).slice(-cfg.maxFetch);
 
     const out: ImapEmail[] = [];
-    for (const id of ids) {
+    let maxSeenUid = lastUid;
+    for (const uid of ids) {
+      const uidNum = Number(uid);
+      if (Number.isFinite(uidNum) && uidNum > maxSeenUid) maxSeenUid = uidNum;
       const res = await runImapCommand(
         socket,
-        `f${id}`,
-        `FETCH ${id} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[TEXT]<0.50000>)`
+        `f${uid}`,
+        `UID FETCH ${uid} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[TEXT]<0.50000>)`
       );
       const literals = extractLiterals(res);
       const headers = parseHeaders(literals[0] || '');
@@ -206,7 +217,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const matchesDomain = domain ? recipientText.includes(`@${domain}`) : false;
       if (!matchesExact && !matchesDomain) continue;
 
-      const messageId = headers.get('message-id') || `${id}:${headers.get('date') || ''}:${headers.get('subject') || ''}`;
+      const messageId = headers.get('message-id') || `${uid}:${headers.get('date') || ''}:${headers.get('subject') || ''}`;
       const sourceId = `imap:${createHash('sha1').update(messageId).digest('hex')}`;
       if (existingSourceIds.has(sourceId)) continue;
 
@@ -226,6 +237,9 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
         receivedAt: headers.get('date') ? new Date(headers.get('date')!).toISOString() : new Date().toISOString(),
         read: false
       });
+    }
+    if (maxSeenUid > lastUid) {
+      await storage.set(lastUidKey(address), String(maxSeenUid));
     }
     await runImapCommand(socket, 'a9', 'LOGOUT');
     return out;
