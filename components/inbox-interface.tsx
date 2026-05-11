@@ -64,6 +64,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [showFilter, setShowFilter] = useState(false);
   const [readEmailIds, setReadEmailIds] = useState<Set<string>>(new Set());
   const [deletingEmailId, setDeletingEmailId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const previousEmailIds = useRef<Set<string>>(new Set());
   const hasLoadedEmails = useRef(false);
 
@@ -471,6 +472,23 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     });
   }, [emails, filterQuery]);
 
+
+
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredEmails.length / pageSize));
+  const paginatedEmails = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredEmails.slice(start, start + pageSize);
+  }, [currentPage, filteredEmails]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [address, filterQuery]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
   const emailCount = filterQuery ? filteredEmails.length : emails.length;
   const unreadCount = emails.filter((email) => !readEmailIds.has(email.id)).length;
 
@@ -845,7 +863,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                             <p>{filterQuery ? t.inboxFilterEmpty : t.waitingForIncoming}</p>
                         </motion.div>
                     ) : (
-                        filteredEmails.map((email) => {
+                        paginatedEmails.map((email) => {
                             const sender = getSenderInfo(email.from);
                             return (
                             <motion.div
@@ -897,6 +915,15 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     )}
                 </AnimatePresence>
             </div>
+            {filteredEmails.length > pageSize && (
+              <div className="flex items-center justify-between border-t border-white/10 p-2 text-xs">
+                <span className="text-muted-foreground">Page {currentPage}/{totalPages}</span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" disabled={currentPage <= 1} onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}>Prev</Button>
+                  <Button size="sm" variant="ghost" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}>Next</Button>
+                </div>
+              </div>
+            )}
         </div>
 
         {/* Email Content */}
@@ -904,9 +931,9 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
             {selectedEmail ? (
                 <div className="flex flex-col h-full">
                     {/* Header */}
-                    <div className="p-6 border-b border-white/5 space-y-4 bg-black/20">
+                    <div className="p-3 md:p-6 border-b border-white/5 space-y-3 md:space-y-4 bg-black/20">
                         <div className="flex flex-wrap items-start justify-between gap-3">
-                            <h1 className="text-xl font-bold text-white">{selectedEmail.subject}</h1>
+                            <h1 className="text-base md:text-xl font-bold text-white leading-snug">{selectedEmail.subject}</h1>
                             <div className="flex items-center gap-2">
                               <Button
                                 variant="ghost"
@@ -965,10 +992,10 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     </div>
                     
                     {/* Body */}
-                    <div className="flex-1 overflow-y-auto p-6 bg-white">
+                    <div className="flex-1 overflow-y-auto p-3 md:p-6 bg-white">
                         <div
                           onClick={handleEmailBodyClick}
-                          className="prose prose-base md:prose-lg max-w-none text-black prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
+                          className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-black prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
                           dangerouslySetInnerHTML={{
                             __html: highlightVerificationCodes(
                               resolveInlineImages(
