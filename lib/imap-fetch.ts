@@ -93,6 +93,17 @@ const decodeQuotedPrintable = (value: string) => {
   return Buffer.from(binary, 'binary').toString('utf8');
 };
 
+const collectRecipientText = (headers: Map<string, string>) => {
+  const values = [
+    headers.get('to') || '',
+    headers.get('cc') || '',
+    headers.get('delivered-to') || '',
+    headers.get('x-original-to') || '',
+    headers.get('envelope-to') || ''
+  ];
+  return decodeMimeEncodedWords(values.join(' ').toLowerCase());
+};
+
 const normalizeBodyText = (raw: string, transferEncoding?: string) => {
   const trimmed = raw.trim();
   const encoding = (transferEncoding || '').toLowerCase();
@@ -175,12 +186,15 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const res = await runImapCommand(
         socket,
         `f${id}`,
-        `FETCH ${id} (BODY.PEEK[HEADER.FIELDS (FROM TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[TEXT]<0.50000>)`
+        `FETCH ${id} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[TEXT]<0.50000>)`
       );
       const literals = [...res.matchAll(/\{(\d+)\}\r\n([\s\S]*?)(?=\r\n(?:\)|f\d+ ))/g)].map((m) => m[2]);
       const headers = parseHeaders(literals[0] || '');
-      const to = decodeMimeEncodedWords(headers.get('to') || '');
-      if (!to.toLowerCase().includes(address.toLowerCase()) && !to.toLowerCase().includes(`@${domain}`)) continue;
+      const to = decodeMimeEncodedWords(headers.get('to') || headers.get('delivered-to') || '');
+      const recipientText = collectRecipientText(headers);
+      const matchesExact = recipientText.includes(address.toLowerCase());
+      const matchesDomain = domain ? recipientText.includes(`@${domain}`) : false;
+      if (!matchesExact && !matchesDomain) continue;
 
       const messageId = headers.get('message-id') || `${id}:${headers.get('date') || ''}:${headers.get('subject') || ''}`;
       const sourceId = `imap:${createHash('sha1').update(messageId).digest('hex')}`;
@@ -188,14 +202,15 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
 
       const transferEncoding = headers.get('content-transfer-encoding') || '';
       const normalizedText = normalizeBodyText(literals[1] || '', transferEncoding);
+      const safeText = normalizedText || '(No preview available)';
       out.push({
         id: randomUUID(),
         sourceId,
         from: decodeMimeEncodedWords(headers.get('from') || 'Unknown Sender'),
         to,
         subject: decodeMimeEncodedWords(headers.get('subject') || '(No Subject)'),
-        text: normalizedText,
-        html: normalizedText,
+        text: safeText,
+        html: safeText,
         attachments: [],
         receivedAt: headers.get('date') ? new Date(headers.get('date')!).toISOString() : new Date().toISOString(),
         read: false

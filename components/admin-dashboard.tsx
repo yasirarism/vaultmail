@@ -508,10 +508,10 @@ export function AdminDashboard() {
                 Admin Dashboard
               </p>
               <h1 className="text-3xl font-semibold text-white">
-                Pengaturan Telegram Channel
+                Temp Mail For Developer
               </h1>
               <p className="text-sm text-white/70">
-                Atur bot Telegram untuk mengirim notifikasi inbox baru.
+                Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.
               </p>
             </div>
             <Link
