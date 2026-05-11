@@ -49,7 +49,7 @@ export async function GET(req: Request) {
   try {
     await cleanupExpiredMessages(address);
     if (forceResync) {
-      await storage.delete(lastUidKey(address));
+      await storage.del(lastUidKey(address));
     }
 
     const existing = await storage.lrange(inboxKey(address), 0, -1);
