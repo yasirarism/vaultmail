@@ -98,3 +98,28 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+
+.email-content {
+  font-size: 14px;
+  line-height: 1.45;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.email-content td,
+.email-content th,
+.email-content p,
+.email-content span,
+.email-content a,
+.email-content div {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 768px) {
+  .email-content {
+    font-size: 16px;
+  }
+}
