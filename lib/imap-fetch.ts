@@ -127,6 +127,14 @@ const normalizeBodyText = (raw: string, transferEncoding?: string) => {
 };
 
 
+
+const buildInboxPreview = (raw: string) => {
+  const withoutTags = raw.replace(/<[^>]+>/g, ' ');
+  const oneLine = withoutTags.replace(/\s+/g, ' ').trim();
+  if (!oneLine) return '(No preview available)';
+  return oneLine.length > 240 ? `${oneLine.slice(0, 237)}...` : oneLine;
+};
+
 const extractLiterals = (raw: string) => {
   const out: string[] = [];
   const marker = /\{(\d+)\}\r\n/g;
@@ -219,7 +227,10 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const headers = parseHeaders(literals[0] || '');
       const from = decodeMimeEncodedWords(headers.get('from') || 'Unknown Sender');
       const to = decodeMimeEncodedWords(headers.get('to') || headers.get('delivered-to') || '');
-      // Jangan hard-filter per recipient/sender domain: tampilkan semua email dari mailbox IMAP.
+      const recipientText = collectRecipientText(headers);
+      const normalizedAddress = address.toLowerCase();
+      const matchesAddress = recipientText.includes(normalizedAddress);
+      if (!matchesAddress) continue;
 
       const messageId = headers.get('message-id') || `${uid}:${headers.get('date') || ''}:${headers.get('subject') || ''}`;
       const sourceId = `imap:${createHash('sha1').update(messageId).digest('hex')}`;
@@ -228,7 +239,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const transferEncoding = headers.get('content-transfer-encoding') || '';
       const rawBody = literals[1] || literals[0] || '';
       const normalizedText = normalizeBodyText(rawBody, transferEncoding);
-      const safeText = normalizedText || decodeMimeEncodedWords(headers.get('subject') || '') || '(No preview available)';
+      const safeText = buildInboxPreview(normalizedText || decodeMimeEncodedWords(headers.get('subject') || ''));
       out.push({
         id: randomUUID(),
         sourceId,
