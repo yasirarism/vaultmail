@@ -51,11 +51,9 @@ type ImapSettings = {
   port: number;
   user: string;
   password: string;
-  mailbox: string;
   tls: boolean;
   rejectUnauthorized: boolean;
   maxFetch: number;
-  domainFilter?: string;
 };
 
 type AdminStats = {
@@ -95,7 +93,7 @@ export function AdminDashboard() {
   const [cleanupRunning, setCleanupRunning] = useState(false);
   const [deleteInboxRunning, setDeleteInboxRunning] = useState(false);
   const [deleteAllRunning, setDeleteAllRunning] = useState(false);
-  const [imapSettings, setImapSettings] = useState<ImapSettings>({ enabled: false, host: '', port: 993, user: '', password: '', mailbox: 'INBOX', tls: true, rejectUnauthorized: true, maxFetch: 30, domainFilter: '' });
+  const [imapSettings, setImapSettings] = useState<ImapSettings>({ enabled: false, host: '', port: 993, user: '', password: '', tls: true, rejectUnauthorized: true, maxFetch: 30 });
   const [imapSaving, setImapSaving] = useState(false);
   const [imapTesting, setImapTesting] = useState(false);
 
@@ -921,9 +919,7 @@ export function AdminDashboard() {
                 <Input value={String(imapSettings.port)} onChange={(e) => setImapSettings((p) => ({ ...p, port: Number(e.target.value || 993) }))} placeholder="993" className="bg-black/30 text-white placeholder:text-white/40" />
                 <Input value={imapSettings.user} onChange={(e) => setImapSettings((p) => ({ ...p, user: e.target.value }))} placeholder="gmail@domain.com" className="bg-black/30 text-white placeholder:text-white/40" />
                 <Input type="password" value={imapSettings.password} onChange={(e) => setImapSettings((p) => ({ ...p, password: e.target.value }))} placeholder="App Password" className="bg-black/30 text-white placeholder:text-white/40" />
-                <Input value={imapSettings.mailbox} onChange={(e) => setImapSettings((p) => ({ ...p, mailbox: e.target.value }))} placeholder="INBOX" className="bg-black/30 text-white placeholder:text-white/40" />
                 <Input value={String(imapSettings.maxFetch)} onChange={(e) => setImapSettings((p) => ({ ...p, maxFetch: Number(e.target.value || 30) }))} placeholder="30" className="bg-black/30 text-white placeholder:text-white/40" />
-                <Input value={imapSettings.domainFilter || ''} onChange={(e) => setImapSettings((p) => ({ ...p, domainFilter: e.target.value }))} placeholder="opsional: domain.com" className="bg-black/30 text-white placeholder:text-white/40 sm:col-span-2" />
               </div>
               <div className="mt-4 flex justify-end gap-2">
                 <Button type="button" variant="secondary" onClick={testImapSettings} disabled={imapTesting || imapSaving}>

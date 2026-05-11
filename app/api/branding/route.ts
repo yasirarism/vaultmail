@@ -5,6 +5,8 @@ import { DEFAULT_APP_NAME, normalizeAppName } from '@/lib/branding';
 
 type BrandingSettings = {
   appName: string;
+  headerTitle?: string;
+  headerDescription?: string;
   updatedAt: string;
 };
 
@@ -28,5 +30,14 @@ export async function GET() {
   const settings = parseSettings(settingsRaw);
   const appName = normalizeAppName(settings?.appName) || DEFAULT_APP_NAME;
 
-  return NextResponse.json({ appName });
+  return NextResponse.json(
+    {
+      appName,
+      headerTitle: settings?.headerTitle || 'Temp Mail',
+      headerDescription:
+        settings?.headerDescription ||
+        'Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.'
+    },
+    { headers: { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' } }
+  );
 }

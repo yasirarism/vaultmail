@@ -27,6 +27,8 @@ export function HomePage({ initialAddress }: HomePageProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [retentionSeconds, setRetentionSeconds] = useState(86400);
   const [customAppName, setCustomAppName] = useState<string | null>(null);
+  const [heroTitle, setHeroTitle] = useState('Temp Mail');
+  const [heroDescription, setHeroDescription] = useState('Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.');
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -69,9 +71,11 @@ export function HomePage({ initialAddress }: HomePageProps) {
       try {
         const response = await fetch("/api/branding");
         if (!response.ok) return;
-        const data = (await response.json()) as { appName?: string };
+        const data = (await response.json()) as { appName?: string; headerTitle?: string; headerDescription?: string };
         const value = data?.appName?.trim();
         setCustomAppName(value || DEFAULT_APP_NAME);
+        if (data?.headerTitle?.trim()) setHeroTitle(data.headerTitle.trim());
+        if (data?.headerDescription?.trim()) setHeroDescription(data.headerDescription.trim());
       } catch (error) {
         console.error(error);
       }
@@ -201,10 +205,10 @@ export function HomePage({ initialAddress }: HomePageProps) {
           <div className="flex-1 py-12">
          <div className="text-center max-w-2xl mx-auto px-4 mb-12 space-y-4">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/50">
-              {t.heroTitle} <br/> {t.heroTitleSuffix}
+              {heroTitle}
             </h1>
             <p className="text-muted-foreground text-lg">
-              {t.heroSubtitle}
+              {heroDescription}
             </p>
          </div>
 

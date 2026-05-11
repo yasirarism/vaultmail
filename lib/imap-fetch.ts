@@ -9,11 +9,9 @@ type ImapConfig = {
   port: number;
   user: string;
   password: string;
-  mailbox: string;
   tls: boolean;
   rejectUnauthorized: boolean;
   maxFetch: number;
-  domainFilter?: string;
 };
 
 type ImapEmail = {
@@ -47,11 +45,9 @@ const readConfig = async (): Promise<ImapConfig> => {
     port: Number(saved?.port || 993),
     user: saved?.user || '',
     password: saved?.password || '',
-    mailbox: saved?.mailbox || 'INBOX',
     tls: saved?.tls !== false,
     rejectUnauthorized: saved?.rejectUnauthorized !== false,
     maxFetch: Number(saved?.maxFetch || 30),
-    domainFilter: saved?.domainFilter?.toLowerCase()
   };
 };
 
@@ -158,14 +154,13 @@ const runImapCommand = (socket: tls.TLSSocket, tag: string, command: string) =>
   });
 
 export const testImapConnection = async (config: {
-  host: string; port: number; user: string; password: string; mailbox: string; tls?: boolean; rejectUnauthorized?: boolean;
+  host: string; port: number; user: string; password: string; tls?: boolean; rejectUnauthorized?: boolean;
 }) => {
   const cfg = {
     host: config.host.trim(),
     port: Number(config.port || 993),
     user: config.user.trim(),
     password: config.password,
-    mailbox: (config.mailbox || 'INBOX').trim() || 'INBOX',
     tls: config.tls !== false,
     rejectUnauthorized: config.rejectUnauthorized !== false
   };
@@ -175,7 +170,7 @@ export const testImapConnection = async (config: {
   await new Promise<void>((resolve, reject) => { socket.once('data', () => resolve()); socket.once('error', reject); });
   try {
     await runImapCommand(socket, 't1', `LOGIN "${cfg.user.replace(/"/g, '')}" "${cfg.password.replace(/"/g, '')}"`);
-    await runImapCommand(socket, 't2', `SELECT ${cfg.mailbox}`);
+    await runImapCommand(socket, 't2', "SELECT INBOX");
     await runImapCommand(socket, 't9', 'LOGOUT');
     return { success: true };
   } finally { socket.end(); }
@@ -186,14 +181,12 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
   if (!cfg.enabled || !cfg.host || !cfg.user || !cfg.password || !cfg.tls) return [] as ImapEmail[];
 
   const domain = address.split('@')[1]?.toLowerCase();
-  if (cfg.domainFilter && cfg.domainFilter !== domain) return [] as ImapEmail[];
-
   const socket = tls.connect({ host: cfg.host, port: cfg.port, servername: cfg.host, rejectUnauthorized: cfg.rejectUnauthorized });
   await new Promise<void>((resolve, reject) => { socket.once('data', () => resolve()); socket.once('error', reject); });
 
   try {
     await runImapCommand(socket, 'a1', `LOGIN "${cfg.user.replace(/"/g, '')}" "${cfg.password.replace(/"/g, '')}"`);
-    await runImapCommand(socket, 'a2', `SELECT ${cfg.mailbox}`);
+    await runImapCommand(socket, 'a2', "SELECT INBOX");
     const search = await runImapCommand(socket, 'a3', 'SEARCH ALL');
     const idsLine = search.split('\n').find((l) => l.includes('* SEARCH')) || '';
     const ids = idsLine.replace(/.*\* SEARCH\s*/, '').trim().split(/\s+/).filter(Boolean).slice(-cfg.maxFetch);
@@ -210,8 +203,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const to = decodeMimeEncodedWords(headers.get('to') || headers.get('delivered-to') || '');
       const recipientText = collectRecipientText(headers);
       const matchesExact = recipientText.includes(address.toLowerCase());
-      const matchesDomain = domain ? recipientText.includes(`@${domain}`) : false;
-      if (!matchesExact && !matchesDomain) continue;
+      if (!matchesExact) continue;
 
       const messageId = headers.get('message-id') || `${id}:${headers.get('date') || ''}:${headers.get('subject') || ''}`;
       const sourceId = `imap:${createHash('sha1').update(messageId).digest('hex')}`;
