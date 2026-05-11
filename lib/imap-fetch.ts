@@ -162,6 +162,21 @@ const extractHtmlFromAnyContent = (raw: string) => {
   return fragment?.[0] || '';
 };
 
+
+const stripMailHeadersFromPreview = (text: string) => {
+  const lines = text.split('\n');
+  const filtered = lines.filter((line) => !/^(delivered-to|from|to|cc|subject|date|message-id):/i.test(line.trim()));
+  return filtered.join('\n');
+};
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const buildInboxPreview = (raw: string) => {
   const withoutTags = raw.replace(/<[^>]+>/g, ' ');
   const oneLine = withoutTags.replace(/\s+/g, ' ').trim();
@@ -299,6 +314,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const subject = decodeMimeEncodedWords(headers.get('subject') || getHeaderFromRawResponse(res, 'Subject') || '(No Subject)');
       const safeText = buildInboxPreview(normalizedText || extractedHtml || subject);
       const htmlContent = extractedHtml || (/<[^>]+>/.test(normalizedText) ? normalizedText : "");
+      const safeHtml = htmlContent || `<p>${escapeHtml(safeText)}</p>`;
       out.push({
         id: randomUUID(),
         sourceId,
@@ -306,7 +322,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
         to,
         subject,
         text: safeText,
-        html: htmlContent || safeText,
+        html: safeHtml,
         attachments: [],
         receivedAt: parseReceivedAt(headers.get('date')),
         read: false
