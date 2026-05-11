@@ -8,6 +8,7 @@ export const DOMAINS_SETTINGS_KEY = withPrefix('settings:domains');
 export const RETENTION_SETTINGS_KEY = withPrefix('settings:retention');
 export const BRANDING_SETTINGS_KEY = withPrefix('settings:branding');
 export const HOMEPAGE_LOCK_SETTINGS_KEY = withPrefix('settings:homepage-lock');
+export const IMAP_SETTINGS_KEY = withPrefix('settings:imap');
 
 export const isAdminSessionValid = async (token?: string | null) => {
   if (!token) return false;
