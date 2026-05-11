@@ -103,6 +103,12 @@ const collectRecipientText = (headers: Map<string, string>) => {
 };
 
 
+
+const extractEmailAddresses = (text: string) => {
+  const matches = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) || [];
+  return [...new Set(matches.map((item) => item.toLowerCase()))];
+};
+
 const parseReceivedAt = (rawDate?: string) => {
   if (!rawDate) return new Date().toISOString();
   const ts = Date.parse(rawDate);
@@ -231,8 +237,17 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const from = decodeMimeEncodedWords(headers.get('from') || 'Unknown Sender');
       const to = decodeMimeEncodedWords(headers.get('to') || headers.get('delivered-to') || '');
       const recipientText = collectRecipientText(headers);
-      const normalizedAddress = address.toLowerCase();
-      const matchesAddress = recipientText.includes(normalizedAddress);
+      const normalizedAddress = address.toLowerCase().trim();
+      const recipientRaw = [
+        headers.get('to') || '',
+        headers.get('cc') || '',
+        headers.get('delivered-to') || '',
+        headers.get('x-original-to') || '',
+        headers.get('envelope-to') || ''
+      ].join(' ');
+      const recipientAddresses = extractEmailAddresses(`${recipientRaw} ${recipientText}`);
+      const matchesAddress = recipientAddresses.includes(normalizedAddress)
+        || recipientText.includes(normalizedAddress);
       if (!matchesAddress) {
         debug.recipientFiltered += 1;
         continue;
