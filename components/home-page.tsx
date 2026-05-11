@@ -111,12 +111,12 @@ export function HomePage({ initialAddress }: HomePageProps) {
 
       {/* Navbar */}
       <header className="border-b border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-xl">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+        <div className="max-w-6xl mx-auto px-3 md:px-4 min-h-14 md:h-16 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2 font-bold text-base sm:text-lg md:text-xl">
+            <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg shrink-0 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span>{resolvedAppName}</span>
+            <span className="truncate">{resolvedAppName}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">

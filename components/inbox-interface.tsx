@@ -591,7 +591,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                           localStorage.setItem('dispo_address', `${val}@${currentDomain}`);
                       }}
                       onBlur={() => addToHistory(address)}
-                      className="pr-4 font-mono text-lg bg-black/20 border-white/10 h-12"
+                      className="pr-4 font-mono text-base md:text-lg bg-black/20 border-white/10 h-10 md:h-12"
                       placeholder={t.usernamePlaceholder}
                   />
               </div>
@@ -681,7 +681,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsAddDomainOpen(true)}
-                className="h-12 w-12 border border-white/10 hover:bg-white/5 text-purple-400 hover:text-purple-300"
+                className="h-10 w-10 md:h-12 md:w-12 border border-white/10 hover:bg-white/5 text-purple-400 hover:text-purple-300"
                 title={t.settingsTitle}
             >
                 <Settings2 className="h-5 w-5" />
@@ -692,7 +692,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     onClick={() => setShowHistory(!showHistory)} 
                     variant="ghost" 
                     size="icon" 
-                    className={cn("h-12 w-12 border border-white/10 hover:bg-white/5 relative", showHistory && "bg-white/10 ring-2 ring-white/10")}
+                    className={cn("h-10 w-10 md:h-12 md:w-12 border border-white/10 hover:bg-white/5 relative", showHistory && "bg-white/10 ring-2 ring-white/10")}
                     title={t.historyTitle}
                 >
                     <History className="h-5 w-5" />
@@ -785,10 +785,10 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     )}
                 </AnimatePresence>
             </div>
-            <Button onClick={copyAddress} variant="secondary" size="lg" className="h-12 w-full md:w-auto">
+            <Button onClick={copyAddress} variant="secondary" size="lg" className="h-10 md:h-12 px-3 md:px-4 w-full sm:w-auto">
               <Copy className="mr-2 h-4 w-4" /> {t.copy}
             </Button>
-            <Button onClick={generateAddress} variant="outline" size="lg" className="h-12 border-white/10 hover:bg-white/5 w-full md:w-auto">
+            <Button onClick={generateAddress} variant="outline" size="lg" className="h-10 md:h-12 px-3 md:px-4 border-white/10 hover:bg-white/5 w-full sm:w-auto">
               <RefreshCw className="mr-2 h-4 w-4" /> {t.newAlias}
             </Button>
           </div>
