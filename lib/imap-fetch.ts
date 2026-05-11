@@ -141,6 +141,16 @@ const normalizeBodyText = (raw: string, transferEncoding?: string) => {
 
 
 
+
+const extractHtmlFromRawBody = (raw: string) => {
+  const pattern = /Content-Type:\s*text\/html[^\r\n]*(?:\r?\n[\t ].*)*\r?\n\r?\n([\s\S]*?)(?:\r?\n--[^\r\n]+|$)/i;
+  const htmlMatch = raw.match(pattern);
+  if (!htmlMatch) return '';
+  const section = htmlMatch[1].trim();
+  const encodingMatch = htmlMatch[0].match(/Content-Transfer-Encoding:\s*([^\r\n;]+)/i);
+  return normalizeBodyText(section, encodingMatch?.[1]);
+};
+
 const buildInboxPreview = (raw: string) => {
   const withoutTags = raw.replace(/<[^>]+>/g, ' ');
   const oneLine = withoutTags.replace(/\s+/g, ' ').trim();
@@ -237,7 +247,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const res = await runImapCommand(
         socket,
         `f${uid}`,
-        `UID FETCH ${uid} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[TEXT]<0.50000>)`
+        `UID FETCH ${uid} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[]<0.120000>)`
       );
       const literals = extractLiterals(res);
       const headers = parseHeaders(literals[0] || '');
@@ -274,9 +284,10 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const transferEncoding = headers.get('content-transfer-encoding') || '';
       const rawBody = literals[1] || literals[0] || '';
       const normalizedText = normalizeBodyText(rawBody, transferEncoding);
+      const extractedHtml = extractHtmlFromRawBody(rawBody);
       const subject = decodeMimeEncodedWords(headers.get('subject') || getHeaderFromRawResponse(res, 'Subject') || '(No Subject)');
-      const safeText = buildInboxPreview(normalizedText || subject);
-      const looksLikeHtml = /<[^>]+>/.test(normalizedText);
+      const safeText = buildInboxPreview(normalizedText || extractedHtml || subject);
+      const htmlContent = extractedHtml || (/<[^>]+>/.test(normalizedText) ? normalizedText : "");
       out.push({
         id: randomUUID(),
         sourceId,
@@ -284,7 +295,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
         to,
         subject,
         text: safeText,
-        html: looksLikeHtml ? normalizedText : safeText,
+        html: htmlContent || safeText,
         attachments: [],
         receivedAt: parseReceivedAt(headers.get('date')),
         read: false
