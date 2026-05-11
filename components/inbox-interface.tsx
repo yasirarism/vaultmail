@@ -395,12 +395,15 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     toast.success(t.toastCopied);
   };
 
-  const fetchEmails = useCallback(async () => {
+  const fetchEmails = useCallback(async (forceResync = false) => {
     if (!address) return;
     try {
       setLoading(true);
-      const res = await fetch(`/api/inbox?address=${encodeURIComponent(address)}&t=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch(`/api/inbox?address=${encodeURIComponent(address)}&t=${Date.now()}${forceResync ? '&resync=1' : ''}`, { cache: 'no-store' });
       const data = await res.json();
+      if (forceResync) {
+        toast.info('IMAP resync dijalankan, mengambil ulang email dari server.');
+      }
       if (data?.imapError) {
         toast.error(`IMAP sync error: ${data.imapMessage || 'Unknown error'}`);
         console.warn('[IMAP_SYNC_ERROR]', {
@@ -842,7 +845,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                   >
                     <Search className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => fetchEmails()} disabled={loading}>
+                  <Button variant="ghost" size="icon" onClick={() => fetchEmails(true)} disabled={loading}>
                       <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
                   </Button>
                 </div>

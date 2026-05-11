@@ -51,7 +51,7 @@ const readConfig = async (): Promise<ImapConfig> => {
   };
 };
 
-const lastUidKey = (address: string) => `imap:lastuid:${address.toLowerCase()}`;
+export const lastUidKey = (address: string) => `imap:lastuid:${address.toLowerCase()}`;
 
 const parseHeaders = (raw: string) => {
   const lines = raw.split(/\r?\n/);

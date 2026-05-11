@@ -3,6 +3,7 @@ import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
 import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
 import { fetchFromImap } from '@/lib/imap-fetch';
+import { lastUidKey } from '@/lib/imap-fetch';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,7 @@ const cleanupExpiredMessages = async (address: string) => {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const address = searchParams.get('address');
+  const forceResync = searchParams.get('resync') === '1';
 
   if (!address) {
     return NextResponse.json({ error: 'Address required' }, { status: 400 });
@@ -46,6 +48,9 @@ export async function GET(req: Request) {
 
   try {
     await cleanupExpiredMessages(address);
+    if (forceResync) {
+      await storage.delete(lastUidKey(address));
+    }
 
     const existing = await storage.lrange(inboxKey(address), 0, -1);
     const existingSourceIds = new Set(
@@ -83,6 +88,7 @@ export async function GET(req: Request) {
 export async function DELETE(req: Request) {
   const { searchParams } = new URL(req.url);
   const address = searchParams.get('address');
+  const forceResync = searchParams.get('resync') === '1';
   const emailId = searchParams.get('emailId');
 
   if (!address || !emailId) {
