@@ -203,7 +203,8 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const to = decodeMimeEncodedWords(headers.get('to') || headers.get('delivered-to') || '');
       const recipientText = collectRecipientText(headers);
       const matchesExact = recipientText.includes(address.toLowerCase());
-      if (!matchesExact) continue;
+      const matchesDomain = domain ? recipientText.includes(`@${domain}`) : false;
+      if (!matchesExact && !matchesDomain) continue;
 
       const messageId = headers.get('message-id') || `${id}:${headers.get('date') || ''}:${headers.get('subject') || ''}`;
       const sourceId = `imap:${createHash('sha1').update(messageId).digest('hex')}`;

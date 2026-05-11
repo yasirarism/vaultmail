@@ -64,10 +64,10 @@ export async function GET(req: Request) {
     }
 
     const emails = await storage.lrange(inboxKey(address), 0, -1);
-    return NextResponse.json({ emails: emails || [] });
+    return NextResponse.json({ emails: emails || [] }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('Inbox Error:', error);
-    return NextResponse.json({ emails: [] }, { status: 200 });
+    return NextResponse.json({ emails: [] }, { status: 200, headers: { 'Cache-Control': 'no-store' } });
   }
 }
 
