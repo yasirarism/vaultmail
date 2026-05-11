@@ -31,6 +31,8 @@ type RetentionSettings = {
 
 type BrandingSettings = {
   appName: string;
+  headerTitle?: string;
+  headerDescription?: string;
 };
 
 type HomepageLockSettings = {
@@ -79,6 +81,8 @@ export function AdminDashboard() {
   const [brandingSaving, setBrandingSaving] = useState(false);
   const [domainsSaving, setDomainsSaving] = useState(false);
   const [appName, setAppName] = useState(DEFAULT_APP_NAME);
+  const [headerTitle, setHeaderTitle] = useState('Temp Mail');
+  const [headerDescription, setHeaderDescription] = useState('Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.');
   const [homepageLockEnabled, setHomepageLockEnabled] = useState(false);
   const [homepageLockPassword, setHomepageLockPassword] = useState('');
   const [homepageLockSaving, setHomepageLockSaving] = useState(false);
@@ -156,9 +160,9 @@ export function AdminDashboard() {
       if (retentionData?.seconds) {
         setRetentionSeconds(retentionData.seconds);
       }
-      if (brandingData?.appName) {
-        setAppName(brandingData.appName);
-      }
+      if (brandingData?.appName) setAppName(brandingData.appName);
+      if (brandingData?.headerTitle) setHeaderTitle(brandingData.headerTitle);
+      if (brandingData?.headerDescription) setHeaderDescription(brandingData.headerDescription);
       setHomepageLockEnabled(Boolean(homepageLockData?.enabled));
       setHomepageLockHasPassword(Boolean(homepageLockData?.hasPassword));
       setImapSettings({ ...imapSettings, ...imapData });
@@ -246,7 +250,7 @@ export function AdminDashboard() {
       const response = await fetch('/api/admin/branding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ appName })
+        body: JSON.stringify({ appName, headerTitle, headerDescription })
       });
       if (!response.ok) {
         throw new Error('Unauthorized or failed to save branding.');
@@ -508,10 +512,10 @@ export function AdminDashboard() {
                 Admin Dashboard
               </p>
               <h1 className="text-3xl font-semibold text-white">
-                Temp Mail For Developer
+                {headerTitle || "Temp Mail"}
               </h1>
               <p className="text-sm text-white/70">
-                Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.
+                {headerDescription || 'Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.'}
               </p>
             </div>
             <Link
@@ -644,13 +648,25 @@ export function AdminDashboard() {
                 </Button>
               </div>
               <div className="mt-4">
-                <label className="text-xs font-semibold uppercase tracking-widest text-white/60">
-                  Nama Web
-                </label>
+                <label className="text-xs font-semibold uppercase tracking-widest text-white/60">Nama Web</label>
                 <Input
                   value={appName}
                   onChange={(event) => setAppName(event.target.value)}
                   placeholder={DEFAULT_APP_NAME}
+                  className="mt-3 bg-black/30 text-white placeholder:text-white/40"
+                />
+                <label className="mt-4 block text-xs font-semibold uppercase tracking-widest text-white/60">Title bawah header (opsional)</label>
+                <Input
+                  value={headerTitle}
+                  onChange={(event) => setHeaderTitle(event.target.value)}
+                  placeholder="Temp Mail"
+                  className="mt-3 bg-black/30 text-white placeholder:text-white/40"
+                />
+                <label className="mt-4 block text-xs font-semibold uppercase tracking-widest text-white/60">Deskripsi bawah header (opsional)</label>
+                <Input
+                  value={headerDescription}
+                  onChange={(event) => setHeaderDescription(event.target.value)}
+                  placeholder="Spin up secure temporary inboxes in seconds..."
                   className="mt-3 bg-black/30 text-white placeholder:text-white/40"
                 />
               </div>

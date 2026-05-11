@@ -120,6 +120,23 @@ const normalizeBodyText = (raw: string, transferEncoding?: string) => {
   return trimmed;
 };
 
+
+const extractLiterals = (raw: string) => {
+  const out: string[] = [];
+  const marker = /\{(\d+)\}\r\n/g;
+  let match: RegExpExecArray | null;
+  while ((match = marker.exec(raw)) !== null) {
+    const size = Number(match[1]);
+    const start = marker.lastIndex;
+    const end = start + size;
+    if (Number.isFinite(size) && end <= raw.length) {
+      out.push(raw.slice(start, end));
+      marker.lastIndex = end;
+    }
+  }
+  return out;
+};
+
 const runImapCommand = (socket: tls.TLSSocket, tag: string, command: string) =>
   new Promise<string>((resolve, reject) => {
     let buf = '';
@@ -188,7 +205,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
         `f${id}`,
         `FETCH ${id} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[TEXT]<0.50000>)`
       );
-      const literals = [...res.matchAll(/\{(\d+)\}\r\n([\s\S]*?)(?=\r\n(?:\)|f\d+ ))/g)].map((m) => m[2]);
+      const literals = extractLiterals(res);
       const headers = parseHeaders(literals[0] || '');
       const to = decodeMimeEncodedWords(headers.get('to') || headers.get('delivered-to') || '');
       const recipientText = collectRecipientText(headers);
@@ -201,8 +218,9 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       if (existingSourceIds.has(sourceId)) continue;
 
       const transferEncoding = headers.get('content-transfer-encoding') || '';
-      const normalizedText = normalizeBodyText(literals[1] || '', transferEncoding);
-      const safeText = normalizedText || '(No preview available)';
+      const rawBody = literals[1] || literals[0] || '';
+      const normalizedText = normalizeBodyText(rawBody, transferEncoding);
+      const safeText = normalizedText || decodeMimeEncodedWords(headers.get('subject') || '') || '(No preview available)';
       out.push({
         id: randomUUID(),
         sourceId,

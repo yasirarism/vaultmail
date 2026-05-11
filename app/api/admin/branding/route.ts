@@ -10,6 +10,8 @@ import { DEFAULT_APP_NAME, normalizeAppName } from '@/lib/branding';
 
 type BrandingSettings = {
   appName: string;
+  headerTitle?: string;
+  headerDescription?: string;
   updatedAt: string;
 };
 
@@ -45,6 +47,10 @@ export async function GET() {
 
   return NextResponse.json({
     appName,
+    headerTitle: settings?.headerTitle || 'Temp Mail',
+    headerDescription:
+      settings?.headerDescription ||
+      'Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.',
     updatedAt: settings?.updatedAt || new Date().toISOString()
   });
 }
@@ -56,9 +62,16 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const appName = normalizeAppName(body?.appName) || DEFAULT_APP_NAME;
+  const headerTitle = normalizeAppName(body?.headerTitle) || 'Temp Mail';
+  const headerDescription =
+    typeof body?.headerDescription === 'string'
+      ? body.headerDescription.trim()
+      : 'Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.';
 
   const settings: BrandingSettings = {
     appName,
+    headerTitle,
+    headerDescription,
     updatedAt: new Date().toISOString()
   };
 
