@@ -75,6 +75,48 @@ We include a pre-configured worker in the `worker/` directory.
     *   Pushing changes under `worker/` will trigger `.github/workflows/worker-deploy.yml`.
     *   The workflow syncs the listed secrets on deploy so values stay consistent across redeploys.
 
+
+
+### 4. Alternative: IMAP Fetch Setup (Admin Dashboard)
+
+Selain webhook, Anda juga bisa menarik email langsung dari akun IMAP (misalnya Gmail) lewat **Admin Dashboard**.
+
+#### A. Buka pengaturan IMAP di admin
+1. Login ke `/admin`.
+2. Cari section **IMAP Fetch**.
+3. Isi parameter berikut lalu klik **Simpan IMAP**:
+   - `Host`: server IMAP (contoh Gmail: `imap.gmail.com`)
+   - `Port`: biasanya `993`
+   - `User`: email login IMAP
+   - `Password`: password IMAP / app password
+   - `Mailbox`: biasanya `INBOX`
+   - `Max Fetch`: jumlah email terakhir yang di-scan per request inbox
+   - `Domain Filter` (opsional): batasi hanya domain tertentu
+4. Aktifkan toggle **Aktif** pada IMAP Fetch.
+
+#### B. Contoh setup Gmail (disarankan pakai App Password)
+> Catatan: untuk Gmail, password akun biasa sering ditolak untuk IMAP. Gunakan App Password.
+
+1. Buka akun Google yang mau dipakai menerima email.
+2. Pastikan **2-Step Verification** sudah aktif.
+3. Buat **App Password** dari halaman keamanan Google.
+4. Gunakan konfigurasi berikut di Admin Dashboard:
+   - Host: `imap.gmail.com`
+   - Port: `993`
+   - User: `namaakun@gmail.com`
+   - Password: *16-digit App Password* (tanpa spasi)
+   - Mailbox: `INBOX`
+   - Max Fetch: contoh `30`
+5. Simpan, aktifkan IMAP, lalu buka inbox target di aplikasi.
+
+#### C. Cara kerjanya
+- Saat frontend memanggil `GET /api/inbox?address=...`, server akan:
+  1. load email existing,
+  2. pull email terbaru dari IMAP (jika aktif),
+  3. deduplicate berdasarkan `sourceId`,
+  4. simpan ke inbox storage yang sama dengan webhook.
+- Artinya mode webhook lama **tetap jalan**; IMAP adalah jalur alternatif/tambahan.
+
 ## 🛠️ Local Development
 
 1.  **Install Dependencies**:
