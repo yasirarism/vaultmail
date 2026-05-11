@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, ChevronDown, X, Settings2, Download, Search } from 'lucide-react';
+import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, ChevronDown, X, Settings2, Download, Search, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { cn, getSenderInfo } from '@/lib/utils';
@@ -570,7 +570,15 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
               .
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedEmail(null)}
+                                className="md:hidden"
+                              >
+                                <ChevronLeft className="mr-1 h-4 w-4" /> Inbox
+                              </Button>
             <span className={`h-2 w-2 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
             <span className="text-xs text-muted-foreground uppercase tracking-wider font-mono">
                 {loading ? t.syncing : t.live}
@@ -714,7 +722,15 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 <div className="w-full max-w-[22rem] rounded-2xl border border-white/10 bg-black/70 p-0 text-white shadow-2xl backdrop-blur-xl sm:w-80 sm:bg-zinc-900">
                                 <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-black/60">
                                     <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">{t.historyTitle}</span>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedEmail(null)}
+                                className="md:hidden"
+                              >
+                                <ChevronLeft className="mr-1 h-4 w-4" /> Inbox
+                              </Button>
                                         {history.length > 0 && (
                                             <button 
                                                 onClick={() => {
@@ -813,7 +829,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[80vh]">
         {/* Email List */}
-        <div className="md:col-span-1 glass-card rounded-2xl overflow-hidden flex flex-col min-h-[45vh] md:min-h-0">
+        <div className={cn("md:col-span-1 glass-card rounded-2xl overflow-hidden flex flex-col min-h-[45vh] md:min-h-0", selectedEmail && "hidden md:flex")}>
             <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/20">
                 <h3 className="font-semibold flex items-center gap-2">
                     <Mail className="h-4 w-4 text-blue-400" /> {t.inboxLabel}
@@ -927,14 +943,22 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
         </div>
 
         {/* Email Content */}
-        <div className="md:col-span-2 glass-card rounded-2xl overflow-hidden flex flex-col h-full min-h-[55vh] md:min-h-0 bg-black/40">
+        <div className={cn("md:col-span-2 glass-card rounded-2xl overflow-hidden flex flex-col h-full min-h-[55vh] md:min-h-0 bg-black/40", !selectedEmail && "hidden md:flex")}>
             {selectedEmail ? (
                 <div className="flex flex-col h-full">
                     {/* Header */}
                     <div className="p-3 md:p-6 border-b border-white/5 space-y-3 md:space-y-4 bg-black/20">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <h1 className="text-base md:text-xl font-bold text-white leading-snug">{selectedEmail.subject}</h1>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedEmail(null)}
+                                className="md:hidden"
+                              >
+                                <ChevronLeft className="mr-1 h-4 w-4" /> Inbox
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -992,10 +1016,10 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     </div>
                     
                     {/* Body */}
-                    <div className="flex-1 overflow-y-auto p-3 md:p-6 bg-white">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 bg-white">
                         <div
                           onClick={handleEmailBodyClick}
-                          className="prose prose-sm md:prose-base lg:prose-lg max-w-none text-black prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
+                          className="prose prose-sm md:prose-base lg:prose-lg max-w-none overflow-x-hidden break-words text-black prose-img:max-w-full prose-pre:overflow-x-auto prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
                           dangerouslySetInnerHTML={{
                             __html: highlightVerificationCodes(
                               resolveInlineImages(
