@@ -570,7 +570,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
               .
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex w-full sm:w-auto items-center gap-1 sm:gap-2 flex-wrap justify-start sm:justify-end">
             <span className={`h-2 w-2 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
             <span className="text-xs text-muted-foreground uppercase tracking-wider font-mono">
                 {loading ? t.syncing : t.live}
@@ -714,7 +714,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 <div className="w-full max-w-[22rem] rounded-2xl border border-white/10 bg-black/70 p-0 text-white shadow-2xl backdrop-blur-xl sm:w-80 sm:bg-zinc-900">
                                 <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-black/60">
                                     <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">{t.historyTitle}</span>
-                                    <div className="flex items-center gap-2 flex-wrap">
+                                    <div className="flex w-full sm:w-auto items-center gap-1 sm:gap-2 flex-wrap justify-start sm:justify-end">
                                         {history.length > 0 && (
                                             <button 
                                                 onClick={() => {
@@ -931,16 +931,16 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
             {selectedEmail ? (
                 <div className="flex flex-col h-full">
                     {/* Header */}
-                    <div className="p-3 md:p-6 border-b border-white/5 space-y-3 md:space-y-4 bg-black/20">
+                    <div className="p-3 sm:p-4 md:p-6 border-b border-white/5 space-y-2 md:space-y-4 bg-black/20">
                         <div className="flex flex-wrap items-start justify-between gap-3">
-                            <h1 className="text-base md:text-xl font-bold text-white leading-snug">{selectedEmail.subject}</h1>
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <h1 className="text-sm sm:text-base md:text-xl font-bold text-white leading-snug break-words">{selectedEmail.subject}</h1>
+                            <div className="flex w-full sm:w-auto items-center gap-1 sm:gap-2 flex-wrap justify-start sm:justify-end">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => deleteEmail(selectedEmail.id)}
                                 disabled={deletingEmailId === selectedEmail.id}
-                                className="text-red-200 hover:bg-red-500/20 hover:text-red-100"
+                                className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm text-red-200 hover:bg-red-500/20 hover:text-red-100"
                               >
                                 {deletingEmailId === selectedEmail.id ? (
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -949,17 +949,17 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 )}
                                 Hapus
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={downloadEmail}>
+                              <Button variant="ghost" size="sm" onClick={downloadEmail} className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
                                 <Download className="mr-2 h-4 w-4" />
                                 Download Email
                               </Button>
-                              <span className="text-xs text-muted-foreground border border-white/10 px-2 py-1 rounded-md">
+                              <span className="text-[10px] sm:text-xs text-muted-foreground border border-white/10 px-2 py-1 rounded-md">
                                   {new Date(selectedEmail.receivedAt).toLocaleString()}
                               </span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 text-sm">
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs">
+                        <div className="flex items-start gap-2 sm:gap-3 text-xs sm:text-sm">
+                            <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex shrink-0 items-center justify-center font-bold text-white text-[10px] sm:text-xs">
                                 {selectedSender?.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex flex-col">
@@ -980,6 +980,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                   key={`${attachment.filename || 'attachment'}-${index}`}
                                   variant="secondary"
                                   size="sm"
+                                  className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
                                   onClick={() => downloadAttachment(index)}
                                 >
                                   <Download className="mr-2 h-4 w-4" />
