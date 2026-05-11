@@ -844,7 +844,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[80vh]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[88vh]">
         {/* Email List */}
         <div className="md:col-span-1 glass-card rounded-2xl overflow-hidden flex flex-col min-h-[45vh] md:min-h-0">
             <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/20">
@@ -960,7 +960,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
         </div>
 
         {/* Email Content */}
-        <div className="md:col-span-2 glass-card rounded-2xl overflow-hidden flex flex-col h-auto md:h-full min-h-[50vh] md:min-h-0 bg-black/40">
+        <div className="md:col-span-2 glass-card rounded-2xl overflow-hidden flex flex-col h-auto md:h-full min-h-[62vh] md:min-h-0 bg-black/40">
             {selectedEmail ? (
                 <div className="flex flex-col h-full">
                     {/* Header */}

@@ -300,8 +300,8 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
         continue;
       }
 
-      const messageIdentity = [
-        headers.get('message-id') || '',
+      const messageIdHeader = (headers.get('message-id') || '').trim();
+      const messageIdentity = messageIdHeader || [
         headers.get('date') || '',
         headers.get('from') || '',
         headers.get('to') || headers.get('delivered-to') || '',
