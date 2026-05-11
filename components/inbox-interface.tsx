@@ -67,6 +67,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const [currentPage, setCurrentPage] = useState(1);
   const previousEmailIds = useRef<Set<string>>(new Set());
   const hasLoadedEmails = useRef(false);
+  const fetchInFlight = useRef(false);
 
   const selectedSender = selectedEmail ? getSenderInfo(selectedEmail.from) : null;
   const domainExpirationDate = domainExpiration ? new Date(domainExpiration) : null;
@@ -416,6 +417,8 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
 
   const fetchEmails = useCallback(async (forceResync = false) => {
     if (!address) return;
+    if (fetchInFlight.current) return;
+    fetchInFlight.current = true;
     try {
       setLoading(true);
       const res = await fetch(`/api/inbox?address=${encodeURIComponent(address)}&t=${Date.now()}${forceResync ? '&resync=1' : ''}`, { cache: 'no-store' });
@@ -447,6 +450,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       console.error(e);
     } finally {
       setLoading(false);
+      fetchInFlight.current = false;
     }
   }, [address]);
 
@@ -1030,12 +1034,12 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                           title="email-preview"
                           className="h-full w-full border-0"
                           sandbox="allow-popups allow-popups-to-escape-sandbox"
-                          srcDoc={highlightVerificationCodes(
+                          srcDoc={`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>html,body{margin:0;padding:0;max-width:100%;overflow-wrap:anywhere;}img{max-width:100%;height:auto;}table{max-width:100% !important;}</style></head><body>${highlightVerificationCodes(
                             resolveInlineImages(
                               stripEmailStyles(selectedEmail.html || `<p>${selectedEmail.text}</p>`),
                               selectedEmail.attachments
                             )
-                          )}
+                          )}</body></html>`}
                         />
                     </div>
                 </div>

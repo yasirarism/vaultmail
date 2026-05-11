@@ -98,8 +98,16 @@ export async function GET(req: Request) {
       return Number.isFinite(ts) && ts >= thresholdMs;
     });
     if (freshImapEmails.length > 0) {
+      const current = await storage.lrange(inboxKey(address), 0, -1);
+      const known = new Set(
+        (current || [])
+          .map((item) => (item && typeof item === 'object' ? (item as { sourceId?: string }).sourceId : undefined))
+          .filter((value): value is string => Boolean(value))
+      );
       for (const email of freshImapEmails) {
+        if (known.has(email.sourceId)) continue;
         await storage.lpush(inboxKey(address), email);
+        known.add(email.sourceId);
       }
       await storage.expire(inboxKey(address), retentionSeconds);
     }
