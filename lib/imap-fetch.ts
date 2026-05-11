@@ -151,6 +151,17 @@ const extractHtmlFromRawBody = (raw: string) => {
   return normalizeBodyText(section, encodingMatch?.[1]);
 };
 
+
+const extractHtmlFromAnyContent = (raw: string) => {
+  const decoded = normalizeBodyText(raw, 'quoted-printable');
+  const htmlDoc = decoded.match(/<html[\s\S]*<\/html>/i);
+  if (htmlDoc) return htmlDoc[0];
+  const bodyDoc = decoded.match(/<body[\s\S]*<\/body>/i);
+  if (bodyDoc) return bodyDoc[0];
+  const fragment = decoded.match(/<table[\s\S]*<\/table>/i);
+  return fragment?.[0] || '';
+};
+
 const buildInboxPreview = (raw: string) => {
   const withoutTags = raw.replace(/<[^>]+>/g, ' ');
   const oneLine = withoutTags.replace(/\s+/g, ' ').trim();
@@ -284,7 +295,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const transferEncoding = headers.get('content-transfer-encoding') || '';
       const rawBody = literals[1] || literals[0] || '';
       const normalizedText = normalizeBodyText(rawBody, transferEncoding);
-      const extractedHtml = extractHtmlFromRawBody(rawBody);
+      const extractedHtml = extractHtmlFromRawBody(rawBody) || extractHtmlFromAnyContent(rawBody);
       const subject = decodeMimeEncodedWords(headers.get('subject') || getHeaderFromRawResponse(res, 'Subject') || '(No Subject)');
       const safeText = buildInboxPreview(normalizedText || extractedHtml || subject);
       const htmlContent = extractedHtml || (/<[^>]+>/.test(normalizedText) ? normalizedText : "");
