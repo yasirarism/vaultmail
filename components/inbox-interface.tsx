@@ -404,6 +404,9 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       if (forceResync) {
         toast.info('IMAP resync dijalankan, mengambil ulang email dari server.');
       }
+      if (data?.imapDebug) {
+        console.info('[IMAP_SYNC_DEBUG]', { address, ...data.imapDebug });
+      }
       if (data?.imapError) {
         toast.error(`IMAP sync error: ${data.imapMessage || 'Unknown error'}`);
         console.warn('[IMAP_SYNC_ERROR]', {

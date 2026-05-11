@@ -59,7 +59,8 @@ export async function GET(req: Request) {
         .filter((value): value is string => Boolean(value))
     );
 
-    const imapEmails = await fetchFromImap(address, existingSourceIds);
+    const imapResult = await fetchFromImap(address, existingSourceIds);
+    const imapEmails = imapResult.emails;
     const retentionSeconds = await getRetentionSeconds();
     const thresholdMs = Date.now() - retentionSeconds * 1000;
     const freshImapEmails = imapEmails.filter((email) => {
@@ -74,7 +75,7 @@ export async function GET(req: Request) {
     }
 
     const emails = await storage.lrange(inboxKey(address), 0, -1);
-    return NextResponse.json({ emails: emails || [] }, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ emails: emails || [], imapDebug: imapResult.debug }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('Inbox Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown inbox error';

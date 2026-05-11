@@ -195,8 +195,9 @@ export const testImapConnection = async (config: {
 };
 
 export const fetchFromImap = async (address: string, existingSourceIds: Set<string>) => {
+  const debug = { totalUids: 0, recipientFiltered: 0, duplicateFiltered: 0, returned: 0 };
   const cfg = await readConfig();
-  if (!cfg.enabled || !cfg.host || !cfg.user || !cfg.password || !cfg.tls) return [] as ImapEmail[];
+  if (!cfg.enabled || !cfg.host || !cfg.user || !cfg.password || !cfg.tls) return { emails: [] as ImapEmail[], debug };
 
   const socket = tls.connect({ host: cfg.host, port: cfg.port, servername: cfg.host, rejectUnauthorized: cfg.rejectUnauthorized });
   await new Promise<void>((resolve, reject) => { socket.once('data', () => resolve()); socket.once('error', reject); });
@@ -213,6 +214,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
     );
     const idsLine = search.split('\n').find((l) => l.includes('* SEARCH')) || '';
     const ids = idsLine.replace(/.*\* SEARCH\s*/, '').trim().split(/\s+/).filter(Boolean).slice(-cfg.maxFetch);
+    debug.totalUids = ids.length;
 
     const out: ImapEmail[] = [];
     let maxSeenUid = lastUid;
@@ -231,11 +233,17 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const recipientText = collectRecipientText(headers);
       const normalizedAddress = address.toLowerCase();
       const matchesAddress = recipientText.includes(normalizedAddress);
-      if (!matchesAddress) continue;
+      if (!matchesAddress) {
+        debug.recipientFiltered += 1;
+        continue;
+      }
 
       const messageId = headers.get('message-id') || `${uid}:${headers.get('date') || ''}:${headers.get('subject') || ''}`;
       const sourceId = `imap:${createHash('sha1').update(messageId).digest('hex')}`;
-      if (existingSourceIds.has(sourceId)) continue;
+      if (existingSourceIds.has(sourceId)) {
+        debug.duplicateFiltered += 1;
+        continue;
+      }
 
       const transferEncoding = headers.get('content-transfer-encoding') || '';
       const rawBody = literals[1] || literals[0] || '';
@@ -258,6 +266,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       await storage.set(lastUidKey(address), String(maxSeenUid));
     }
     await runImapCommand(socket, 'a9', 'LOGOUT');
-    return out;
+    debug.returned = out.length;
+    return { emails: out, debug };
   } finally { socket.end(); }
 };
