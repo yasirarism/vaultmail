@@ -72,3 +72,29 @@
     border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
+
+
+/* Email preview responsiveness */
+.email-content,
+.email-content * {
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+.email-content table {
+  display: block;
+  width: 100% !important;
+  overflow-x: auto;
+}
+
+.email-content img,
+.email-content iframe,
+.email-content video {
+  height: auto !important;
+}
+
+.email-content pre,
+.email-content code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}

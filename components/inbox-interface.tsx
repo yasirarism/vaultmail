@@ -995,7 +995,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 bg-white">
                         <div
                           onClick={handleEmailBodyClick}
-                          className="prose prose-sm md:prose-base lg:prose-lg max-w-none overflow-x-hidden break-words text-black prose-img:max-w-full prose-pre:overflow-x-auto prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
+                          className="email-content prose prose-sm md:prose-base lg:prose-lg max-w-none overflow-x-hidden break-words text-black prose-img:max-w-full prose-pre:overflow-x-auto prose-a:text-green-600 prose-a:underline hover:prose-a:text-green-700"
                           dangerouslySetInnerHTML={{
                             __html: highlightVerificationCodes(
                               resolveInlineImages(
