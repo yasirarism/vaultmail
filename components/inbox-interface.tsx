@@ -148,7 +148,10 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
     doc.querySelectorAll('script').forEach((node) => node.remove());
-    return doc.body.innerHTML || '';
+    const headStyles = Array.from(doc.head.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((node) => node.outerHTML)
+      .join('');
+    return `${headStyles}${doc.body.innerHTML || ''}`;
   }, []);
 
   const normalizeContentId = useCallback((value?: string) => {
@@ -1018,7 +1021,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 bg-white">
                         <div
                           onClick={handleEmailBodyClick}
-                          className="email-content max-w-none overflow-x-hidden break-words text-black [&_img]:max-w-full [&_a]:text-green-600 [&_a]:underline hover:[&_a]:text-green-700 [&_pre]:bg-transparent [&_pre]:p-0 [&_pre]:shadow-none [&_blockquote]:border-l-0 [&_blockquote]:pl-0"
+                          className="email-content max-w-none overflow-x-hidden break-words text-black [&_img]:max-w-full [&_a]:text-green-600 [&_a]:underline hover:[&_a]:text-green-700 [&_pre]:bg-transparent [&_pre]:p-0 [&_pre]:shadow-none [&_blockquote]:border-0 [&_blockquote]:pl-0 [&_*]:text-inherit"
                           dangerouslySetInnerHTML={{
                             __html: highlightVerificationCodes(
                               resolveInlineImages(
