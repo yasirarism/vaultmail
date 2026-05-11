@@ -109,6 +109,13 @@ const extractEmailAddresses = (text: string) => {
   return [...new Set(matches.map((item) => item.toLowerCase()))];
 };
 
+
+const getHeaderFromRawResponse = (raw: string, header: string) => {
+  const pattern = new RegExp(`(?:\r?\n|^)${header}:\s*([^\r\n]+)`, 'i');
+  const match = raw.match(pattern);
+  return match?.[1]?.trim() || '';
+};
+
 const parseReceivedAt = (rawDate?: string) => {
   if (!rawDate) return new Date().toISOString();
   const ts = Date.parse(rawDate);
@@ -234,8 +241,10 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       );
       const literals = extractLiterals(res);
       const headers = parseHeaders(literals[0] || '');
-      const from = decodeMimeEncodedWords(headers.get('from') || 'Unknown Sender');
-      const to = decodeMimeEncodedWords(headers.get('to') || headers.get('delivered-to') || '');
+      const rawFrom = headers.get('from') || getHeaderFromRawResponse(res, 'From') || 'Unknown Sender';
+      const from = decodeMimeEncodedWords(rawFrom);
+      const rawTo = headers.get('to') || headers.get('delivered-to') || getHeaderFromRawResponse(res, 'To') || '';
+      const to = decodeMimeEncodedWords(rawTo);
       const recipientText = collectRecipientText(headers);
       const normalizedAddress = address.toLowerCase().trim();
       const recipientRaw = [
@@ -265,15 +274,17 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const transferEncoding = headers.get('content-transfer-encoding') || '';
       const rawBody = literals[1] || literals[0] || '';
       const normalizedText = normalizeBodyText(rawBody, transferEncoding);
-      const safeText = buildInboxPreview(normalizedText || decodeMimeEncodedWords(headers.get('subject') || ''));
+      const subject = decodeMimeEncodedWords(headers.get('subject') || getHeaderFromRawResponse(res, 'Subject') || '(No Subject)');
+      const safeText = buildInboxPreview(normalizedText || subject);
+      const looksLikeHtml = /<[^>]+>/.test(normalizedText);
       out.push({
         id: randomUUID(),
         sourceId,
         from,
         to,
-        subject: decodeMimeEncodedWords(headers.get('subject') || '(No Subject)'),
+        subject,
         text: safeText,
-        html: safeText,
+        html: looksLikeHtml ? normalizedText : safeText,
         attachments: [],
         receivedAt: parseReceivedAt(headers.get('date')),
         read: false
