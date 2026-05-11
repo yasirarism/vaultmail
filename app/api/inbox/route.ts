@@ -31,6 +31,36 @@ const getRetentionSeconds = async () => {
   return parseRetentionSettings(raw)?.seconds || 86400;
 };
 
+
+const stripHeaderLines = (value: string) =>
+  value
+    .split('\n')
+    .filter((line) => !/^(delivered-to|from|to|cc|subject|date|message-id):/i.test(line.trim()))
+    .join('\n')
+    .trim();
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const normalizeEmailPayload = (item: unknown) => {
+  if (!item || typeof item !== 'object') return item;
+  const email = item as Record<string, unknown>;
+  const text = typeof email.text === 'string' ? email.text : '';
+  const cleanedText = stripHeaderLines(text);
+  const html = typeof email.html === 'string' ? email.html : '';
+  const hasHtml = /<[^>]+>/.test(html);
+  return {
+    ...email,
+    text: cleanedText || text,
+    html: hasHtml ? html : `<p>${escapeHtml(cleanedText || text || '')}</p>`
+  };
+};
+
 const cleanupExpiredMessages = async (address: string) => {
   const retentionSeconds = await getRetentionSeconds();
   const threshold = new Date(Date.now() - retentionSeconds * 1000).toISOString();
@@ -75,7 +105,8 @@ export async function GET(req: Request) {
     }
 
     const emails = await storage.lrange(inboxKey(address), 0, -1);
-    return NextResponse.json({ emails: emails || [], imapDebug: imapResult.debug }, { headers: { 'Cache-Control': 'no-store' } });
+    const normalizedEmails = (emails || []).map(normalizeEmailPayload);
+    return NextResponse.json({ emails: normalizedEmails, imapDebug: imapResult.debug }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('Inbox Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown inbox error';
