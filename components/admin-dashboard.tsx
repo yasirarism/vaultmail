@@ -93,6 +93,7 @@ export function AdminDashboard() {
   const [deleteAllRunning, setDeleteAllRunning] = useState(false);
   const [imapSettings, setImapSettings] = useState<ImapSettings>({ enabled: false, host: '', port: 993, user: '', password: '', mailbox: 'INBOX', tls: true, rejectUnauthorized: true, maxFetch: 30, domainFilter: '' });
   const [imapSaving, setImapSaving] = useState(false);
+  const [imapTesting, setImapTesting] = useState(false);
 
   const retentionOptions = useMemo(
     () => [
@@ -309,6 +310,28 @@ export function AdminDashboard() {
       toast.error('Failed to save IMAP settings.');
     } finally {
       setImapSaving(false);
+    }
+  };
+
+
+  const testImapSettings = async () => {
+    setImapTesting(true);
+    try {
+      const response = await fetch('/api/admin/imap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...imapSettings, action: 'test' })
+      });
+      const data = (await response.json()) as { success?: boolean; error?: string };
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'IMAP test failed');
+      }
+      toast.success('IMAP test berhasil. Koneksi valid.');
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? `IMAP test gagal: ${error.message}` : 'IMAP test gagal.');
+    } finally {
+      setImapTesting(false);
     }
   };
 
@@ -886,8 +909,13 @@ export function AdminDashboard() {
                 <Input value={String(imapSettings.maxFetch)} onChange={(e) => setImapSettings((p) => ({ ...p, maxFetch: Number(e.target.value || 30) }))} placeholder="30" className="bg-black/30 text-white placeholder:text-white/40" />
                 <Input value={imapSettings.domainFilter || ''} onChange={(e) => setImapSettings((p) => ({ ...p, domainFilter: e.target.value }))} placeholder="opsional: domain.com" className="bg-black/30 text-white placeholder:text-white/40 sm:col-span-2" />
               </div>
-              <div className="mt-4 flex justify-end">
-                <Button onClick={saveImapSettings} disabled={imapSaving}>{imapSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Simpan IMAP'}</Button>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button type="button" variant="secondary" onClick={testImapSettings} disabled={imapTesting || imapSaving}>
+                  {imapTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Test IMAP'}
+                </Button>
+                <Button onClick={saveImapSettings} disabled={imapSaving}>
+                  {imapSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Simpan IMAP'}
+                </Button>
               </div>
             </div>
 

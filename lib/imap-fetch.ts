@@ -39,6 +39,42 @@ const runImapCommand = (socket: tls.TLSSocket, tag: string, command: string) => 
   socket.on('data', onData); socket.on('error', onError); socket.write(`${tag} ${command}\r\n`);
 });
 
+
+export const testImapConnection = async (config: {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  mailbox: string;
+  tls?: boolean;
+  rejectUnauthorized?: boolean;
+}) => {
+  const cfg = {
+    host: config.host.trim(),
+    port: Number(config.port || 993),
+    user: config.user.trim(),
+    password: config.password,
+    mailbox: (config.mailbox || 'INBOX').trim() || 'INBOX',
+    tls: config.tls !== false,
+    rejectUnauthorized: config.rejectUnauthorized !== false
+  };
+
+  if (!cfg.host || !cfg.user || !cfg.password || !cfg.tls) {
+    throw new Error('IMAP config incomplete');
+  }
+
+  const socket = tls.connect({ host: cfg.host, port: cfg.port, servername: cfg.host, rejectUnauthorized: cfg.rejectUnauthorized });
+  await new Promise<void>((resolve, reject) => { socket.once('data', () => resolve()); socket.once('error', reject); });
+  try {
+    await runImapCommand(socket, 't1', `LOGIN "${cfg.user.replace(/"/g, '')}" "${cfg.password.replace(/"/g, '')}"`);
+    await runImapCommand(socket, 't2', `SELECT ${cfg.mailbox}`);
+    await runImapCommand(socket, 't9', 'LOGOUT');
+    return { success: true };
+  } finally {
+    socket.end();
+  }
+};
+
 export const fetchFromImap = async (address: string, existingSourceIds: Set<string>) => {
   const cfg = await readConfig();
   if (!cfg.enabled || !cfg.host || !cfg.user || !cfg.password || !cfg.tls) return [] as ImapEmail[];
