@@ -2,6 +2,7 @@ import { inboxKey } from '@/lib/storage-keys';
 import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
 import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
+import { IMAP_SETTINGS_KEY } from '@/lib/admin-auth';
 import { fetchFromImap } from '@/lib/imap-fetch';
 import { lastUidKey } from '@/lib/imap-fetch';
 
@@ -10,6 +11,7 @@ export const dynamic = 'force-dynamic';
 type RetentionSettings = {
   seconds: number;
 };
+type ImapSettings = { enabled?: boolean };
 
 const parseRetentionSettings = (value: unknown): RetentionSettings | null => {
   if (!value) return null;
@@ -22,6 +24,21 @@ const parseRetentionSettings = (value: unknown): RetentionSettings | null => {
   }
   if (typeof value === 'object') {
     return value as RetentionSettings;
+  }
+  return null;
+};
+
+const parseImapSettings = (value: unknown): ImapSettings | null => {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as ImapSettings;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value === 'object') {
+    return value as ImapSettings;
   }
   return null;
 };
@@ -90,7 +107,21 @@ export async function GET(req: Request) {
         .filter((value): value is string => Boolean(value))
     );
 
-    const imapResult = await fetchFromImap(address, existingSourceIds);
+    const imapSettingsRaw = await storage.get(IMAP_SETTINGS_KEY);
+    const imapSettings = parseImapSettings(imapSettingsRaw);
+    const imapEnabled = Boolean(imapSettings?.enabled);
+    const imapResult = imapEnabled
+      ? await fetchFromImap(address, existingSourceIds)
+      : {
+          emails: [],
+          debug: {
+            totalUids: 0,
+            recipientFiltered: 0,
+            duplicateFiltered: 0,
+            returned: 0,
+            skipped: 'imap_disabled'
+          }
+        };
     const imapEmails = imapResult.emails;
     const retentionSeconds = await getRetentionSeconds();
     const thresholdMs = Date.now() - retentionSeconds * 1000;
