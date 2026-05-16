@@ -145,6 +145,8 @@ const normalizeBodyText = (raw: string, transferEncoding?: string) => {
   return trimmed;
 };
 
+const stripInvisibleChars = (value: string) =>
+  value.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '').replace(/\u00A0/g, ' ');
 
 
 
@@ -157,6 +159,24 @@ const extractPartFromRawBody = (raw: string, contentType: 'text/plain' | 'text/h
 
 const extractHtmlFromRawBody = (raw: string) => extractPartFromRawBody(raw, 'text/html');
 const extractTextFromRawBody = (raw: string) => extractPartFromRawBody(raw, 'text/plain');
+
+const extractPartByBoundary = (raw: string, contentType: 'text/plain' | 'text/html') => {
+  const boundaryMatch = raw.match(/Content-Type:\s*multipart\/[^\r\n;]+(?:[^\r\n]*;\s*|\r?\n[\t ]*)boundary="?([^"\r\n;]+)"?/i);
+  if (!boundaryMatch?.[1]) return '';
+  const boundary = boundaryMatch[1].trim();
+  const segments = raw.split(new RegExp(`(?:\r?\n)?--${boundary.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:--)?\r?\n`, 'g'));
+  for (const segment of segments) {
+    if (!new RegExp(`Content-Type:\\s*${contentType.replace('/', '\\/')}`, 'i').test(segment)) continue;
+    const headerEnd = segment.search(/\r?\n\r?\n/);
+    if (headerEnd === -1) continue;
+    const headerText = segment.slice(0, headerEnd);
+    const body = segment.slice(headerEnd).replace(/^\r?\n\r?\n/, '').trim();
+    const transfer = headerText.match(/Content-Transfer-Encoding:\s*([^\r\n;]+)/i)?.[1];
+    const normalized = normalizeBodyText(body, transfer);
+    if (normalized) return normalized;
+  }
+  return '';
+};
 
 const extractHtmlFromAnyContent = (raw: string) => {
   const decoded = normalizeBodyText(raw, 'quoted-printable');
@@ -187,7 +207,7 @@ const escapeHtml = (value: string) =>
 
 const buildInboxPreview = (raw: string) => {
   const withoutTags = raw.replace(/<[^>]+>/g, ' ');
-  const oneLine = withoutTags.replace(/\s+/g, ' ').trim();
+  const oneLine = stripInvisibleChars(withoutTags).replace(/\s+/g, ' ').trim();
   if (!oneLine) return '(No preview available)';
   return oneLine.length > 240 ? `${oneLine.slice(0, 237)}...` : oneLine;
 };
@@ -329,8 +349,8 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const bodyLiterals = literals.slice(1);
       const rawBody = bodyLiterals.join('\n') || literals[1] || literals[0] || '';
       const normalizedText = normalizeBodyText(rawBody, transferEncoding);
-      const extractedText = extractTextFromRawBody(res) || extractTextFromRawBody(rawBody);
-      const extractedHtml = extractHtmlFromRawBody(res) || extractHtmlFromAnyContent(res) || extractHtmlFromRawBody(rawBody) || extractHtmlFromAnyContent(rawBody);
+      const extractedText = extractTextFromRawBody(res) || extractPartByBoundary(res, 'text/plain') || extractTextFromRawBody(rawBody) || extractPartByBoundary(rawBody, 'text/plain');
+      const extractedHtml = extractHtmlFromRawBody(res) || extractPartByBoundary(res, 'text/html') || extractHtmlFromAnyContent(res) || extractHtmlFromRawBody(rawBody) || extractPartByBoundary(rawBody, 'text/html') || extractHtmlFromAnyContent(rawBody);
       const subject = decodeMimeEncodedWords(headers.get('subject') || getHeaderFromRawResponse(res, 'Subject') || '(No Subject)');
       const safeText = buildInboxPreview(extractedText || normalizedText || extractedHtml || subject);
       const htmlContent = extractedHtml
