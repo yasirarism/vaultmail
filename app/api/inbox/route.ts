@@ -80,6 +80,7 @@ export async function GET(req: Request) {
     await cleanupExpiredMessages(address);
     if (forceResync) {
       await storage.del(lastUidKey(address));
+      await storage.del(inboxKey(address));
     }
 
     const existing = await storage.lrange(inboxKey(address), 0, -1);
