@@ -71,13 +71,19 @@ const parseHeaders = (raw: string) => {
 };
 
 const decodeMimeEncodedWords = (value: string) =>
-  value.replace(/=\?([^?]+)\?([BQbq])\?([^?]*)\?=/g, (_m, _charset, enc, text) => {
+  value.replace(/=\?([^?]+)\?([BQbq])\?([^?]*)\?=/g, (_m, charset, enc, text) => {
     try {
-      if (String(enc).toUpperCase() === 'B') return Buffer.from(text, 'base64').toString('utf8');
-      const qp = text
+      const bytes = String(enc).toUpperCase() === 'B'
+        ? Buffer.from(text, 'base64')
+        : Buffer.from(text
         .replace(/_/g, ' ')
-        .replace(/=([0-9A-Fa-f]{2})/g, (_q: string, hex: string) => String.fromCharCode(parseInt(hex, 16)));
-      return Buffer.from(qp, 'binary').toString('utf8');
+        .replace(/=([0-9A-Fa-f]{2})/g, (_q: string, hex: string) => String.fromCharCode(parseInt(hex, 16))), 'binary');
+      const normalizedCharset = String(charset || 'utf-8').toLowerCase();
+      try {
+        return new TextDecoder(normalizedCharset as BufferEncoding, { fatal: false }).decode(bytes);
+      } catch {
+        return bytes.toString('utf8');
+      }
     } catch {
       return text;
     }
@@ -139,18 +145,38 @@ const normalizeBodyText = (raw: string, transferEncoding?: string) => {
   return trimmed;
 };
 
+const stripInvisibleChars = (value: string) =>
+  value.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '').replace(/\u00A0/g, ' ');
 
 
 
-const extractHtmlFromRawBody = (raw: string) => {
-  const pattern = /Content-Type:\s*text\/html[^\r\n]*(?:\r?\n[\t ].*)*\r?\n\r?\n([\s\S]*?)(?:\r?\n--[^\r\n]+|$)/i;
+const extractPartFromRawBody = (raw: string, contentType: 'text/plain' | 'text/html') => {
+  const pattern = new RegExp(`Content-Type:\\s*${contentType.replace('/', '\\/')}[^\\r\\n]*(?:\\r?\\n[\\t ].*)*\\r?\\n(?:Content-Transfer-Encoding:\\s*([^\\r\\n;]+)[^\\r\\n]*\\r?\\n)?\\r?\\n([\\s\\S]*?)(?:\\r?\\n--[^\\r\\n]+|$)`, 'i');
   const htmlMatch = raw.match(pattern);
   if (!htmlMatch) return '';
-  const section = htmlMatch[1].trim();
-  const encodingMatch = htmlMatch[0].match(/Content-Transfer-Encoding:\s*([^\r\n;]+)/i);
-  return normalizeBodyText(section, encodingMatch?.[1]);
+  return normalizeBodyText((htmlMatch[2] || '').trim(), htmlMatch[1]);
 };
 
+const extractHtmlFromRawBody = (raw: string) => extractPartFromRawBody(raw, 'text/html');
+const extractTextFromRawBody = (raw: string) => extractPartFromRawBody(raw, 'text/plain');
+
+const extractPartByBoundary = (raw: string, contentType: 'text/plain' | 'text/html') => {
+  const boundaryMatch = raw.match(/Content-Type:\s*multipart\/[^\r\n;]+(?:[^\r\n]*;\s*|\r?\n[\t ]*)boundary="?([^"\r\n;]+)"?/i);
+  if (!boundaryMatch?.[1]) return '';
+  const boundary = boundaryMatch[1].trim();
+  const segments = raw.split(new RegExp(`(?:\r?\n)?--${boundary.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:--)?\r?\n`, 'g'));
+  for (const segment of segments) {
+    if (!new RegExp(`Content-Type:\\s*${contentType.replace('/', '\\/')}`, 'i').test(segment)) continue;
+    const headerEnd = segment.search(/\r?\n\r?\n/);
+    if (headerEnd === -1) continue;
+    const headerText = segment.slice(0, headerEnd);
+    const body = segment.slice(headerEnd).replace(/^\r?\n\r?\n/, '').trim();
+    const transfer = headerText.match(/Content-Transfer-Encoding:\s*([^\r\n;]+)/i)?.[1];
+    const normalized = normalizeBodyText(body, transfer);
+    if (normalized) return normalized;
+  }
+  return '';
+};
 
 const extractHtmlFromAnyContent = (raw: string) => {
   const decoded = normalizeBodyText(raw, 'quoted-printable');
@@ -159,7 +185,9 @@ const extractHtmlFromAnyContent = (raw: string) => {
   const bodyDoc = decoded.match(/<body[\s\S]*<\/body>/i);
   if (bodyDoc) return bodyDoc[0];
   const fragment = decoded.match(/<table[\s\S]*<\/table>/i);
-  return fragment?.[0] || '';
+  if (fragment?.[0]) return fragment[0];
+  const genericHtml = decoded.match(/<(div|section|article|main|p|a|span|h1|h2|h3|h4|h5|h6|ul|ol|li)[\s\S]*<\/\1>/i);
+  return genericHtml?.[0] || '';
 };
 
 
@@ -179,21 +207,22 @@ const escapeHtml = (value: string) =>
 
 const buildInboxPreview = (raw: string) => {
   const withoutTags = raw.replace(/<[^>]+>/g, ' ');
-  const oneLine = withoutTags.replace(/\s+/g, ' ').trim();
+  const oneLine = stripInvisibleChars(withoutTags).replace(/\s+/g, ' ').trim();
   if (!oneLine) return '(No preview available)';
   return oneLine.length > 240 ? `${oneLine.slice(0, 237)}...` : oneLine;
 };
 
-const extractLiterals = (raw: string) => {
+const extractLiterals = (raw: Buffer) => {
   const out: string[] = [];
+  const latin = raw.toString('latin1');
   const marker = /\{(\d+)\}\r\n/g;
   let match: RegExpExecArray | null;
-  while ((match = marker.exec(raw)) !== null) {
+  while ((match = marker.exec(latin)) !== null) {
     const size = Number(match[1]);
     const start = marker.lastIndex;
     const end = start + size;
     if (Number.isFinite(size) && end <= raw.length) {
-      out.push(raw.slice(start, end));
+      out.push(raw.subarray(start, end).toString('utf8'));
       marker.lastIndex = end;
     }
   }
@@ -201,14 +230,16 @@ const extractLiterals = (raw: string) => {
 };
 
 const runImapCommand = (socket: tls.TLSSocket, tag: string, command: string) =>
-  new Promise<string>((resolve, reject) => {
-    let buf = '';
+  new Promise<Buffer>((resolve, reject) => {
+    const chunks: Buffer[] = [];
     const onData = (d: Buffer) => {
-      buf += d.toString('utf8');
-      if (buf.includes(`\r\n${tag} OK`) || buf.endsWith(`${tag} OK\r\n`)) {
+      chunks.push(d);
+      const buf = Buffer.concat(chunks);
+      const text = buf.toString('utf8');
+      if (text.includes(`\r\n${tag} OK`) || text.endsWith(`${tag} OK\r\n`)) {
         cleanup();
         resolve(buf);
-      } else if (buf.includes(`\r\n${tag} NO`) || buf.includes(`\r\n${tag} BAD`)) {
+      } else if (text.includes(`\r\n${tag} NO`) || text.includes(`\r\n${tag} BAD`)) {
         cleanup();
         reject(new Error(`IMAP command failed: ${command}`));
       }
@@ -256,11 +287,11 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
     await runImapCommand(socket, 'a2', "SELECT INBOX");
     const lastUidRaw = await storage.get(lastUidKey(address));
     const lastUid = Number(lastUidRaw || 0);
-    const search = await runImapCommand(
+    const search = (await runImapCommand(
       socket,
       'a3',
       lastUid > 0 ? `UID SEARCH UID ${lastUid + 1}:*` : 'UID SEARCH ALL'
-    );
+    )).toString('utf8');
     const idsLine = search.split('\n').find((l) => l.includes('* SEARCH')) || '';
     const ids = idsLine.replace(/.*\* SEARCH\s*/, '').trim().split(/\s+/).filter(Boolean).slice(-cfg.maxFetch);
     debug.totalUids = ids.length;
@@ -270,12 +301,13 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
     for (const uid of ids) {
       const uidNum = Number(uid);
       if (Number.isFinite(uidNum) && uidNum > maxSeenUid) maxSeenUid = uidNum;
-      const res = await runImapCommand(
+      const resBuffer = await runImapCommand(
         socket,
         `f${uid}`,
-        `UID FETCH ${uid} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[]<0.120000>)`
+        `UID FETCH ${uid} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[])`
       );
-      const literals = extractLiterals(res);
+      const res = resBuffer.toString('utf8');
+      const literals = extractLiterals(resBuffer);
       const headers = parseHeaders(literals[0] || '');
       const rawFrom = headers.get('from') || getHeaderFromRawResponse(res, 'From') || 'Unknown Sender';
       const from = decodeMimeEncodedWords(rawFrom);
@@ -314,12 +346,17 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       }
 
       const transferEncoding = headers.get('content-transfer-encoding') || '';
-      const rawBody = literals[1] || literals[0] || '';
+      const bodyLiterals = literals.slice(1);
+      const rawBody = bodyLiterals.join('\n') || literals[1] || literals[0] || '';
       const normalizedText = normalizeBodyText(rawBody, transferEncoding);
-      const extractedHtml = extractHtmlFromRawBody(res) || extractHtmlFromAnyContent(res) || extractHtmlFromRawBody(rawBody) || extractHtmlFromAnyContent(rawBody);
+      const extractedText = extractTextFromRawBody(res) || extractPartByBoundary(res, 'text/plain') || extractTextFromRawBody(rawBody) || extractPartByBoundary(rawBody, 'text/plain');
+      const extractedHtml = extractHtmlFromRawBody(res) || extractPartByBoundary(res, 'text/html') || extractHtmlFromAnyContent(res) || extractHtmlFromRawBody(rawBody) || extractPartByBoundary(rawBody, 'text/html') || extractHtmlFromAnyContent(rawBody);
       const subject = decodeMimeEncodedWords(headers.get('subject') || getHeaderFromRawResponse(res, 'Subject') || '(No Subject)');
-      const safeText = buildInboxPreview(normalizedText || extractedHtml || subject);
-      const htmlContent = extractedHtml || (/<[^>]+>/.test(normalizedText) ? normalizedText : "");
+      const safeText = buildInboxPreview(extractedText || normalizedText || extractedHtml || subject);
+      const htmlContent = extractedHtml
+        || (/<[^>]+>/.test(normalizedText) ? normalizedText : '')
+        || extractHtmlFromAnyContent(literals.join('\n'))
+        || extractHtmlFromAnyContent(res);
       const safeHtml = htmlContent || `<p>${escapeHtml(safeText)}</p>`;
       out.push({
         id: randomUUID(),
