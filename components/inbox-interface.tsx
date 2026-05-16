@@ -193,7 +193,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   );
 
   const getListPreviewText = useCallback((email: Email) => {
-    const source = email.html || email.text || '';
+    const source = (email.text && email.text.trim()) || email.html || '';
     const plain = (() => {
       if (typeof window === 'undefined') {
         return source.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ');
@@ -206,6 +206,14 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       .split('\n')
       .filter((line) => !/^(delivered-to|from|to|cc|subject|date|message-id):/i.test(line.trim()))
       .join(' ')
+      .replace(/=\r?\n/g, '')
+      .replace(/=([0-9A-F]{2})/gi, (_m, hex: string) => {
+        try {
+          return String.fromCharCode(parseInt(hex, 16));
+        } catch {
+          return '';
+        }
+      })
       .replace(/\s+/g, ' ')
       .trim();
     return cleaned || '(No preview available)';
@@ -1034,7 +1042,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                           title="email-preview"
                           className="h-full w-full border-0"
                           sandbox="allow-popups allow-popups-to-escape-sandbox"
-                          srcDoc={`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>html,body{margin:0;padding:0;max-width:100%;overflow-wrap:anywhere;}img{max-width:100%;height:auto;}table{max-width:100% !important;}</style></head><body>${highlightVerificationCodes(
+                          srcDoc={`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>html,body{margin:0;padding:0;max-width:100%;overflow-wrap:anywhere;}*{box-sizing:border-box;}img{max-width:100%;height:auto;}table{max-width:100% !important;width:100% !important;table-layout:auto !important;}td,th{word-break:break-word;}a{word-break:break-word;}button,.button,[role="button"],input[type="button"],input[type="submit"]{max-width:100% !important;white-space:normal !important;line-height:1.3 !important;}@media (max-width:640px){table[width]{width:100% !important;}td[width],th[width]{width:auto !important;}button,.button,[role="button"],input[type="button"],input[type="submit"]{display:block !important;width:100% !important;}}</style></head><body>${highlightVerificationCodes(
                             resolveInlineImages(
                               stripEmailStyles(selectedEmail.html || `<p>${selectedEmail.text}</p>`),
                               selectedEmail.attachments
