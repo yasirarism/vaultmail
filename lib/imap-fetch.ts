@@ -216,7 +216,7 @@ const runImapCommand = (socket: tls.TLSSocket, tag: string, command: string) =>
       chunks.push(d);
       const buf = Buffer.concat(chunks);
       const text = buf.toString('utf8');
-      if (buf.includes(`\r\n${tag} OK`) || buf.endsWith(`${tag} OK\r\n`)) {
+      if (text.includes(`\r\n${tag} OK`) || text.endsWith(`${tag} OK\r\n`)) {
         cleanup();
         resolve(buf);
       } else if (text.includes(`\r\n${tag} NO`) || text.includes(`\r\n${tag} BAD`)) {
