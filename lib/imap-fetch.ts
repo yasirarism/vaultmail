@@ -192,16 +192,17 @@ const buildInboxPreview = (raw: string) => {
   return oneLine.length > 240 ? `${oneLine.slice(0, 237)}...` : oneLine;
 };
 
-const extractLiterals = (raw: string) => {
+const extractLiterals = (raw: Buffer) => {
   const out: string[] = [];
+  const latin = raw.toString('latin1');
   const marker = /\{(\d+)\}\r\n/g;
   let match: RegExpExecArray | null;
-  while ((match = marker.exec(raw)) !== null) {
+  while ((match = marker.exec(latin)) !== null) {
     const size = Number(match[1]);
     const start = marker.lastIndex;
     const end = start + size;
     if (Number.isFinite(size) && end <= raw.length) {
-      out.push(raw.slice(start, end));
+      out.push(raw.subarray(start, end).toString('utf8'));
       marker.lastIndex = end;
     }
   }
@@ -209,14 +210,16 @@ const extractLiterals = (raw: string) => {
 };
 
 const runImapCommand = (socket: tls.TLSSocket, tag: string, command: string) =>
-  new Promise<string>((resolve, reject) => {
-    let buf = '';
+  new Promise<Buffer>((resolve, reject) => {
+    const chunks: Buffer[] = [];
     const onData = (d: Buffer) => {
-      buf += d.toString('utf8');
+      chunks.push(d);
+      const buf = Buffer.concat(chunks);
+      const text = buf.toString('utf8');
       if (buf.includes(`\r\n${tag} OK`) || buf.endsWith(`${tag} OK\r\n`)) {
         cleanup();
         resolve(buf);
-      } else if (buf.includes(`\r\n${tag} NO`) || buf.includes(`\r\n${tag} BAD`)) {
+      } else if (text.includes(`\r\n${tag} NO`) || text.includes(`\r\n${tag} BAD`)) {
         cleanup();
         reject(new Error(`IMAP command failed: ${command}`));
       }
@@ -264,11 +267,11 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
     await runImapCommand(socket, 'a2', "SELECT INBOX");
     const lastUidRaw = await storage.get(lastUidKey(address));
     const lastUid = Number(lastUidRaw || 0);
-    const search = await runImapCommand(
+    const search = (await runImapCommand(
       socket,
       'a3',
       lastUid > 0 ? `UID SEARCH UID ${lastUid + 1}:*` : 'UID SEARCH ALL'
-    );
+    )).toString('utf8');
     const idsLine = search.split('\n').find((l) => l.includes('* SEARCH')) || '';
     const ids = idsLine.replace(/.*\* SEARCH\s*/, '').trim().split(/\s+/).filter(Boolean).slice(-cfg.maxFetch);
     debug.totalUids = ids.length;
@@ -278,12 +281,13 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
     for (const uid of ids) {
       const uidNum = Number(uid);
       if (Number.isFinite(uidNum) && uidNum > maxSeenUid) maxSeenUid = uidNum;
-      const res = await runImapCommand(
+      const resBuffer = await runImapCommand(
         socket,
         `f${uid}`,
         `UID FETCH ${uid} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[])`
       );
-      const literals = extractLiterals(res);
+      const res = resBuffer.toString('utf8');
+      const literals = extractLiterals(resBuffer);
       const headers = parseHeaders(literals[0] || '');
       const rawFrom = headers.get('from') || getHeaderFromRawResponse(res, 'From') || 'Unknown Sender';
       const from = decodeMimeEncodedWords(rawFrom);
