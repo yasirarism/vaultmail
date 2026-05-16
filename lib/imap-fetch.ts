@@ -71,13 +71,19 @@ const parseHeaders = (raw: string) => {
 };
 
 const decodeMimeEncodedWords = (value: string) =>
-  value.replace(/=\?([^?]+)\?([BQbq])\?([^?]*)\?=/g, (_m, _charset, enc, text) => {
+  value.replace(/=\?([^?]+)\?([BQbq])\?([^?]*)\?=/g, (_m, charset, enc, text) => {
     try {
-      if (String(enc).toUpperCase() === 'B') return Buffer.from(text, 'base64').toString('utf8');
-      const qp = text
+      const bytes = String(enc).toUpperCase() === 'B'
+        ? Buffer.from(text, 'base64')
+        : Buffer.from(text
         .replace(/_/g, ' ')
-        .replace(/=([0-9A-Fa-f]{2})/g, (_q: string, hex: string) => String.fromCharCode(parseInt(hex, 16)));
-      return Buffer.from(qp, 'binary').toString('utf8');
+        .replace(/=([0-9A-Fa-f]{2})/g, (_q: string, hex: string) => String.fromCharCode(parseInt(hex, 16))), 'binary');
+      const normalizedCharset = String(charset || 'utf-8').toLowerCase();
+      try {
+        return new TextDecoder(normalizedCharset as BufferEncoding, { fatal: false }).decode(bytes);
+      } catch {
+        return bytes.toString('utf8');
+      }
     } catch {
       return text;
     }
@@ -142,15 +148,15 @@ const normalizeBodyText = (raw: string, transferEncoding?: string) => {
 
 
 
-const extractHtmlFromRawBody = (raw: string) => {
-  const pattern = /Content-Type:\s*text\/html[^\r\n]*(?:\r?\n[\t ].*)*\r?\n\r?\n([\s\S]*?)(?:\r?\n--[^\r\n]+|$)/i;
+const extractPartFromRawBody = (raw: string, contentType: 'text/plain' | 'text/html') => {
+  const pattern = new RegExp(`Content-Type:\\s*${contentType.replace('/', '\\/')}[^\\r\\n]*(?:\\r?\\n[\\t ].*)*\\r?\\n(?:Content-Transfer-Encoding:\\s*([^\\r\\n;]+)[^\\r\\n]*\\r?\\n)?\\r?\\n([\\s\\S]*?)(?:\\r?\\n--[^\\r\\n]+|$)`, 'i');
   const htmlMatch = raw.match(pattern);
   if (!htmlMatch) return '';
-  const section = htmlMatch[1].trim();
-  const encodingMatch = htmlMatch[0].match(/Content-Transfer-Encoding:\s*([^\r\n;]+)/i);
-  return normalizeBodyText(section, encodingMatch?.[1]);
+  return normalizeBodyText((htmlMatch[2] || '').trim(), htmlMatch[1]);
 };
 
+const extractHtmlFromRawBody = (raw: string) => extractPartFromRawBody(raw, 'text/html');
+const extractTextFromRawBody = (raw: string) => extractPartFromRawBody(raw, 'text/plain');
 
 const extractHtmlFromAnyContent = (raw: string) => {
   const decoded = normalizeBodyText(raw, 'quoted-printable');
@@ -273,7 +279,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const res = await runImapCommand(
         socket,
         `f${uid}`,
-        `UID FETCH ${uid} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[]<0.120000>)`
+        `UID FETCH ${uid} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[]<0.350000>)`
       );
       const literals = extractLiterals(res);
       const headers = parseHeaders(literals[0] || '');
@@ -316,9 +322,10 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const transferEncoding = headers.get('content-transfer-encoding') || '';
       const rawBody = literals[1] || literals[0] || '';
       const normalizedText = normalizeBodyText(rawBody, transferEncoding);
+      const extractedText = extractTextFromRawBody(res) || extractTextFromRawBody(rawBody);
       const extractedHtml = extractHtmlFromRawBody(res) || extractHtmlFromAnyContent(res) || extractHtmlFromRawBody(rawBody) || extractHtmlFromAnyContent(rawBody);
       const subject = decodeMimeEncodedWords(headers.get('subject') || getHeaderFromRawResponse(res, 'Subject') || '(No Subject)');
-      const safeText = buildInboxPreview(normalizedText || extractedHtml || subject);
+      const safeText = buildInboxPreview(extractedText || normalizedText || extractedHtml || subject);
       const htmlContent = extractedHtml || (/<[^>]+>/.test(normalizedText) ? normalizedText : "");
       const safeHtml = htmlContent || `<p>${escapeHtml(safeText)}</p>`;
       out.push({
