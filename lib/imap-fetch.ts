@@ -165,7 +165,9 @@ const extractHtmlFromAnyContent = (raw: string) => {
   const bodyDoc = decoded.match(/<body[\s\S]*<\/body>/i);
   if (bodyDoc) return bodyDoc[0];
   const fragment = decoded.match(/<table[\s\S]*<\/table>/i);
-  return fragment?.[0] || '';
+  if (fragment?.[0]) return fragment[0];
+  const genericHtml = decoded.match(/<(div|section|article|main|p|a|span|h1|h2|h3|h4|h5|h6|ul|ol|li)[\s\S]*<\/\1>/i);
+  return genericHtml?.[0] || '';
 };
 
 
@@ -326,7 +328,10 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const extractedHtml = extractHtmlFromRawBody(res) || extractHtmlFromAnyContent(res) || extractHtmlFromRawBody(rawBody) || extractHtmlFromAnyContent(rawBody);
       const subject = decodeMimeEncodedWords(headers.get('subject') || getHeaderFromRawResponse(res, 'Subject') || '(No Subject)');
       const safeText = buildInboxPreview(extractedText || normalizedText || extractedHtml || subject);
-      const htmlContent = extractedHtml || (/<[^>]+>/.test(normalizedText) ? normalizedText : "");
+      const htmlContent = extractedHtml
+        || (/<[^>]+>/.test(normalizedText) ? normalizedText : '')
+        || extractHtmlFromAnyContent(literals.join('\n'))
+        || extractHtmlFromAnyContent(res);
       const safeHtml = htmlContent || `<p>${escapeHtml(safeText)}</p>`;
       out.push({
         id: randomUUID(),
