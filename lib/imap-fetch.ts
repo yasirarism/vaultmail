@@ -281,7 +281,7 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       const res = await runImapCommand(
         socket,
         `f${uid}`,
-        `UID FETCH ${uid} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[]<0.350000>)`
+        `UID FETCH ${uid} (BODY.PEEK[HEADER.FIELDS (FROM TO CC DELIVERED-TO X-ORIGINAL-TO ENVELOPE-TO SUBJECT DATE MESSAGE-ID CONTENT-TRANSFER-ENCODING)] BODY.PEEK[])`
       );
       const literals = extractLiterals(res);
       const headers = parseHeaders(literals[0] || '');
@@ -322,7 +322,8 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
       }
 
       const transferEncoding = headers.get('content-transfer-encoding') || '';
-      const rawBody = literals[1] || literals[0] || '';
+      const bodyLiterals = literals.slice(1);
+      const rawBody = bodyLiterals.join('\n') || literals[1] || literals[0] || '';
       const normalizedText = normalizeBodyText(rawBody, transferEncoding);
       const extractedText = extractTextFromRawBody(res) || extractTextFromRawBody(rawBody);
       const extractedHtml = extractHtmlFromRawBody(res) || extractHtmlFromAnyContent(res) || extractHtmlFromRawBody(rawBody) || extractHtmlFromAnyContent(rawBody);
