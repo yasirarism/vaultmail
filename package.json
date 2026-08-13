@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:totp": "node --experimental-strip-types scripts/verify-totp.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
