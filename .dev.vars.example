@@ -1,0 +1,3 @@
+NEXTJS_ENV=development
+STORAGE_DRIVER=d1
+ADMIN_PASSWORD=changeme

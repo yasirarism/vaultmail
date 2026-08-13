@@ -5,6 +5,7 @@ import { Menu, Shield, Zap, Globe, Code2, Wrench } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { ThemePicker } from "@/components/theme-picker";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -106,8 +107,8 @@ export function HomePage({ initialAddress }: HomePageProps) {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
       {/* Background Blobs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="theme-blob absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="theme-blob absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Navbar */}
       <header className="border-b border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-50">
@@ -140,12 +141,13 @@ export function HomePage({ initialAddress }: HomePageProps) {
                       initial={{ opacity: 0, y: 10, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                      className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl overflow-hidden"
+                      className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl overflow-hidden"
                     >
                       <div className="p-2 space-y-2">
                         <div className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                           Menu
                         </div>
+                        <ThemePicker t={t} compact />
                         <button
                           type="button"
                           onClick={() => {
@@ -248,7 +250,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
 
 function Feature({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
     return (
-        <div className="p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+        <div className="theme-surface p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
             <div className="mb-4 p-3 rounded-full bg-white/5 w-fit">
                 {icon}
             </div>

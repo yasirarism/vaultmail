@@ -9,7 +9,7 @@ import {
   getHomepageLockSettings,
   hashHomepagePassword
 } from '@/lib/homepage-lock';
-import { storage } from '@/lib/storage';
+import { storage, isStorageConfigured } from '@/lib/storage';
 
 type HomepageLockPayload = {
   enabled: boolean;
@@ -27,10 +27,10 @@ const isAuthorized = async () => {
   return isAdminSessionValid(sessionToken);
 };
 
-const ensureMongoAvailable = () => {
-  if (!process.env.MONGODB_URI) {
+const ensureStorageAvailable = async () => {
+  if (!(await isStorageConfigured())) {
     return NextResponse.json(
-      { error: 'MONGODB_URI is not set. Configure MongoDB to use homepage lock.' },
+      { error: 'Persistent storage is not configured. Bind D1 on Cloudflare or set MONGODB_URI elsewhere.' },
       { status: 500 }
     );
   }
@@ -41,9 +41,9 @@ export async function GET() {
   if (!(await isAuthorized())) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
-  const mongoGuard = ensureMongoAvailable();
-  if (mongoGuard) {
-    return mongoGuard;
+  const storageGuard = await ensureStorageAvailable();
+  if (storageGuard) {
+    return storageGuard;
   }
 
   const settings = await getHomepageLockSettings();
@@ -59,9 +59,9 @@ export async function POST(request: Request) {
   if (!(await isAuthorized())) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
-  const mongoGuard = ensureMongoAvailable();
-  if (mongoGuard) {
-    return mongoGuard;
+  const storageGuard = await ensureStorageAvailable();
+  if (storageGuard) {
+    return storageGuard;
   }
 
   const body = (await request.json()) as HomepageLockSettingsPayload;

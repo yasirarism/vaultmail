@@ -4,7 +4,10 @@
 
 A premium, privacy-focused disposable email service built with **Next.js** and **MongoDB**. Features real-time inbox updates, custom domain support, and configurable privacy settings.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248)
+![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Next.js](https://img.shields.io/badge/Next.js-16-black) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248) ![Cloudflare](https://img.shields.io/badge/Cloudflare-D1-F38020)
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/yasirarism/vaultmail)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yasirarism/vaultmail&env=MONGODB_URI,ADMIN_PASSWORD&envDescription=MongoDB%20connection%20string%20and%20admin%20password)
 
 ## ✨ Features
 
@@ -25,9 +28,47 @@ A premium, privacy-focused disposable email service built with **Next.js** and *
 
 ## 🚀 Deployment Guide
 
+VaultMail supports two backends:
+
+| Platform | Database | IMAP | Incoming mail |
+| --- | --- | --- | --- |
+| Cloudflare Pages / Workers | **D1** | Disabled (use webhook) | Cloudflare Email Routing worker |
+| Vercel / Docker / VPS | **MongoDB** | Optional | Webhook and/or IMAP |
+
+`next build` / `next start` and the Dockerfile stay on MongoDB. Cloudflare uses `npm run cf:deploy` and never requires `MONGODB_URI`.
+
+### A. One-click: Cloudflare Pages / Workers (D1)
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/yasirarism/vaultmail)
+
+1. Click **Deploy to Cloudflare**.
+2. Create a D1 database named `vaultmail`, then bind it as `DB`:
+   ```bash
+   npx wrangler d1 create vaultmail
+   ```
+   Put the returned `database_id` into `wrangler.jsonc`.
+3. Apply schema (optional — tables are also created on first request):
+   ```bash
+   npx wrangler d1 migrations apply vaultmail --remote
+   ```
+4. Set Worker secrets / vars:
+   * `ADMIN_PASSWORD`
+   * `STORAGE_DRIVER=d1` (already set in `wrangler.jsonc`)
+5. Deploy:
+   ```bash
+   npm run cf:deploy
+   ```
+6. Point the email worker `WEBHOOK_URL` to `https://<your-app>.workers.dev/api/webhook`.
+
+IMAP is intentionally off on Cloudflare (TCP IMAP is slow and unsupported). Use the included Email Routing worker.
+
+### B. Vercel / Docker / VPS (MongoDB)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yasirarism/vaultmail&env=MONGODB_URI,ADMIN_PASSWORD&envDescription=MongoDB%20connection%20string%20and%20admin%20password)
+
 ### 1. Deploy to Vercel
 
-Clone this repository and deploy it to Vercel.
+Clone this repository and deploy it to Vercel. Keep using `npm run build` / the default Vercel Next.js preset.
 
 ### 2. Configure Database (MongoDB)
 
@@ -35,6 +76,7 @@ Provision a MongoDB database (MongoDB Atlas or self-hosted) and set the connecti
 
 *   `MONGODB_URI`
 *   `MONGODB_DB` (optional, defaults to `vaultmail`)
+*   `STORAGE_DRIVER=mongo` (optional; auto-selected when `MONGODB_URI` is set outside Cloudflare)
 
 ### 3. Configure Email Forwarding
 
@@ -129,6 +171,8 @@ Selain webhook, Anda juga bisa menarik email langsung dari akun IMAP (misalnya G
     ```env
     MONGODB_URI="your-connection-string"
     MONGODB_DB="vaultmail"
+    # Optional: force a storage backend (mongo outside Cloudflare, d1 on Cloudflare)
+    STORAGE_DRIVER="mongo"
     # Optional: enable Google AdSense auto ads
     NEXT_PUBLIC_ADSENSE_CLIENT_ID="ca-pub-xxxxxxxxxxxxxxxx"
     ```

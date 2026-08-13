@@ -1,35 +1,91 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import Link from 'next/link';
 import { Code2, Globe, Menu, Shield, Wrench } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ThemePicker } from '@/components/theme-picker';
 import { cn } from '@/lib/utils';
-import { getTranslations } from '@/lib/i18n';
+import {
+  DEFAULT_LOCALE,
+  getTranslations,
+  SUPPORTED_LOCALES,
+  type Locale,
+  type Translations,
+} from '@/lib/i18n';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
 
 const STORAGE_KEY = 'vaultmail_locale';
+const LOCALE_EVENT = 'vaultmail-locale-change';
 
-export function ApiAccessPage() {
+const isLocale = (value: string | null): value is Locale =>
+  Boolean(value && SUPPORTED_LOCALES.includes(value as Locale));
+
+const readStoredLocale = (): Locale => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (isLocale(stored)) return stored;
+  } catch {
+    // Ignore unavailable storage, e.g. privacy mode.
+  }
+  return DEFAULT_LOCALE;
+};
+
+const subscribeLocale = (onStoreChange: () => void) => {
+  window.addEventListener('storage', onStoreChange);
+  window.addEventListener(LOCALE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener('storage', onStoreChange);
+    window.removeEventListener(LOCALE_EVENT, onStoreChange);
+  };
+};
+
+type AppChromeValue = {
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
+  t: Translations;
+  resolvedAppName: string;
+};
+
+const AppChromeContext = createContext<AppChromeValue | null>(null);
+
+export function useAppChrome() {
+  const value = useContext(AppChromeContext);
+  if (!value) {
+    throw new Error('useAppChrome must be used within AppShell');
+  }
+  return value;
+}
+
+type AppShellProps = {
+  children: ReactNode;
+  contentClassName?: string;
+};
+
+export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellProps) {
   const [showMenu, setShowMenu] = useState(false);
-  const [locale, setLocale] = useState<'en' | 'id'>('en');
+  const locale = useSyncExternalStore(subscribeLocale, readStoredLocale, () => DEFAULT_LOCALE);
   const [customAppName, setCustomAppName] = useState<string | null>(null);
 
-  useEffect(() => {
-    const storedLocale = localStorage.getItem(STORAGE_KEY);
-    if (storedLocale === 'en' || storedLocale === 'id') {
-      setLocale(storedLocale);
-    }
+  const setLocale = useCallback((next: Locale) => {
+    localStorage.setItem(STORAGE_KEY, next);
+    document.documentElement.lang = next;
+    window.dispatchEvent(new Event(LOCALE_EVENT));
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, locale);
+    document.documentElement.lang = locale;
   }, [locale]);
-
-  const t = useMemo(() => getTranslations(locale), [locale]);
-  const resolvedAppName = customAppName || t.appName;
 
   useEffect(() => {
     const loadBranding = async () => {
@@ -37,8 +93,7 @@ export function ApiAccessPage() {
         const response = await fetch('/api/branding');
         if (!response.ok) return;
         const data = (await response.json()) as { appName?: string };
-        const value = data?.appName?.trim();
-        setCustomAppName(value || DEFAULT_APP_NAME);
+        setCustomAppName(data?.appName?.trim() || DEFAULT_APP_NAME);
       } catch (error) {
         console.error(error);
       }
@@ -47,20 +102,27 @@ export function ApiAccessPage() {
     loadBranding();
   }, []);
 
-  return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
-      <div className="theme-blob absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="theme-blob absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+  const t = useMemo(() => getTranslations(locale), [locale]);
+  const resolvedAppName = customAppName || t.appName;
+  const value = useMemo(
+    () => ({ locale, setLocale, t, resolvedAppName }),
+    [locale, setLocale, t, resolvedAppName]
+  );
 
-      <header className="border-b border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <Shield className="h-5 w-5 text-white" />
-            </div>
-            <span>{resolvedAppName}</span>
-          </Link>
-          <div className="flex items-center gap-4">
+  return (
+    <AppChromeContext.Provider value={value}>
+      <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
+        <div className="theme-blob absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="theme-blob absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <header className="border-b border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-50">
+          <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <Shield className="h-5 w-5 text-white" />
+              </div>
+              <span>{resolvedAppName}</span>
+            </Link>
             <div className="relative">
               <Button
                 type="button"
@@ -134,55 +196,12 @@ export function ApiAccessPage() {
               )}
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <section className="max-w-6xl mx-auto px-4 py-16 w-full">
-        <div className="glass-card rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-white">
-                <Code2 className="h-5 w-5 text-blue-300" />
-                <h1 className="text-2xl font-semibold">{t.apiAccessTitle}</h1>
-              </div>
-              <p className="text-muted-foreground max-w-2xl">
-                {t.apiAccessSubtitle}
-              </p>
-            </div>
-            <Link
-              href="https://github.com/yasirarism"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              {t.apiAccessCta}
-            </Link>
-          </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.apiAccessEndpointsTitle}
-              </p>
-              <ul className="mt-3 space-y-2 text-xs font-mono text-blue-100">
-                <li>GET /api/inbox?address=nama@domain.com</li>
-                <li>GET /api/download?address=nama@domain.com&amp;emailId=uuid&amp;type=email</li>
-                <li>GET /api/retention</li>
-              </ul>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {t.apiAccessWebhookTitle}
-              </p>
-              <p className="mt-3 text-sm text-white/80">
-                POST /api/webhook
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {t.apiAccessWebhookHint}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
+        <section className={cn(contentClassName, 'mx-auto px-4 py-16 w-full')}>
+          {children}
+        </section>
+      </main>
+    </AppChromeContext.Provider>
   );
 }

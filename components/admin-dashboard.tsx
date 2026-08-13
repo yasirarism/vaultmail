@@ -96,6 +96,8 @@ export function AdminDashboard() {
   const [imapSettings, setImapSettings] = useState<ImapSettings>({ enabled: false, host: '', port: 993, user: '', password: '', tls: true, rejectUnauthorized: true, maxFetch: 30 });
   const [imapSaving, setImapSaving] = useState(false);
   const [imapTesting, setImapTesting] = useState(false);
+  const [imapSupported, setImapSupported] = useState(true);
+  const [storageDriver, setStorageDriver] = useState<'d1' | 'mongo' | 'unknown'>('unknown');
 
   const retentionOptions = useMemo(
     () => [
@@ -117,14 +119,16 @@ export function AdminDashboard() {
         brandingResponse,
         domainsResponse,
         homepageLockResponse,
-        imapResponse
+        imapResponse,
+        runtimeResponse
       ] = await Promise.all([
         fetch('/api/admin/telegram'),
         fetch('/api/admin/retention'),
         fetch('/api/admin/branding'),
         fetch('/api/admin/domains'),
         fetch('/api/admin/homepage-lock'),
-        fetch('/api/admin/imap')
+        fetch('/api/admin/imap'),
+        fetch('/api/runtime')
       ]);
       if (
         !telegramResponse.ok ||
@@ -143,7 +147,21 @@ export function AdminDashboard() {
       const domainsData = (await domainsResponse.json()) as DomainsSettings;
       const homepageLockData =
         (await homepageLockResponse.json()) as HomepageLockSettings;
-      const imapData = (await imapResponse.json()) as ImapSettings;
+      const imapData = (await imapResponse.json()) as ImapSettings & { supported?: boolean };
+      if (runtimeResponse.ok) {
+        const runtime = (await runtimeResponse.json()) as {
+          storageDriver?: 'd1' | 'mongo';
+          imapSupported?: boolean;
+        };
+        if (runtime.storageDriver === 'd1' || runtime.storageDriver === 'mongo') {
+          setStorageDriver(runtime.storageDriver);
+        }
+        if (typeof runtime.imapSupported === 'boolean') {
+          setImapSupported(runtime.imapSupported);
+        }
+      } else if (typeof imapData.supported === 'boolean') {
+        setImapSupported(imapData.supported);
+      }
       setEnabled(Boolean(data.enabled));
       setBotToken(data.botToken || '');
       setChatId(data.chatId || '');
@@ -908,12 +926,25 @@ export function AdminDashboard() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-white">IMAP Fetch</h2>
-                  <p className="text-sm text-white/60">Alternatif webhook: ambil email dari IMAP (mis. Gmail).</p>
+                  <p className="text-sm text-white/60">
+                    {imapSupported
+                      ? 'Ambil email langsung dari IMAP seperti TMAIL, terbatas pada durasi retensi inbox.'
+                      : 'IMAP dimatikan di Cloudflare karena delay dan tidak ada TCP socket. Pakai Email Routing + webhook.'}
+                  </p>
+                  {storageDriver !== 'unknown' && (
+                    <p className="mt-1 text-xs text-white/40">
+                      Storage: {storageDriver === 'd1' ? 'Cloudflare D1' : 'MongoDB'}
+                    </p>
+                  )}
                 </div>
-                <Button variant={imapSettings.enabled ? 'default' : 'secondary'} onClick={() => setImapSettings((prev) => ({ ...prev, enabled: !prev.enabled }))}>
-                  {imapSettings.enabled ? 'Aktif' : 'Nonaktif'}
-                </Button>
+                {imapSupported && (
+                  <Button variant={imapSettings.enabled ? 'default' : 'secondary'} onClick={() => setImapSettings((prev) => ({ ...prev, enabled: !prev.enabled }))}>
+                    {imapSettings.enabled ? 'Aktif' : 'Nonaktif'}
+                  </Button>
+                )}
               </div>
+              {imapSupported ? (
+                <>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <Input value={imapSettings.host} onChange={(e) => setImapSettings((p) => ({ ...p, host: e.target.value }))} placeholder="imap.gmail.com" className="bg-black/30 text-white placeholder:text-white/40" />
                 <Input value={String(imapSettings.port)} onChange={(e) => setImapSettings((p) => ({ ...p, port: Number(e.target.value || 993) }))} placeholder="993" className="bg-black/30 text-white placeholder:text-white/40" />
@@ -929,6 +960,12 @@ export function AdminDashboard() {
                   {imapSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Simpan IMAP'}
                 </Button>
               </div>
+                </>
+              ) : (
+                <div className="mt-4 rounded-xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+                  Deploy Cloudflare memakai D1 + webhook. Set <span className="font-mono">WEBHOOK_URL</span> worker email ke <span className="font-mono">/api/webhook</span>.
+                </div>
+              )}
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/20 p-5">

@@ -1,10 +1,9 @@
-import { inboxKey } from '@/lib/storage-keys';
+import { inboxKey, lastUidKey } from '@/lib/storage-keys';
 import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
 import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
 import { IMAP_SETTINGS_KEY } from '@/lib/admin-auth';
-import { fetchFromImap } from '@/lib/imap-fetch';
-import { lastUidKey } from '@/lib/imap-fetch';
+import { isImapSupported } from '@/lib/runtime';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,22 +108,26 @@ export async function GET(req: Request) {
 
     const imapSettingsRaw = await storage.get(IMAP_SETTINGS_KEY);
     const imapSettings = parseImapSettings(imapSettingsRaw);
-    const imapEnabled = Boolean(imapSettings?.enabled);
+    const imapEnabled = isImapSupported() && Boolean(imapSettings?.enabled);
+    const retentionSeconds = await getRetentionSeconds();
+    const thresholdMs = Date.now() - retentionSeconds * 1000;
     const imapResult = imapEnabled
-      ? await fetchFromImap(address, existingSourceIds)
+      ? await (await import('@/lib/imap-fetch')).fetchFromImap(address, existingSourceIds, {
+          sinceMs: thresholdMs,
+        })
       : {
           emails: [],
           debug: {
             totalUids: 0,
             recipientFiltered: 0,
             duplicateFiltered: 0,
+            expiredFiltered: 0,
             returned: 0,
-            skipped: 'imap_disabled'
+            search: '',
+            skipped: isImapSupported() ? 'imap_disabled' : 'cloudflare_webhook_only'
           }
         };
     const imapEmails = imapResult.emails;
-    const retentionSeconds = await getRetentionSeconds();
-    const thresholdMs = Date.now() - retentionSeconds * 1000;
     const freshImapEmails = imapEmails.filter((email) => {
       const ts = new Date(email.receivedAt).getTime();
       return Number.isFinite(ts) && ts >= thresholdMs;
@@ -160,7 +163,6 @@ export async function GET(req: Request) {
 export async function DELETE(req: Request) {
   const { searchParams } = new URL(req.url);
   const address = searchParams.get('address');
-  const forceResync = searchParams.get('resync') === '1';
   const emailId = searchParams.get('emailId');
 
   if (!address || !emailId) {

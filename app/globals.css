@@ -73,6 +73,180 @@
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
+.theme-preview-glass {
+  background:
+    linear-gradient(145deg, rgba(96, 165, 250, 0.35), rgba(168, 85, 247, 0.25)),
+    rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.theme-preview-neomorph {
+  background: #2b3244;
+  box-shadow: 4px 4px 8px #1d2230, -4px -4px 8px #3b4560;
+}
+
+/* Full neomorph template */
+html[data-theme='neomorph'] {
+  --background: 222 20% 18%;
+  --foreground: 214 32% 94%;
+  --card: 222 20% 18%;
+  --card-foreground: 214 32% 94%;
+  --popover: 222 20% 18%;
+  --popover-foreground: 214 32% 94%;
+  --primary: 214 78% 82%;
+  --primary-foreground: 222 28% 14%;
+  --secondary: 222 16% 24%;
+  --secondary-foreground: 214 32% 94%;
+  --muted: 222 16% 24%;
+  --muted-foreground: 214 22% 82%;
+  --accent: 222 16% 24%;
+  --accent-foreground: 214 32% 94%;
+  --border: 222 14% 30%;
+  --input: 222 14% 30%;
+  --ring: 214 78% 76%;
+  --neo-bg: #2b3244;
+  --neo-dark: #1d2230;
+  --neo-light: #3b4560;
+  --neo-text: #eef3fb;
+  --neo-muted: #c5d0e4;
+  --neo-raised: 8px 8px 16px var(--neo-dark), -8px -8px 16px var(--neo-light);
+  --neo-raised-sm: 5px 5px 10px var(--neo-dark), -5px -5px 10px var(--neo-light);
+  --neo-inset: inset 5px 5px 10px var(--neo-dark), inset -5px -5px 10px var(--neo-light);
+  color-scheme: dark;
+}
+
+html[data-theme='neomorph'],
+html[data-theme='neomorph'] body,
+html[data-theme='neomorph'] main {
+  background: var(--neo-bg) !important;
+  color: var(--neo-text);
+}
+
+html[data-theme='neomorph'] * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-theme='neomorph'] .theme-blob {
+  display: none;
+}
+
+html[data-theme='neomorph'] .text-muted-foreground,
+html[data-theme='neomorph'] .text-white\/40,
+html[data-theme='neomorph'] .text-white\/50,
+html[data-theme='neomorph'] .text-white\/60,
+html[data-theme='neomorph'] .text-white\/70,
+html[data-theme='neomorph'] .text-gray-300,
+html[data-theme='neomorph'] .text-gray-200 {
+  color: var(--neo-muted) !important;
+}
+
+html[data-theme='neomorph'] .text-white,
+html[data-theme='neomorph'] .text-white\/80,
+html[data-theme='neomorph'] .text-blue-100,
+html[data-theme='neomorph'] .text-blue-200 {
+  color: var(--neo-text) !important;
+}
+
+html[data-theme='neomorph'] ::placeholder {
+  color: rgba(197, 208, 228, 0.72) !important;
+}
+
+html[data-theme='neomorph'] header,
+html[data-theme='neomorph'] footer {
+  background: var(--neo-bg) !important;
+  border-color: transparent !important;
+  box-shadow: var(--neo-raised-sm);
+}
+
+html[data-theme='neomorph'] .glass,
+html[data-theme='neomorph'] .glass-card,
+html[data-theme='neomorph'] .theme-surface,
+html[data-theme='neomorph'] .rounded-3xl {
+  background: var(--neo-bg) !important;
+  border-color: transparent !important;
+  box-shadow: var(--neo-raised);
+}
+
+html[data-theme='neomorph'] .bg-background\/50,
+html[data-theme='neomorph'] .bg-background\/60,
+html[data-theme='neomorph'] .from-background,
+html[data-theme='neomorph'] .to-background\/50,
+html[data-theme='neomorph'] .to-background\/60 {
+  background-image: none !important;
+  background-color: var(--neo-bg) !important;
+}
+
+html[data-theme='neomorph'] .bg-black\/40,
+html[data-theme='neomorph'] .bg-black\/30,
+html[data-theme='neomorph'] .bg-black\/20,
+html[data-theme='neomorph'] .bg-black\/10,
+html[data-theme='neomorph'] .bg-black\/70,
+html[data-theme='neomorph'] .bg-white\/5,
+html[data-theme='neomorph'] .bg-white\/\[0\.02\],
+html[data-theme='neomorph'] .bg-zinc-900,
+html[data-theme='neomorph'] .bg-zinc-900\/50,
+html[data-theme='neomorph'] .bg-slate-900\/90,
+html[data-theme='neomorph'] .bg-white\/10 {
+  background: var(--neo-bg) !important;
+  border-color: transparent !important;
+  box-shadow: var(--neo-inset);
+}
+
+html[data-theme='neomorph'] input,
+html[data-theme='neomorph'] textarea,
+html[data-theme='neomorph'] select {
+  background: var(--neo-bg) !important;
+  border-color: transparent !important;
+  color: var(--neo-text) !important;
+  box-shadow: var(--neo-inset) !important;
+}
+
+html[data-theme='neomorph'] button,
+html[data-theme='neomorph'] [role='button'] {
+  color: var(--neo-text);
+  border-color: transparent !important;
+  box-shadow: var(--neo-raised-sm);
+}
+
+html[data-theme='neomorph'] button:hover,
+html[data-theme='neomorph'] [role='button']:hover {
+  background-color: #323a4f !important;
+}
+
+html[data-theme='neomorph'] button:active,
+html[data-theme='neomorph'] [role='button']:active {
+  box-shadow: var(--neo-inset);
+}
+
+html[data-theme='neomorph'] .bg-gradient-to-br,
+html[data-theme='neomorph'] .from-blue-500,
+html[data-theme='neomorph'] .to-purple-600 {
+  background-image: none !important;
+  background-color: #3d4c6d !important;
+  box-shadow: var(--neo-raised-sm);
+}
+
+html[data-theme='neomorph'] .bg-clip-text.text-transparent,
+html[data-theme='neomorph'] .bg-gradient-to-r {
+  -webkit-text-fill-color: unset;
+  color: var(--neo-text);
+  background: none !important;
+}
+
+html[data-theme='neomorph'] .border-white\/5,
+html[data-theme='neomorph'] .border-white\/10,
+html[data-theme='neomorph'] .border-white\/20 {
+  border-color: transparent !important;
+}
+
+html[data-theme='neomorph'] .shadow-2xl,
+html[data-theme='neomorph'] .shadow-lg,
+html[data-theme='neomorph'] .shadow-xl {
+  box-shadow: var(--neo-raised) !important;
+}
+
 
 /* Email preview responsiveness */
 .email-content,

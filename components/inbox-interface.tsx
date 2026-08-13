@@ -10,6 +10,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn, getSenderInfo } from '@/lib/utils';
 import { DEFAULT_DOMAIN_FALLBACK, DEFAULT_EMAIL, getDefaultEmailDomain } from '@/lib/config';
 import { getTranslations, Locale } from '@/lib/i18n';
+import { buildGmailPreviewDocument } from '@/lib/email-preview';
+import type { ParsedAttachment } from '@/lib/email-mime';
 
 // Types
 interface Email {
@@ -18,17 +20,9 @@ interface Email {
   subject: string;
   text: string;
   html: string;
-  attachments?: EmailAttachment[];
+  attachments?: ParsedAttachment[];
   receivedAt: string;
   to: string;
-}
-
-interface EmailAttachment {
-  filename?: string;
-  contentType?: string;
-  size?: number;
-  contentBase64?: string;
-  contentId?: string;
 }
 
 import { SettingsDialog } from './settings-dialog';
@@ -68,6 +62,8 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const previousEmailIds = useRef<Set<string>>(new Set());
   const hasLoadedEmails = useRef(false);
   const fetchInFlight = useRef(false);
+  const previewFrameRef = useRef<HTMLIFrameElement | null>(null);
+  const [previewHeight, setPreviewHeight] = useState(420);
 
   const selectedSender = selectedEmail ? getSenderInfo(selectedEmail.from) : null;
   const domainExpirationDate = domainExpiration ? new Date(domainExpiration) : null;
@@ -140,57 +136,14 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     [address, selectedEmail]
   );
 
-  const stripEmailStyles = useCallback((html: string) => {
-    if (!html) return '';
-
-    if (typeof window === 'undefined') {
-      return html.replace(/<script[\s\S]*?<\/script>/gi, '');
-    }
-
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    doc.querySelectorAll('script').forEach((node) => node.remove());
-    const headStyles = Array.from(doc.head.querySelectorAll('style, link[rel="stylesheet"]'))
-      .map((node) => node.outerHTML)
-      .join('');
-    return `${headStyles}${doc.body.innerHTML || ''}`;
-  }, []);
-
-  const normalizeContentId = useCallback((value?: string) => {
-    if (!value) return '';
-    let normalized = value.replace(/^cid:/i, '').replace(/[<>]/g, '').trim();
-    try {
-      normalized = decodeURIComponent(normalized);
-    } catch {
-      // Ignore malformed URI sequences.
-    }
-    return normalized.toLowerCase();
-  }, []);
-
-  const resolveInlineImages = useCallback(
-    (html: string, attachments?: EmailAttachment[]) => {
-      if (!html || !attachments || attachments.length === 0) return html;
-      return html.replace(/src=["']cid:([^"']+)["']/gi, (match, cid) => {
-        const normalizedCid = normalizeContentId(cid);
-        const attachment = attachments.find((item) => {
-          const contentId = normalizeContentId(item.contentId);
-          return contentId && contentId === normalizedCid;
-        });
-        if (!attachment?.contentBase64) {
-          return match;
-        }
-        const contentType = attachment.contentType || 'image/png';
-        const base64 = attachment.contentBase64.trim().replace(/\s+/g, '');
-        if (!base64) {
-          return match;
-        }
-        const dataUrl = base64.startsWith('data:')
-          ? base64
-          : `data:${contentType};base64,${base64}`;
-        return `src="${dataUrl}"`;
-      });
-    },
-    [normalizeContentId]
-  );
+  const previewSrcDoc = useMemo(() => {
+    if (!selectedEmail) return '';
+    return buildGmailPreviewDocument(
+      selectedEmail.html,
+      selectedEmail.text,
+      selectedEmail.attachments || []
+    );
+  }, [selectedEmail]);
 
   const getListPreviewText = useCallback((email: Email) => {
     const source = (email.text && email.text.trim()) || email.html || '';
@@ -219,40 +172,25 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     return cleaned || '(No preview available)';
   }, []);
 
-  const highlightVerificationCodes = useCallback((html: string) => {
-    if (!html || typeof window === 'undefined') {
-      return html;
-    }
-    const codeRegex = /\b(\d{4,8})\b/g;
-    const keywordRegex =
-      /(otp|one[-\s]?time|verification|verifikasi|security|passcode|kode|auth(?:entication)?|kode\s+otp|kode\s+verifikasi)/i;
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
-    const nodesToUpdate: Text[] = [];
-    while (walker.nextNode()) {
-      const node = walker.currentNode as Text;
-      const text = node.nodeValue || '';
-      const isStandaloneCode = /^\s*\d{4,8}\s*$/.test(text);
-      const hasKeyword = keywordRegex.test(text);
-      if ((isStandaloneCode || hasKeyword) && codeRegex.test(text)) {
-        nodesToUpdate.push(node);
-      }
-      codeRegex.lastIndex = 0;
-      keywordRegex.lastIndex = 0;
-    }
-    nodesToUpdate.forEach((node) => {
-      const text = node.nodeValue || '';
-      const replaced = text.replace(
-        codeRegex,
-        '<mark data-copy-code="$1" class="rounded bg-amber-200/90 px-1 py-0.5 font-semibold text-black cursor-pointer select-all" title="Tap to copy OTP">$1</mark>'
-      );
-      if (replaced !== text) {
-        const wrapper = doc.createElement('span');
-        wrapper.innerHTML = replaced;
-        node.parentNode?.replaceChild(wrapper, node);
-      }
+  const handlePreviewLoad = useCallback(() => {
+    const frame = previewFrameRef.current;
+    const doc = frame?.contentDocument;
+    if (!frame || !doc) return;
+    const resize = () => {
+      const height = Math.max(doc.documentElement.scrollHeight, doc.body?.scrollHeight || 0, 320);
+      setPreviewHeight(height + 8);
+    };
+    resize();
+    doc.querySelectorAll('img').forEach((image) => {
+      image.addEventListener('load', resize);
     });
-    return doc.body.innerHTML;
+    doc.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement | null;
+      const code = target?.closest('[data-copy-code]')?.getAttribute('data-copy-code');
+      if (!code) return;
+      navigator.clipboard.writeText(code);
+      toast.success(`OTP copied: ${code}`);
+    });
   }, []);
 
   useEffect(() => {
@@ -538,6 +476,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   const unreadCount = emails.filter((email) => !readEmailIds.has(email.id)).length;
 
   const openEmail = (email: Email) => {
+    setPreviewHeight(420);
     setSelectedEmail(email);
     setReadEmailIds((prev) => {
       if (prev.has(email.id)) return prev;
@@ -545,16 +484,6 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       next.add(email.id);
       return next;
     });
-  };
-
-  const handleEmailBodyClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    const target = event.target as HTMLElement;
-    const codeElement = target.closest('[data-copy-code]');
-    if (!codeElement) return;
-    const code = codeElement.getAttribute('data-copy-code');
-    if (!code) return;
-    navigator.clipboard.writeText(code);
-    toast.success(`OTP copied: ${code}`);
   };
 
   const deleteEmail = useCallback(
@@ -1037,17 +966,15 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     </div>
                     
                     {/* Body */}
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 bg-white">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white">
                         <iframe
+                          ref={previewFrameRef}
                           title="email-preview"
-                          className="h-full w-full border-0"
-                          sandbox="allow-popups allow-popups-to-escape-sandbox"
-                          srcDoc={`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>html,body{margin:0;padding:0;max-width:100%;overflow-wrap:anywhere;}img{max-width:100%;height:auto;}table{max-width:100% !important;}td,th{word-break:break-word;}a{word-break:break-word;}@media (max-width:640px){body{padding:0 2px;}table{display:block;max-width:100% !important;overflow-x:auto;}table[width]{width:100% !important;}img[width]{width:100% !important;height:auto !important;}}</style></head><body>${highlightVerificationCodes(
-                            resolveInlineImages(
-                              stripEmailStyles(selectedEmail.html || `<p>${selectedEmail.text}</p>`),
-                              selectedEmail.attachments
-                            )
-                          )}</body></html>`}
+                          className="w-full border-0 bg-white"
+                          style={{ height: previewHeight, minHeight: 320 }}
+                          sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
+                          srcDoc={previewSrcDoc}
+                          onLoad={handlePreviewLoad}
                         />
                     </div>
                 </div>
