@@ -2,7 +2,7 @@ import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { ADMIN_SESSION_COOKIE, IMAP_SETTINGS_KEY, isAdminSessionValid } from '@/lib/admin-auth';
-import { testImapConnection } from '@/lib/imap-fetch';
+import { isImapSupported } from '@/lib/runtime';
 
 type ImapSettings = { enabled: boolean; host: string; port: number; user: string; password: string; tls: boolean; rejectUnauthorized: boolean; maxFetch: number; updatedAt: string; };
 const parseSettings = (value: unknown): ImapSettings | null => {
@@ -17,18 +17,32 @@ const isAuthorized = async () => {
   return isAdminSessionValid(sessionToken);
 };
 
+const cloudflareDisabled = () =>
+  NextResponse.json(
+    {
+      success: false,
+      supported: false,
+      error: 'IMAP is disabled on Cloudflare. Use Email Routing and the webhook worker instead.',
+    },
+    { status: 400 }
+  );
+
 export async function GET() {
   if (!(await isAuthorized())) return new NextResponse('Unauthorized', { status: 401 });
   const settingsRaw = await storage.get(IMAP_SETTINGS_KEY);
   const settings = parseSettings(settingsRaw) || { enabled: false, host: '', port: 993, user: '', password: '', tls: true, rejectUnauthorized: true, maxFetch: 30, updatedAt: new Date().toISOString() };
-  return NextResponse.json(settings);
+  return NextResponse.json({ ...settings, supported: isImapSupported() });
 }
 
 export async function POST(request: Request) {
   if (!(await isAuthorized())) return new NextResponse('Unauthorized', { status: 401 });
+  if (!isImapSupported()) {
+    return cloudflareDisabled();
+  }
   const body = await request.json();
   if (body?.action === 'test') {
     try {
+      const { testImapConnection } = await import('@/lib/imap-fetch');
       await testImapConnection({
         host: String(body?.host || ''),
         port: Number(body?.port || 993),

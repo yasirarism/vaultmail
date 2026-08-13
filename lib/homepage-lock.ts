@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { storage } from '@/lib/storage';
+import { storage, isStorageConfigured } from '@/lib/storage';
 import { HOMEPAGE_LOCK_SETTINGS_KEY } from '@/lib/admin-auth';
 
 export const HOMEPAGE_LOCK_COOKIE = 'vaultmail_homepage_auth';
@@ -30,19 +30,19 @@ export const parseHomepageLockSettings = (
   return null;
 };
 
-let warnedMissingMongo = false;
+let warnedMissingStorage = false;
 
-const warnMissingMongo = () => {
-  if (warnedMissingMongo) return;
-  warnedMissingMongo = true;
+const warnMissingStorage = () => {
+  if (warnedMissingStorage) return;
+  warnedMissingStorage = true;
   console.warn(
-    'MONGODB_URI is not set. Homepage lock is disabled until MongoDB is configured.'
+    'Persistent storage is not configured. Homepage lock stays disabled until D1 or MongoDB is available.'
   );
 };
 
 export const getHomepageLockSettings = async (): Promise<HomepageLockSettings> => {
-  if (!process.env.MONGODB_URI) {
-    warnMissingMongo();
+  if (!(await isStorageConfigured())) {
+    warnMissingStorage();
     return { enabled: false };
   }
   const storedRaw = await storage.get(HOMEPAGE_LOCK_SETTINGS_KEY);

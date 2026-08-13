@@ -2,6 +2,9 @@ import { createHash, randomUUID } from 'crypto';
 import tls from 'tls';
 import { storage } from '@/lib/storage';
 import { IMAP_SETTINGS_KEY } from '@/lib/admin-auth';
+import { lastUidKey } from '@/lib/storage-keys';
+
+export { lastUidKey };
 
 type ImapConfig = {
   enabled: boolean;
@@ -50,8 +53,6 @@ const readConfig = async (): Promise<ImapConfig> => {
     maxFetch: Number(saved?.maxFetch || 30),
   };
 };
-
-export const lastUidKey = (address: string) => `imap:lastuid:${address.toLowerCase()}`;
 
 const parseHeaders = (raw: string) => {
   const lines = raw.split(/\r?\n/);

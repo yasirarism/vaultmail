@@ -1,4 +1,4 @@
-import { storage } from '@/lib/storage';
+import { storage, isStorageConfigured } from '@/lib/storage';
 import { BRANDING_SETTINGS_KEY } from '@/lib/admin-auth';
 import { DEFAULT_APP_NAME, normalizeAppName } from '@/lib/branding';
 
@@ -22,12 +22,14 @@ const parseBrandingSettings = (value: unknown): BrandingSettings | null => {
 };
 
 export const getStoredAppName = async () => {
-  if (!process.env.MONGODB_URI) {
+  try {
+    if (!(await isStorageConfigured())) {
+      return DEFAULT_APP_NAME;
+    }
+    const stored = await storage.get(BRANDING_SETTINGS_KEY);
+    const settings = parseBrandingSettings(stored);
+    return normalizeAppName(settings?.appName) || DEFAULT_APP_NAME;
+  } catch {
     return DEFAULT_APP_NAME;
   }
-
-  const stored = await storage.get(BRANDING_SETTINGS_KEY);
-  const settings = parseBrandingSettings(stored);
-
-  return normalizeAppName(settings?.appName) || DEFAULT_APP_NAME;
 };

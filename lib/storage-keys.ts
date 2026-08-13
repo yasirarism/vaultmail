@@ -7,3 +7,6 @@ export const inboxPattern = () => withPrefix('inbox:*');
 
 export const domainExpirationKey = (domain: string) =>
   withPrefix(`domain:expiration:${domain.toLowerCase()}`);
+
+export const lastUidKey = (address: string) =>
+  withPrefix(`imap:lastuid:${address.toLowerCase()}`);
