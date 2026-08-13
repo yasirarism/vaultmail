@@ -11,12 +11,6 @@
   "vars": {
     "STORAGE_DRIVER": "d1"
   },
-  "services": [
-    {
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "vaultmail"
-    }
-  ],
   "d1_databases": [
     {
       "binding": "DB",
