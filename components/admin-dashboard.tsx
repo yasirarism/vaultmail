@@ -928,7 +928,7 @@ export function AdminDashboard() {
                   <h2 className="text-lg font-semibold text-white">IMAP Fetch</h2>
                   <p className="text-sm text-white/60">
                     {imapSupported
-                      ? 'Alternatif webhook: ambil email dari IMAP (mis. Gmail).'
+                      ? 'Ambil email langsung dari IMAP seperti TMAIL, terbatas pada durasi retensi inbox.'
                       : 'IMAP dimatikan di Cloudflare karena delay dan tidak ada TCP socket. Pakai Email Routing + webhook.'}
                   </p>
                   {storageDriver !== 'unknown' && (

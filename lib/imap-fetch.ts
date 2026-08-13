@@ -275,8 +275,79 @@ export const testImapConnection = async (config: {
   } finally { socket.end(); }
 };
 
-export const fetchFromImap = async (address: string, existingSourceIds: Set<string>) => {
-  const debug = { totalUids: 0, recipientFiltered: 0, duplicateFiltered: 0, returned: 0 };
+const IMAP_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const formatImapDate = (timestampMs: number) => {
+  const date = new Date(timestampMs);
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${day}-${IMAP_MONTHS[date.getUTCMonth()]}-${date.getUTCFullYear()}`;
+};
+
+const formatGmailAfter = (timestampMs: number) => {
+  const date = new Date(timestampMs);
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${date.getUTCFullYear()}/${month}/${day}`;
+};
+
+const quoteImap = (value: string) => `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+
+const parseSearchUids = (raw: string) => {
+  const line = raw.split('\n').find((item) => item.includes('* SEARCH')) || '';
+  return line.replace(/.*\* SEARCH\s*/, '').trim().split(/\s+/).filter((item) => /^\d+$/.test(item));
+};
+
+const searchImapUids = async (
+  socket: tls.TLSSocket,
+  address: string,
+  host: string,
+  sinceMs: number,
+  maxFetch: number
+) => {
+  const sinceDate = formatImapDate(sinceMs);
+  const quoted = quoteImap(address);
+  const commands: string[] = [];
+  if (/gmail\.com/i.test(host)) {
+    commands.push(`UID SEARCH X-GM-RAW ${quoteImap(`(to:${address} OR deliveredto:${address}) after:${formatGmailAfter(sinceMs)}`)}`);
+  }
+  commands.push(
+    `UID SEARCH SINCE ${sinceDate} OR OR OR TO ${quoted} CC ${quoted} HEADER Delivered-To ${quoted} HEADER X-Original-To ${quoted}`,
+    `UID SEARCH SINCE ${sinceDate} TO ${quoted}`,
+    `UID SEARCH SINCE ${sinceDate}`
+  );
+
+  let uids: string[] = [];
+  let usedFallback = false;
+  for (const [index, command] of commands.entries()) {
+    try {
+      const response = await runImapCommand(socket, `s${index + 1}`, command);
+      uids = parseSearchUids(response.toString('utf8'));
+      usedFallback = command.endsWith(`SINCE ${sinceDate}`);
+      if (uids.length > 0) break;
+    } catch {
+      // Try the next, broader search.
+    }
+  }
+
+  const scanCap = usedFallback
+    ? Math.min(Math.max(maxFetch * 20, 80), 400)
+    : Math.min(Math.max(maxFetch * 8, 40), 250);
+  return uids.slice(-scanCap);
+};
+
+export const fetchFromImap = async (
+  address: string,
+  existingSourceIds: Set<string>,
+  options?: { sinceMs?: number }
+) => {
+  const debug = {
+    totalUids: 0,
+    recipientFiltered: 0,
+    duplicateFiltered: 0,
+    expiredFiltered: 0,
+    returned: 0,
+    search: ''
+  };
   const cfg = await readConfig();
   if (!cfg.enabled || !cfg.host || !cfg.user || !cfg.password || !cfg.tls) return { emails: [] as ImapEmail[], debug };
 
@@ -286,19 +357,15 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
   try {
     await runImapCommand(socket, 'a1', `LOGIN "${cfg.user.replace(/"/g, '')}" "${cfg.password.replace(/"/g, '')}"`);
     await runImapCommand(socket, 'a2', "SELECT INBOX");
-    const lastUidRaw = await storage.get(lastUidKey(address));
-    const lastUid = Number(lastUidRaw || 0);
-    const search = (await runImapCommand(
-      socket,
-      'a3',
-      lastUid > 0 ? `UID SEARCH UID ${lastUid + 1}:*` : 'UID SEARCH ALL'
-    )).toString('utf8');
-    const idsLine = search.split('\n').find((l) => l.includes('* SEARCH')) || '';
-    const ids = idsLine.replace(/.*\* SEARCH\s*/, '').trim().split(/\s+/).filter(Boolean).slice(-cfg.maxFetch);
+    const sinceMs = options?.sinceMs && Number.isFinite(options.sinceMs)
+      ? options.sinceMs
+      : Date.now() - 86400 * 1000;
+    const ids = await searchImapUids(socket, address, cfg.host, sinceMs, cfg.maxFetch);
     debug.totalUids = ids.length;
+    debug.search = `since:${formatImapDate(sinceMs)}`;
 
     const out: ImapEmail[] = [];
-    let maxSeenUid = lastUid;
+    let maxSeenUid = 0;
     for (const uid of ids) {
       const uidNum = Number(uid);
       if (Number.isFinite(uidNum) && uidNum > maxSeenUid) maxSeenUid = uidNum;
@@ -345,6 +412,11 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
         debug.duplicateFiltered += 1;
         continue;
       }
+      const receivedAt = parseReceivedAt(headers.get('date'));
+      if (new Date(receivedAt).getTime() < sinceMs) {
+        debug.expiredFiltered += 1;
+        continue;
+      }
 
       const transferEncoding = headers.get('content-transfer-encoding') || '';
       const bodyLiterals = literals.slice(1);
@@ -368,15 +440,17 @@ export const fetchFromImap = async (address: string, existingSourceIds: Set<stri
         text: safeText,
         html: safeHtml,
         attachments: [],
-        receivedAt: parseReceivedAt(headers.get('date')),
+        receivedAt,
         read: false
       });
     }
-    if (maxSeenUid > lastUid) {
+    if (maxSeenUid > 0) {
       await storage.set(lastUidKey(address), String(maxSeenUid));
     }
     await runImapCommand(socket, 'a9', 'LOGOUT');
-    debug.returned = out.length;
-    return { emails: out, debug };
+    out.sort((left, right) => new Date(right.receivedAt).getTime() - new Date(left.receivedAt).getTime());
+    const emails = out.slice(0, cfg.maxFetch);
+    debug.returned = emails.length;
+    return { emails, debug };
   } finally { socket.end(); }
 };

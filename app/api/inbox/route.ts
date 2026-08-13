@@ -109,21 +109,25 @@ export async function GET(req: Request) {
     const imapSettingsRaw = await storage.get(IMAP_SETTINGS_KEY);
     const imapSettings = parseImapSettings(imapSettingsRaw);
     const imapEnabled = isImapSupported() && Boolean(imapSettings?.enabled);
+    const retentionSeconds = await getRetentionSeconds();
+    const thresholdMs = Date.now() - retentionSeconds * 1000;
     const imapResult = imapEnabled
-      ? await (await import('@/lib/imap-fetch')).fetchFromImap(address, existingSourceIds)
+      ? await (await import('@/lib/imap-fetch')).fetchFromImap(address, existingSourceIds, {
+          sinceMs: thresholdMs,
+        })
       : {
           emails: [],
           debug: {
             totalUids: 0,
             recipientFiltered: 0,
             duplicateFiltered: 0,
+            expiredFiltered: 0,
             returned: 0,
+            search: '',
             skipped: isImapSupported() ? 'imap_disabled' : 'cloudflare_webhook_only'
           }
         };
     const imapEmails = imapResult.emails;
-    const retentionSeconds = await getRetentionSeconds();
-    const thresholdMs = Date.now() - retentionSeconds * 1000;
     const freshImapEmails = imapEmails.filter((email) => {
       const ts = new Date(email.receivedAt).getTime();
       return Number.isFinite(ts) && ts >= thresholdMs;
