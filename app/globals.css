@@ -73,6 +73,119 @@
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
+.theme-preview-glass {
+  background:
+    linear-gradient(145deg, rgba(96, 165, 250, 0.35), rgba(168, 85, 247, 0.25)),
+    rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.theme-preview-neomorph {
+  background: #2b3244;
+  box-shadow: 4px 4px 8px #1d2230, -4px -4px 8px #3b4560;
+}
+
+/* Full neomorph template */
+html[data-theme='neomorph'] {
+  --background: 222 20% 18%;
+  --foreground: 214 28% 92%;
+  --card: 222 20% 18%;
+  --card-foreground: 214 28% 92%;
+  --popover: 222 20% 18%;
+  --popover-foreground: 214 28% 92%;
+  --primary: 217 70% 78%;
+  --primary-foreground: 222 28% 14%;
+  --secondary: 222 16% 24%;
+  --secondary-foreground: 214 28% 92%;
+  --muted: 222 16% 24%;
+  --muted-foreground: 215 14% 68%;
+  --accent: 222 16% 24%;
+  --accent-foreground: 214 28% 92%;
+  --border: 222 14% 28%;
+  --input: 222 14% 28%;
+  --ring: 217 70% 72%;
+  --neo-bg: #2b3244;
+  --neo-dark: #1d2230;
+  --neo-light: #3b4560;
+  --neo-raised: 8px 8px 16px var(--neo-dark), -8px -8px 16px var(--neo-light);
+  --neo-raised-sm: 5px 5px 10px var(--neo-dark), -5px -5px 10px var(--neo-light);
+  --neo-inset: inset 5px 5px 10px var(--neo-dark), inset -5px -5px 10px var(--neo-light);
+  color-scheme: dark;
+}
+
+html[data-theme='neomorph'] body,
+html[data-theme='neomorph'] main {
+  background: var(--neo-bg) !important;
+}
+
+html[data-theme='neomorph'] .theme-blob {
+  display: none;
+}
+
+html[data-theme='neomorph'] header,
+html[data-theme='neomorph'] footer {
+  background: var(--neo-bg) !important;
+  backdrop-filter: none !important;
+  border-color: transparent !important;
+  box-shadow: var(--neo-raised-sm);
+}
+
+html[data-theme='neomorph'] .glass,
+html[data-theme='neomorph'] .glass-card,
+html[data-theme='neomorph'] .theme-surface {
+  background: var(--neo-bg) !important;
+  backdrop-filter: none !important;
+  border-color: transparent !important;
+  box-shadow: var(--neo-raised);
+}
+
+html[data-theme='neomorph'] .bg-black\/40,
+html[data-theme='neomorph'] .bg-black\/30,
+html[data-theme='neomorph'] .bg-black\/20,
+html[data-theme='neomorph'] .bg-black\/70,
+html[data-theme='neomorph'] .bg-white\/5,
+html[data-theme='neomorph'] .bg-white\/\[0\.02\],
+html[data-theme='neomorph'] .bg-zinc-900,
+html[data-theme='neomorph'] .bg-zinc-900\/50,
+html[data-theme='neomorph'] .bg-slate-900\/90 {
+  background: var(--neo-bg) !important;
+  border-color: transparent !important;
+  box-shadow: var(--neo-inset);
+}
+
+html[data-theme='neomorph'] input,
+html[data-theme='neomorph'] textarea,
+html[data-theme='neomorph'] select {
+  background: var(--neo-bg) !important;
+  border-color: transparent !important;
+  box-shadow: var(--neo-inset) !important;
+}
+
+html[data-theme='neomorph'] button,
+html[data-theme='neomorph'] [role='button'] {
+  border-color: transparent !important;
+  box-shadow: var(--neo-raised-sm);
+}
+
+html[data-theme='neomorph'] button:active,
+html[data-theme='neomorph'] [role='button']:active {
+  box-shadow: var(--neo-inset);
+}
+
+html[data-theme='neomorph'] .bg-gradient-to-br.from-blue-500,
+html[data-theme='neomorph'] .from-blue-500.to-purple-600 {
+  background-image: none !important;
+  background-color: #3d4c6d !important;
+  box-shadow: var(--neo-raised-sm);
+}
+
+html[data-theme='neomorph'] .bg-clip-text.text-transparent {
+  -webkit-text-fill-color: unset;
+  color: #e8edf7;
+  background: none !important;
+}
+
 
 /* Email preview responsiveness */
 .email-content,

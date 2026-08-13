@@ -4,6 +4,8 @@ import { DEFAULT_LOCALE } from '@/lib/i18n';
 import { Toaster } from 'sonner';
 import AdsenseScript from '@/components/AdsenseScript';
 import { getStoredAppName } from '@/lib/branding-settings';
+import { ThemeProvider } from '@/components/theme-provider';
+import { DEFAULT_THEME, THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 
 export async function generateMetadata(): Promise<Metadata> {
   const appName = await getStoredAppName();
@@ -19,11 +21,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang={DEFAULT_LOCALE} className="dark">
+    <html lang={DEFAULT_LOCALE} className="dark" data-theme={DEFAULT_THEME} suppressHydrationWarning>
       <body className="font-sans">
-        <AdsenseScript />
-        {children}
-        <Toaster position="top-right" theme="dark" />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <ThemeProvider>
+          <AdsenseScript />
+          {children}
+          <Toaster position="top-right" theme="dark" />
+        </ThemeProvider>
       </body>
     </html>
   );

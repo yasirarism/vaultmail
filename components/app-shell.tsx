@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { Code2, Globe, Menu, Shield, Wrench } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { ThemePicker } from '@/components/theme-picker';
 import { cn } from '@/lib/utils';
 import {
   DEFAULT_LOCALE,
@@ -111,8 +112,8 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
   return (
     <AppChromeContext.Provider value={value}>
       <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="theme-blob absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="theme-blob absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <header className="border-b border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -138,11 +139,12 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
               {showMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                  <div className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl overflow-hidden">
+                  <div className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl overflow-hidden">
                     <div className="p-2 space-y-2">
                       <div className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                         Menu
                       </div>
+                      <ThemePicker t={t} compact />
                       <button
                         type="button"
                         onClick={() => {

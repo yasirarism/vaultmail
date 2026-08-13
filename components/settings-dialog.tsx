@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Trash2, Plus, Globe, Settings2 } from 'lucide-react';
+import { X, Trash2, Plus, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { ThemePicker } from '@/components/theme-picker';
 import { Translations } from '@/lib/i18n';
 
 interface SettingsDialogProps {
@@ -75,6 +76,7 @@ export function SettingsDialog({
                                 
                                 <div className="p-6 overflow-y-auto custom-scrollbar bg-zinc-900">
                                     <div className="space-y-6">
+                                        <ThemePicker t={t} />
                                         {/* System Domains */}
                                         <div className="space-y-3">
                                             <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider">{t.systemDomainsTitle}</h4>
