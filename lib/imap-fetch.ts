@@ -3,6 +3,7 @@ import tls from 'tls';
 import { storage } from '@/lib/storage';
 import { IMAP_SETTINGS_KEY } from '@/lib/admin-auth';
 import { lastUidKey } from '@/lib/storage-keys';
+import { extractRfc822FromImapFetch, parseRfc822 } from '@/lib/email-mime';
 
 export { lastUidKey };
 
@@ -418,19 +419,17 @@ export const fetchFromImap = async (
         continue;
       }
 
-      const transferEncoding = headers.get('content-transfer-encoding') || '';
-      const bodyLiterals = literals.slice(1);
-      const rawBody = bodyLiterals.join('\n') || literals[1] || literals[0] || '';
-      const normalizedText = normalizeBodyText(rawBody, transferEncoding);
-      const extractedText = extractTextFromRawBody(res) || extractPartByBoundary(res, 'text/plain') || extractTextFromRawBody(rawBody) || extractPartByBoundary(rawBody, 'text/plain');
-      const extractedHtml = extractHtmlFromRawBody(res) || extractPartByBoundary(res, 'text/html') || extractHtmlFromAnyContent(res) || extractHtmlFromRawBody(rawBody) || extractPartByBoundary(rawBody, 'text/html') || extractHtmlFromAnyContent(rawBody);
-      const subject = decodeMimeEncodedWords(headers.get('subject') || getHeaderFromRawResponse(res, 'Subject') || '(No Subject)');
-      const safeText = buildInboxPreview(extractedText || normalizedText || extractedHtml || subject);
-      const htmlContent = extractedHtml
-        || (/<[^>]+>/.test(normalizedText) ? normalizedText : '')
-        || extractHtmlFromAnyContent(literals.join('\n'))
+      const parsedMail = parseRfc822(extractRfc822FromImapFetch(resBuffer));
+      const extractedText = parsedMail.text
+        || extractTextFromRawBody(res)
+        || extractPartByBoundary(res, 'text/plain');
+      const extractedHtml = parsedMail.html
+        || extractHtmlFromRawBody(res)
+        || extractPartByBoundary(res, 'text/html')
         || extractHtmlFromAnyContent(res);
-      const safeHtml = htmlContent || `<p>${escapeHtml(safeText)}</p>`;
+      const subject = decodeMimeEncodedWords(headers.get('subject') || getHeaderFromRawResponse(res, 'Subject') || '(No Subject)');
+      const safeText = buildInboxPreview(extractedText || extractedHtml || subject);
+      const safeHtml = extractedHtml || (extractedText ? `<pre style="white-space:pre-wrap;font-family:Arial,Helvetica,sans-serif;font-size:14.5px;color:#222">${escapeHtml(extractedText)}</pre>` : `<p>${escapeHtml(safeText)}</p>`);
       out.push({
         id: randomUUID(),
         sourceId,
@@ -439,7 +438,7 @@ export const fetchFromImap = async (
         subject,
         text: safeText,
         html: safeHtml,
-        attachments: [],
+        attachments: parsedMail.attachments,
         receivedAt,
         read: false
       });
