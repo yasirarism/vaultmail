@@ -9,6 +9,7 @@ import {
   Clock,
   Copy,
   Loader2,
+  Palette,
   Plus,
   ShieldCheck,
   ShieldOff,
@@ -17,6 +18,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
+import { applyTheme, isVisualTheme, type VisualTheme } from '@/lib/theme';
 
 type TelegramSettings = {
   enabled: boolean;
@@ -55,6 +57,19 @@ type ImapSettings = {
   rejectUnauthorized: boolean;
   maxFetch: number;
 };
+
+type ThemeSettings = {
+  defaultTheme: VisualTheme;
+  updatedAt?: string;
+};
+
+const THEME_OPTIONS: { value: VisualTheme; label: string; preview: string }[] = [
+  { value: 'glass', label: 'Glassmorphism', preview: 'theme-preview-glass' },
+  { value: 'neomorph', label: 'Neomorph', preview: 'theme-preview-neomorph' }
+];
+
+const normalizeThemeSetting = (value: unknown): VisualTheme =>
+  typeof value === 'string' && isVisualTheme(value) ? value : 'glass';
 
 type AdminStats = {
   inboxCount: number;
@@ -97,6 +112,8 @@ export function AdminDashboard() {
   const [imapSaving, setImapSaving] = useState(false);
   const [imapTesting, setImapTesting] = useState(false);
   const [imapSupported, setImapSupported] = useState(true);
+  const [defaultTheme, setDefaultTheme] = useState<VisualTheme>('glass');
+  const [themeSaving, setThemeSaving] = useState(false);
   const [storageDriver, setStorageDriver] = useState<'d1' | 'mongo' | 'unknown'>('unknown');
 
   const retentionOptions = useMemo(
@@ -120,6 +137,7 @@ export function AdminDashboard() {
         domainsResponse,
         homepageLockResponse,
         imapResponse,
+        themeResponse,
         runtimeResponse
       ] = await Promise.all([
         fetch('/api/admin/telegram'),
@@ -128,6 +146,7 @@ export function AdminDashboard() {
         fetch('/api/admin/domains'),
         fetch('/api/admin/homepage-lock'),
         fetch('/api/admin/imap'),
+        fetch('/api/admin/theme'),
         fetch('/api/runtime')
       ]);
       if (
@@ -136,7 +155,8 @@ export function AdminDashboard() {
         !brandingResponse.ok ||
         !domainsResponse.ok ||
         !homepageLockResponse.ok ||
-        !imapResponse.ok
+        !imapResponse.ok ||
+        !themeResponse.ok
       ) {
         throw new Error('Unauthorized or failed to load settings.');
       }
@@ -148,6 +168,8 @@ export function AdminDashboard() {
       const homepageLockData =
         (await homepageLockResponse.json()) as HomepageLockSettings;
       const imapData = (await imapResponse.json()) as ImapSettings & { supported?: boolean };
+      const themeData = (await themeResponse.json()) as ThemeSettings;
+      setDefaultTheme(normalizeThemeSetting(themeData?.defaultTheme));
       if (runtimeResponse.ok) {
         const runtime = (await runtimeResponse.json()) as {
           storageDriver?: 'd1' | 'mongo';
@@ -277,6 +299,34 @@ export function AdminDashboard() {
       toast.error('Failed to save site name.');
     } finally {
       setBrandingSaving(false);
+    }
+  };
+
+  const selectTheme = (next: VisualTheme) => {
+    setDefaultTheme(next);
+    // Live preview only (does not touch the personal localStorage override).
+    applyTheme(next);
+  };
+
+  const saveTheme = async () => {
+    setThemeSaving(true);
+    try {
+      const response = await fetch('/api/admin/theme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ defaultTheme })
+      });
+      if (!response.ok) {
+        throw new Error('Unauthorized or failed to save theme.');
+      }
+      const data = (await response.json()) as ThemeSettings;
+      setDefaultTheme(normalizeThemeSetting(data?.defaultTheme));
+      toast.success('Theme saved. Berlaku sebagai tema default untuk semua pengunjung baru.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to save theme.');
+    } finally {
+      setThemeSaving(false);
     }
   };
 
@@ -686,6 +736,66 @@ export function AdminDashboard() {
                   className="mt-3 bg-black/30 text-white placeholder:text-white/40"
                 />
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+                    <Palette className="h-5 w-5 text-blue-300" />
+                    Tema Tampilan
+                  </h2>
+                  <p className="text-sm text-white/60">
+                    Pilih tema default untuk seluruh website. Pengunjung tetap bisa
+                    memilih tema sendiri lewat menu pengaturan.
+                  </p>
+                </div>
+                <Button onClick={saveTheme} disabled={themeSaving}>
+                  {themeSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Simpan Tema'
+                  )}
+                </Button>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {THEME_OPTIONS.map((option) => {
+                  const active = defaultTheme === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => selectTheme(option.value)}
+                      className={`flex items-center gap-4 rounded-xl border px-4 py-3 text-left transition-all ${
+                        active
+                          ? 'border-blue-400/60 bg-blue-400/10'
+                          : 'border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.05]'
+                      }`}
+                    >
+                      <div className={`h-12 w-16 shrink-0 rounded-lg ${option.preview}`} />
+                      <span className="flex-1">
+                        <span className="block text-sm font-semibold text-white">
+                          {option.label}
+                        </span>
+                        <span className="block text-xs text-white/50">
+                          {option.value === 'glass'
+                            ? 'Glassmorphism + blur'
+                            : 'Soft UI neomorph'}
+                        </span>
+                      </span>
+                      {active && (
+                        <span className="rounded-full bg-blue-400/20 px-2 py-1 text-[10px] font-semibold text-blue-200">
+                          AKTIF
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-3 text-xs text-white/50">
+                Tema langsung dipratinjau saat dipilih. Simpan untuk menerapkan ke semua
+                pengunjung yang belum memilih tema sendiri.
+              </p>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/20 p-5">

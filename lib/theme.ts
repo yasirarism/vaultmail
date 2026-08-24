@@ -20,6 +20,12 @@ export const readStoredTheme = (): VisualTheme => {
   } catch {
     // Ignore unavailable storage.
   }
+  // Fall back to whatever the bootstrap script resolved for this visitor
+  // (the admin-configured site default) before touching localStorage again.
+  if (typeof document !== 'undefined') {
+    const current = document.documentElement.getAttribute('data-theme');
+    if (isVisualTheme(current)) return current;
+  }
   return DEFAULT_THEME;
 };
 
@@ -38,4 +44,7 @@ export const subscribeTheme = (onChange: () => void) => {
   };
 };
 
-export const THEME_BOOTSTRAP_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');document.documentElement.setAttribute('data-theme',t==='neomorph'||t==='glass'?t:'${DEFAULT_THEME}');}catch(e){document.documentElement.setAttribute('data-theme','${DEFAULT_THEME}');}})();`;
+export const buildThemeBootstrapScript = (fallback: VisualTheme) =>
+  `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');document.documentElement.setAttribute('data-theme',(t==='neomorph'||t==='glass')?t:'${fallback}');}catch(e){document.documentElement.setAttribute('data-theme','${fallback}');}})();`;
+
+export const THEME_BOOTSTRAP_SCRIPT = buildThemeBootstrapScript(DEFAULT_THEME);

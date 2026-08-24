@@ -271,9 +271,9 @@ function TwoFactorContent({ initialSecret = '' }: TwoFactorPageProps) {
             </div>
             <CodeRow label={t.twoFaNext} value={nextCode} />
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+          <div className="theme-progress-track h-2 w-full overflow-hidden rounded-full">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-blue-400 to-purple-500 transition-[width] duration-200"
+              className="theme-progress-fill h-full rounded-full transition-[width] duration-200"
               style={{ width: progressWidth }}
             />
           </div>
