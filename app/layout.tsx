@@ -5,7 +5,8 @@ import { Toaster } from 'sonner';
 import AdsenseScript from '@/components/AdsenseScript';
 import { getStoredAppName } from '@/lib/branding-settings';
 import { ThemeProvider } from '@/components/theme-provider';
-import { DEFAULT_THEME, THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
+import { buildThemeBootstrapScript } from '@/lib/theme';
+import { getStoredDefaultTheme } from '@/lib/theme-settings';
 
 export async function generateMetadata(): Promise<Metadata> {
   const appName = await getStoredAppName();
@@ -15,15 +16,17 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const defaultTheme = await getStoredDefaultTheme();
+
   return (
-    <html lang={DEFAULT_LOCALE} className="dark" data-theme={DEFAULT_THEME} suppressHydrationWarning>
+    <html lang={DEFAULT_LOCALE} className="dark" data-theme={defaultTheme} suppressHydrationWarning>
       <body className="font-sans">
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: buildThemeBootstrapScript(defaultTheme) }} />
         <ThemeProvider>
           <AdsenseScript />
           {children}

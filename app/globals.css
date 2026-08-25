@@ -88,11 +88,13 @@
 
 /* Full neomorph template */
 html[data-theme='neomorph'] {
-  --background: 222 20% 18%;
+  /* Keep the HSL tokens in sync with --neo-bg so popups/cards that use
+     bg-background / bg-card / bg-popover match the neomorph surface exactly. */
+  --background: 223 23% 22%;
   --foreground: 214 32% 94%;
-  --card: 222 20% 18%;
+  --card: 223 23% 22%;
   --card-foreground: 214 32% 94%;
-  --popover: 222 20% 18%;
+  --popover: 223 23% 22%;
   --popover-foreground: 214 32% 94%;
   --primary: 214 78% 82%;
   --primary-foreground: 222 28% 14%;
@@ -110,6 +112,8 @@ html[data-theme='neomorph'] {
   --neo-light: #3b4560;
   --neo-text: #eef3fb;
   --neo-muted: #c5d0e4;
+  --neo-accent: #7da7f5;
+  --neo-scrim: rgba(16, 20, 30, 0.66);
   --neo-raised: 8px 8px 16px var(--neo-dark), -8px -8px 16px var(--neo-light);
   --neo-raised-sm: 5px 5px 10px var(--neo-dark), -5px -5px 10px var(--neo-light);
   --neo-inset: inset 5px 5px 10px var(--neo-dark), inset -5px -5px 10px var(--neo-light);
@@ -182,16 +186,43 @@ html[data-theme='neomorph'] .bg-black\/40,
 html[data-theme='neomorph'] .bg-black\/30,
 html[data-theme='neomorph'] .bg-black\/20,
 html[data-theme='neomorph'] .bg-black\/10,
-html[data-theme='neomorph'] .bg-black\/70,
 html[data-theme='neomorph'] .bg-white\/5,
 html[data-theme='neomorph'] .bg-white\/\[0\.02\],
 html[data-theme='neomorph'] .bg-zinc-900,
 html[data-theme='neomorph'] .bg-zinc-900\/50,
 html[data-theme='neomorph'] .bg-slate-900\/90,
+html[data-theme='neomorph'] .bg-slate-950\/80,
 html[data-theme='neomorph'] .bg-white\/10 {
   background: var(--neo-bg) !important;
   border-color: transparent !important;
   box-shadow: var(--neo-inset);
+}
+
+/* Popup overlays become a dimmed neomorph scrim instead of pure black so
+   they stay in sync with the theme while still dimming the page behind. */
+html[data-theme='neomorph'] .bg-black\/50,
+html[data-theme='neomorph'] .bg-black\/60,
+html[data-theme='neomorph'] .bg-black\/70 {
+  background: var(--neo-scrim) !important;
+  border-color: transparent !important;
+  box-shadow: none;
+}
+
+/* Toast popups (sonner) follow the neomorph surface. */
+html[data-theme='neomorph'] [data-sonner-toast] {
+  background: var(--neo-bg) !important;
+  color: var(--neo-text) !important;
+  border: none !important;
+  box-shadow: var(--neo-raised) !important;
+}
+
+html[data-theme='neomorph'] [data-sonner-toast] [data-title] {
+  color: var(--neo-text) !important;
+}
+
+html[data-theme='neomorph'] [data-sonner-toast] [data-description],
+html[data-theme='neomorph'] [data-sonner-toast] [data-button] {
+  color: var(--neo-muted) !important;
 }
 
 html[data-theme='neomorph'] input,
@@ -220,6 +251,23 @@ html[data-theme='neomorph'] [role='button']:active {
   box-shadow: var(--neo-inset);
 }
 
+/* Primary buttons (e.g. the login "Masuk" button) keep a light accent chip,
+   so force the dark foreground color back on instead of --neo-text. */
+html[data-theme='neomorph'] button.bg-primary,
+html[data-theme='neomorph'] [role='button'].bg-primary,
+html[data-theme='neomorph'] button.text-primary-foreground {
+  color: hsl(var(--primary-foreground)) !important;
+  background-color: hsl(var(--primary)) !important;
+  box-shadow: var(--neo-raised-sm);
+}
+
+html[data-theme='neomorph'] button.bg-primary:hover,
+html[data-theme='neomorph'] [role='button'].bg-primary:hover,
+html[data-theme='neomorph'] button.text-primary-foreground:hover {
+  background-color: hsl(var(--primary)) !important;
+  filter: brightness(1.06);
+}
+
 html[data-theme='neomorph'] .bg-gradient-to-br,
 html[data-theme='neomorph'] .from-blue-500,
 html[data-theme='neomorph'] .to-purple-600 {
@@ -245,6 +293,26 @@ html[data-theme='neomorph'] .shadow-2xl,
 html[data-theme='neomorph'] .shadow-lg,
 html[data-theme='neomorph'] .shadow-xl {
   box-shadow: var(--neo-raised) !important;
+}
+
+/* Progress bars: readable in both themes (the generic gradient overrides
+   above would otherwise blank out the fill in neomorph). */
+.theme-progress-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.theme-progress-fill {
+  background: linear-gradient(to right, #60a5fa, #a855f7);
+}
+
+html[data-theme='neomorph'] .theme-progress-track {
+  background: var(--neo-bg);
+  box-shadow: var(--neo-inset);
+}
+
+html[data-theme='neomorph'] .theme-progress-fill {
+  background: linear-gradient(to right, var(--neo-accent), #b184f5) !important;
+  box-shadow: 0 0 8px rgba(125, 167, 245, 0.35);
 }
 
 

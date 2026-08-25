@@ -7,6 +7,7 @@ export const TELEGRAM_SETTINGS_KEY = withPrefix('settings:telegram');
 export const DOMAINS_SETTINGS_KEY = withPrefix('settings:domains');
 export const RETENTION_SETTINGS_KEY = withPrefix('settings:retention');
 export const BRANDING_SETTINGS_KEY = withPrefix('settings:branding');
+export const THEME_SETTINGS_KEY = withPrefix('settings:theme');
 export const HOMEPAGE_LOCK_SETTINGS_KEY = withPrefix('settings:homepage-lock');
 export const IMAP_SETTINGS_KEY = withPrefix('settings:imap');
 

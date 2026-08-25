@@ -685,8 +685,8 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                                 exit={{ opacity: 0, scale: 0.96 }}
                                 className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:absolute sm:inset-auto sm:right-0 sm:top-14 sm:block sm:p-0"
                             >
-                                <div className="w-full max-w-[22rem] rounded-2xl border border-white/10 bg-black/70 p-0 text-white shadow-2xl backdrop-blur-xl sm:w-80 sm:bg-zinc-900">
-                                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-black/60">
+                                <div className="w-full max-w-[22rem] rounded-2xl border border-white/10 bg-zinc-900 p-0 text-white shadow-2xl backdrop-blur-xl sm:w-80">
+                                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-white/5">
                                     <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">{t.historyTitle}</span>
                                     <div className="flex items-center gap-2 flex-wrap">
                                         {history.length > 0 && (
