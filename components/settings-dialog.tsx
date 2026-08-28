@@ -50,7 +50,7 @@ export function SettingsDialog({
                 <>
                     {/* Dialog Container - Fixed Flex Centering */}
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
+                        <div className="fixed inset-0" style={{ background: 'rgba(26,26,26,0.55)' }} onClick={() => onOpenChange(false)} />
                         
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -58,33 +58,41 @@ export function SettingsDialog({
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
                             className="relative w-full max-w-lg z-10"
                         >
-                            <div className="rounded-2xl shadow-2xl border border-white/10 bg-zinc-900 flex flex-col max-h-[85vh] overflow-hidden">
-                                <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 bg-zinc-900/50">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-                                            <Settings2 className="h-5 w-5 text-purple-400" />
+                            <div
+                                className="brutal-card-lg flex flex-col max-h-[85vh] overflow-hidden"
+                                style={{ background: 'var(--surface)', color: 'var(--text-primary)' }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '2px solid var(--ink)', background: 'var(--brutal-bg)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <div style={{ width: 40, height: 40, borderRadius: 12, border: '2px solid var(--ink)', background: 'var(--brutal-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)' }}>
+                                            <Settings2 className="h-5 w-5" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-bold text-white leading-none">{t.dialogTitle}</h3>
-                                            <p className="text-xs text-muted-foreground mt-1">{t.dialogSubtitle}</p>
+                                            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, lineHeight: 1.1, color: 'var(--text-primary)' }}>{t.dialogTitle}</h3>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{t.dialogSubtitle}</p>
                                         </div>
                                     </div>
-                                    <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="h-8 w-8 hover:bg-white/10 rounded-full">
+                                    <button
+                                        type="button"
+                                        onClick={() => onOpenChange(false)}
+                                        aria-label="Close"
+                                        style={{ width: 34, height: 34, borderRadius: 10, border: '2px solid var(--ink)', background: 'var(--surface)', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--brutal-shadow-sm)', transition: 'transform 0.12s, box-shadow 0.12s' }}
+                                    >
                                         <X className="h-4 w-4" />
-                                    </Button>
+                                    </button>
                                 </div>
                                 
-                                <div className="p-6 overflow-y-auto custom-scrollbar bg-zinc-900">
+                                <div style={{ padding: '20px', overflowY: 'auto', background: 'var(--surface)' }} className="custom-scrollbar">
                                     <div className="space-y-6">
                                         <ThemePicker t={t} />
                                         {/* System Domains */}
                                         <div className="space-y-3">
-                                            <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider">{t.systemDomainsTitle}</h4>
+                                            <h4 style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>{t.systemDomainsTitle}</h4>
                                             <div className="grid gap-2">
                                                 {systemDomains.map(domain => (
-                                                    <div key={domain} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
-                                                        <span className="font-mono text-sm text-gray-300">{domain}</span>
-                                                        <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded">{t.defaultBadge}</span>
+                                                    <div key={domain} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, border: '2px solid var(--ink)', background: 'var(--brutal-bg)' }}>
+                                                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{domain}</span>
+                                                        <span className="brutal-chip" style={{ fontSize: '0.65rem', background: 'var(--brutal-accent)', color: 'var(--ink)' }}>{t.defaultBadge}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -92,35 +100,38 @@ export function SettingsDialog({
 
                                         {/* Custom Domains */}
                                         <div className="space-y-3">
-                                            <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider">{t.customDomainsTitle}</h4>
+                                            <h4 style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>{t.customDomainsTitle}</h4>
                                             
-                                            <form onSubmit={handleAddDomain} className="flex gap-2">
+                                            <form onSubmit={handleAddDomain} style={{ display: 'flex', gap: 8 }}>
                                                 <Input 
                                                     placeholder={t.customDomainPlaceholder}
                                                     value={newDomain}
                                                     onChange={(e) => setNewDomain(e.target.value)}
-                                                    className="bg-black/20 border-white/10 focus-visible:ring-blue-500/50"
+                                                    className="brutal-input"
+                                                    style={{ height: 40, fontSize: '0.85rem' }}
                                                 />
-                                                <Button type="submit" size="icon" disabled={!newDomain.trim()} className="shrink-0 bg-blue-600 hover:bg-blue-500">
+                                                <Button type="submit" size="icon" disabled={!newDomain.trim()} className="shrink-0" style={{ width: 40, height: 40, borderRadius: 10, border: '2px solid var(--ink)', background: 'var(--brutal-accent)', color: 'var(--ink)', boxShadow: 'var(--brutal-shadow-sm)' }}>
                                                     <Plus className="h-4 w-4" />
                                                 </Button>
                                             </form>
 
                                             <div className="grid gap-2">
                                                 {customDomains.length === 0 ? (
-                                                    <p className="text-sm text-muted-foreground text-center py-4 italic">{t.customDomainEmpty}</p>
+                                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0', fontStyle: 'italic' }}>{t.customDomainEmpty}</p>
                                                 ) : (
                                                     customDomains.map(domain => (
-                                                        <div key={domain} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 group hover:bg-white/10 transition-colors">
-                                                            <span className="font-mono text-sm text-gray-300">{domain}</span>
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="icon" 
+                                                        <div key={domain} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, border: '2px solid var(--ink)', background: 'var(--brutal-bg)', transition: 'background 0.15s' }}>
+                                                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{domain}</span>
+                                                            <button
+                                                                type="button"
                                                                 onClick={() => handleDeleteDomain(domain)}
-                                                                className="h-8 w-8 text-muted-foreground hover:text-red-400 hover:bg-red-400/10"
+                                                                aria-label={`Remove ${domain}`}
+                                                                style={{ width: 32, height: 32, borderRadius: 8, border: '2px solid var(--ink)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.12s, background 0.12s' }}
+                                                                onMouseEnter={(e) => { e.currentTarget.style.color = '#d93025'; e.currentTarget.style.background = 'rgba(217,48,37,0.08)'; }}
+                                                                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'var(--surface)'; }}
                                                             >
                                                                 <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                                            </button>
                                                         </div>
                                                     ))
                                                 )}

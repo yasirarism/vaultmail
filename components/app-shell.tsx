@@ -11,9 +11,8 @@ import {
   type ReactNode,
 } from 'react';
 import Link from 'next/link';
-import { Code2, Globe, Menu, Shield, Wrench } from 'lucide-react';
+import { Code2, Mail, Menu, Shield, Sun, Moon, Wrench, Github } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { ThemePicker } from '@/components/theme-picker';
 import { cn } from '@/lib/utils';
 import {
@@ -24,6 +23,9 @@ import {
   type Translations,
 } from '@/lib/i18n';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
+import { useVisualTheme } from '@/components/theme-provider';
+import { VISUAL_THEMES } from '@/lib/theme';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const STORAGE_KEY = 'vaultmail_locale';
 const LOCALE_EVENT = 'vaultmail-locale-change';
@@ -76,6 +78,7 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
   const [showMenu, setShowMenu] = useState(false);
   const locale = useSyncExternalStore(subscribeLocale, readStoredLocale, () => DEFAULT_LOCALE);
   const [customAppName, setCustomAppName] = useState<string | null>(null);
+  const { theme, setTheme } = useVisualTheme();
 
   const setLocale = useCallback((next: Locale) => {
     localStorage.setItem(STORAGE_KEY, next);
@@ -109,96 +112,239 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
     [locale, setLocale, t, resolvedAppName]
   );
 
+  const cycleTheme = () => {
+    const idx = VISUAL_THEMES.indexOf(theme);
+    setTheme(VISUAL_THEMES[(idx + 1) % VISUAL_THEMES.length]);
+  };
+
   return (
     <AppChromeContext.Provider value={value}>
-      <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
-        <div className="theme-blob absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="theme-blob absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <header className="border-b border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
+      <main
+        className="min-h-screen relative flex flex-col"
+        style={{ background: 'var(--brutal-bg)', color: 'var(--text-primary)' }}
+      >
+        {/* ========== NAVBAR ========== */}
+        <header
+          className="sticky top-0 z-50"
+          style={{ background: 'var(--brutal-accent)', borderBottom: '2px solid var(--ink)' }}
+        >
+          <div className="max-w-6xl mx-auto px-4 h-[62px] flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2.5 no-underline" style={{ color: 'var(--ink)' }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Mail className="h-5 w-5" style={{ color: 'var(--brutal-accent)' }} />
               </div>
-              <span>{resolvedAppName}</span>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.03em' }}>{resolvedAppName}</span>
             </Link>
-            <div className="relative">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setShowMenu((prev) => !prev)}
-                className={cn(
-                  'h-12 w-12 rounded-full border border-white/10 bg-white/10 text-white',
-                  showMenu && 'bg-white/10'
-                )}
-              >
-                <Menu className="h-5 w-5 text-blue-200" />
-              </Button>
 
-              {showMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                  <div className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl overflow-hidden">
-                    <div className="p-2 space-y-2">
-                      <div className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
-                        Menu
-                      </div>
-                      <ThemePicker t={t} compact />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLocale(locale === 'id' ? 'en' : 'id');
-                          setShowMenu(false);
+            <div className="flex items-center gap-2">
+              {/* Language Toggle */}
+              <div style={{ display: 'flex', border: '2px solid var(--ink)', borderRadius: 8, overflow: 'hidden', boxShadow: 'var(--brutal-shadow-sm)', background: 'var(--surface)' }}>
+                <button
+                  onClick={() => setLocale('en')}
+                  style={{
+                    padding: '5px 11px',
+                    border: 'none',
+                    borderRight: '2px solid var(--ink)',
+                    background: locale === 'en' ? 'var(--brutal-accent-2)' : 'var(--surface)',
+                    color: 'var(--ink)',
+                    fontWeight: 800,
+                    fontSize: '0.72rem',
+                    letterSpacing: '0.06em',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)',
+                    transition: 'background 0.15s',
+                  }}
+                >EN</button>
+                <button
+                  onClick={() => setLocale('id')}
+                  style={{
+                    padding: '5px 11px',
+                    border: 'none',
+                    background: locale === 'id' ? 'var(--brutal-accent-2)' : 'var(--surface)',
+                    color: 'var(--ink)',
+                    fontWeight: 800,
+                    fontSize: '0.72rem',
+                    letterSpacing: '0.06em',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)',
+                    transition: 'background 0.15s',
+                  }}
+                >ID</button>
+              </div>
+
+              {/* Theme Cycle Button */}
+              <button
+                onClick={cycleTheme}
+                title={t.themeLabel}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  border: '2px solid var(--ink)',
+                  background: 'var(--surface)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--ink)',
+                  boxShadow: 'var(--brutal-shadow-sm)',
+                  transition: 'transform 0.12s, box-shadow 0.12s',
+                }}
+              >
+                {theme === 'brutal' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+
+              <Link
+                href="/api-access"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '7px 14px',
+                  background: 'var(--surface)',
+                  color: 'var(--ink)',
+                  borderRadius: 8,
+                  border: '2px solid var(--ink)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  boxShadow: 'var(--brutal-shadow-sm)',
+                  transition: 'transform 0.12s, box-shadow 0.12s',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                <Code2 className="h-3.5 w-3.5" />
+                API Doc
+              </Link>
+
+              <Link
+                href="/tools"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '7px 14px',
+                  background: 'var(--surface)',
+                  color: 'var(--ink)',
+                  borderRadius: 8,
+                  border: '2px solid var(--ink)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  boxShadow: 'var(--brutal-shadow-sm)',
+                  transition: 'transform 0.12s, box-shadow 0.12s',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                <Wrench className="h-3.5 w-3.5" />
+                Tools
+              </Link>
+
+              <Link
+                href="/admin"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '7px 18px',
+                  background: 'var(--brutal-accent)',
+                  color: 'var(--ink)',
+                  borderRadius: 8,
+                  border: '2px solid var(--ink)',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  textDecoration: 'none',
+                  letterSpacing: '0.01em',
+                  boxShadow: 'var(--brutal-shadow-sm)',
+                  transition: 'transform 0.12s, box-shadow 0.12s',
+                }}
+              >
+                <Shield className="h-3.5 w-3.5" />
+                Admin
+              </Link>
+
+              {/* Menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu((prev) => !prev)}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    border: '2px solid var(--ink)',
+                    background: 'var(--surface)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--ink)',
+                    boxShadow: 'var(--brutal-shadow-sm)',
+                    transition: 'transform 0.12s, box-shadow 0.12s',
+                  }}
+                >
+                  <Menu className="h-4 w-4" />
+                </button>
+
+                <AnimatePresence>
+                  {showMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                        style={{
+                          position: 'absolute',
+                          right: 0,
+                          zIndex: 50,
+                          marginTop: 8,
+                          width: 240,
+                          borderRadius: 14,
+                          border: '2px solid var(--ink)',
+                          background: 'var(--surface)',
+                          boxShadow: 'var(--brutal-shadow-lg)',
+                          overflow: 'hidden',
                         }}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
                       >
-                        <Globe className="h-4 w-4 text-blue-300" />
-                        {locale === 'id' ? t.languageEnglish : t.languageIndonesian}
-                      </button>
-                      <Link
-                        href="/admin"
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
-                        onClick={() => setShowMenu(false)}
-                      >
-                        <Shield className="h-4 w-4 text-purple-300" />
-                        Admin Dashboard
-                      </Link>
-                      <Link
-                        href="/api-access"
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
-                        onClick={() => setShowMenu(false)}
-                      >
-                        <Code2 className="h-4 w-4 text-blue-300" />
-                        {t.menuApiAccess}
-                      </Link>
-                      <Link
-                        href="/tools"
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
-                        onClick={() => setShowMenu(false)}
-                      >
-                        <Wrench className="h-4 w-4 text-orange-300" />
-                        {t.menuTools}
-                      </Link>
-                      <Link
-                        href="https://github.com/yasirarism"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
-                        onClick={() => setShowMenu(false)}
-                      >
-                        <Shield className="h-4 w-4 text-green-300" />
-                        {t.github}
-                      </Link>
-                    </div>
-                  </div>
-                </>
-              )}
+                        <div className="p-2 space-y-1">
+                          <div style={{ padding: '8px 12px 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-muted)' }}>
+                            Menu
+                          </div>
+                          <ThemePicker t={t} compact />
+                          <a
+                            href="https://github.com/yasirarism"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setShowMenu(false)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              width: '100%',
+                              padding: '8px 12px',
+                              borderRadius: 8,
+                              fontSize: '0.85rem',
+                              color: 'var(--text-primary)',
+                              textDecoration: 'none',
+                              transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                          >
+                            <Github className="h-4 w-4" />
+                            GitHub
+                          </a>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </header>
 
-        <section className={cn(contentClassName, 'mx-auto px-4 py-16 w-full')}>
+        <section className={cn(contentClassName, 'mx-auto px-4 py-10 w-full')}>
           {children}
         </section>
       </main>

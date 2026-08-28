@@ -22,7 +22,13 @@ export function ThemePicker({ t, compact = false }: ThemePickerProps) {
       >
         {t.themeLabel}
       </p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
+        <ThemeOption
+          active={theme === 'brutal'}
+          label={t.themeBrutal}
+          preview="brutal"
+          onClick={() => setTheme('brutal')}
+        />
         <ThemeOption
           active={theme === 'glass'}
           label={t.themeGlass}
@@ -48,7 +54,7 @@ function ThemeOption({
 }: {
   active: boolean;
   label: string;
-  preview: 'glass' | 'neomorph';
+  preview: 'brutal' | 'glass' | 'neomorph';
   onClick: () => void;
 }) {
   return (
@@ -63,7 +69,11 @@ function ThemeOption({
       <div
         className={cn(
           'mb-2 h-12 rounded-lg',
-          preview === 'glass' ? 'theme-preview-glass' : 'theme-preview-neomorph'
+          preview === 'brutal'
+            ? 'theme-preview-brutal'
+            : preview === 'glass'
+              ? 'theme-preview-glass'
+              : 'theme-preview-neomorph'
         )}
       />
       <span className="block text-[11px] font-semibold text-white/80">{label}</span>

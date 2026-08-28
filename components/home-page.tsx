@@ -1,12 +1,9 @@
 'use client';
 
 import { InboxInterface } from "@/components/inbox-interface";
-import { Menu, Shield, Zap, Globe, Code2, Wrench } from "lucide-react";
+import { Menu, Zap, Shield, Globe, Code2, Mail, Sun, Moon, Github } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { ThemePicker } from "@/components/theme-picker";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   DEFAULT_LOCALE,
@@ -16,6 +13,10 @@ import {
   SUPPORTED_LOCALES,
 } from "@/lib/i18n";
 import { DEFAULT_APP_NAME } from "@/lib/branding";
+import { useVisualTheme } from "@/components/theme-provider";
+import { VISUAL_THEMES, type VisualTheme } from "@/lib/theme";
+import { ThemePicker } from "@/components/theme-picker";
+import Link from "next/link";
 
 interface HomePageProps {
   initialAddress?: string;
@@ -30,6 +31,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
   const [customAppName, setCustomAppName] = useState<string | null>(null);
   const [heroTitle, setHeroTitle] = useState('Temp Mail');
   const [heroDescription, setHeroDescription] = useState('Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.');
+  const { theme, setTheme } = useVisualTheme();
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -63,7 +65,6 @@ export function HomePage({ initialAddress }: HomePageProps) {
         console.error(error);
       }
     };
-
     loadRetention();
   }, []);
 
@@ -81,7 +82,6 @@ export function HomePage({ initialAddress }: HomePageProps) {
         console.error(error);
       }
     };
-
     loadBranding();
   }, []);
 
@@ -104,34 +104,191 @@ export function HomePage({ initialAddress }: HomePageProps) {
     return () => clearTimeout(timer);
   }, [greeting]);
 
-  return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-background/50 relative overflow-hidden flex flex-col">
-      {/* Background Blobs */}
-      <div className="theme-blob absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="theme-blob absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+  const cycleTheme = () => {
+    const idx = VISUAL_THEMES.indexOf(theme);
+    const next = VISUAL_THEMES[(idx + 1) % VISUAL_THEMES.length];
+    setTheme(next);
+  };
 
-      {/* Navbar */}
-      <header className="border-b border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-xl">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <Shield className="h-5 w-5 text-white" />
+  // Split hero title for two-tone: last word in accent
+  const heroTitleParts = useMemo(() => {
+    const words = heroTitle.trim().split(' ');
+    if (words.length <= 1) return { first: '', last: heroTitle };
+    const last = words.pop()!;
+    return { first: words.join(' '), last };
+  }, [heroTitle]);
+
+  // Tick text
+  const tickerText = heroDescription || t.heroSubtitle;
+
+  return (
+    <main className="min-h-screen relative flex flex-col" style={{ background: 'var(--brutal-bg)', color: 'var(--text-primary)' }}>
+      {/* ========== NAVBAR ========== */}
+      <header className="sticky top-0 z-50" style={{ background: 'var(--brutal-accent)', borderBottom: '2px solid var(--ink)' }}>
+        <div className="max-w-6xl mx-auto px-4 h-[62px] flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 no-underline" style={{ color: 'var(--ink)' }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
+              <Mail className="h-5 w-5" style={{ color: 'var(--brutal-accent)' }} />
             </div>
-            <span>{resolvedAppName}</span>
-          </div>
-          <div className="flex items-center gap-4">
+            <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.03em' }}>{resolvedAppName}</span>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            {/* Language Toggle */}
+            <div className="language-toggle" style={{ display: 'flex', border: '2px solid var(--ink)', borderRadius: 8, overflow: 'hidden', boxShadow: 'var(--brutal-shadow-sm)', background: 'var(--surface)' }}>
+              <button
+                onClick={() => setLocale('en')}
+                style={{
+                  padding: '5px 11px',
+                  border: 'none',
+                  borderRight: '2px solid var(--ink)',
+                  background: locale === 'en' ? 'var(--brutal-accent-2)' : 'var(--surface)',
+                  color: 'var(--ink)',
+                  fontWeight: 800,
+                  fontSize: '0.72rem',
+                  letterSpacing: '0.06em',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  transition: 'background 0.15s',
+                }}
+              >EN</button>
+              <button
+                onClick={() => setLocale('id')}
+                style={{
+                  padding: '5px 11px',
+                  border: 'none',
+                  background: locale === 'id' ? 'var(--brutal-accent-2)' : 'var(--surface)',
+                  color: 'var(--ink)',
+                  fontWeight: 800,
+                  fontSize: '0.72rem',
+                  letterSpacing: '0.06em',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  transition: 'background 0.15s',
+                }}
+              >ID</button>
+            </div>
+
+            {/* Theme Cycle Button */}
+            <button
+              onClick={cycleTheme}
+              title={t.themeLabel}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                border: '2px solid var(--ink)',
+                background: 'var(--surface)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--ink)',
+                boxShadow: 'var(--brutal-shadow-sm)',
+                transition: 'transform 0.12s, box-shadow 0.12s',
+              }}
+            >
+              {theme === 'brutal' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </button>
+
+            {/* API Doc */}
+            <Link
+              href="/api-access"
+              className="navbar-apidoc-btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '7px 14px',
+                background: 'var(--surface)',
+                color: 'var(--ink)',
+                borderRadius: 8,
+                border: '2px solid var(--ink)',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                boxShadow: 'var(--brutal-shadow-sm)',
+                transition: 'transform 0.12s, box-shadow 0.12s',
+                letterSpacing: '0.01em',
+              }}
+            >
+              <Code2 className="h-3.5 w-3.5" />
+              API Doc
+            </Link>
+
+            {/* Tools */}
+            <Link
+              href="/tools"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '7px 14px',
+                background: 'var(--surface)',
+                color: 'var(--ink)',
+                borderRadius: 8,
+                border: '2px solid var(--ink)',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                boxShadow: 'var(--brutal-shadow-sm)',
+                transition: 'transform 0.12s, box-shadow 0.12s',
+                letterSpacing: '0.01em',
+              }}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Tools
+            </Link>
+
+            {/* Admin */}
+            <Link
+              href="/admin"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '7px 18px',
+                background: 'var(--brutal-accent)',
+                color: 'var(--ink)',
+                borderRadius: 8,
+                border: '2px solid var(--ink)',
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                textDecoration: 'none',
+                letterSpacing: '0.01em',
+                boxShadow: 'var(--brutal-shadow-sm)',
+                transition: 'transform 0.12s, box-shadow 0.12s',
+              }}
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Admin
+            </Link>
+
+            {/* Hamburger menu for extras */}
             <div className="relative">
-              <Button
-                type="button"
-                variant="ghost"
+              <button
                 onClick={() => setShowMenu((prev) => !prev)}
-                className={cn(
-                  "h-12 w-12 rounded-full border border-white/10 bg-white/10 text-white",
-                  showMenu && "bg-white/10"
-                )}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  border: '2px solid var(--ink)',
+                  background: 'var(--surface)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--ink)',
+                  boxShadow: 'var(--brutal-shadow-sm)',
+                  transition: 'transform 0.12s, box-shadow 0.12s',
+                }}
               >
-                <Menu className="h-5 w-5 text-blue-200" />
-              </Button>
+                <Menu className="h-4 w-4" />
+              </button>
 
               <AnimatePresence>
                 {showMenu && (
@@ -141,57 +298,46 @@ export function HomePage({ initialAddress }: HomePageProps) {
                       initial={{ opacity: 0, y: 10, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                      className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl overflow-hidden"
+                      style={{
+                        position: 'absolute',
+                        right: 0,
+                        zIndex: 50,
+                        marginTop: 8,
+                        width: 240,
+                        borderRadius: 14,
+                        border: '2px solid var(--ink)',
+                        background: 'var(--surface)',
+                        boxShadow: 'var(--brutal-shadow-lg)',
+                        overflow: 'hidden',
+                      }}
                     >
-                      <div className="p-2 space-y-2">
-                        <div className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
+                      <div className="p-2 space-y-1">
+                        <div style={{ padding: '8px 12px 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-muted)' }}>
                           Menu
                         </div>
                         <ThemePicker t={t} compact />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setLocale(locale === 'id' ? 'en' : 'id');
-                            setShowMenu(false);
-                          }}
-                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
-                        >
-                          <Globe className="h-4 w-4 text-blue-300" />
-                          {locale === 'id' ? t.languageEnglish : t.languageIndonesian}
-                        </button>
-                        <a
-                          href="/admin"
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
-                          onClick={() => setShowMenu(false)}
-                        >
-                          <Shield className="h-4 w-4 text-purple-300" />
-                          Admin Dashboard
-                        </a>
-                        <a
-                          href="/api-access"
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
-                          onClick={() => setShowMenu(false)}
-                        >
-                          <Code2 className="h-4 w-4 text-blue-300" />
-                          {t.menuApiAccess}
-                        </a>
-                        <a
-                          href="/tools"
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
-                          onClick={() => setShowMenu(false)}
-                        >
-                          <Wrench className="h-4 w-4 text-orange-300" />
-                          {t.menuTools}
-                        </a>
                         <a
                           href="https://github.com/yasirarism"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
                           onClick={() => setShowMenu(false)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            width: '100%',
+                            padding: '8px 12px',
+                            borderRadius: 8,
+                            fontSize: '0.85rem',
+                            color: 'var(--text-primary)',
+                            textDecoration: 'none',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                         >
-                          <Shield className="h-4 w-4 text-green-300" />
-                          {t.github}
+                          <Github className="h-4 w-4" />
+                          GitHub
                         </a>
                       </div>
                     </motion.div>
@@ -202,60 +348,112 @@ export function HomePage({ initialAddress }: HomePageProps) {
           </div>
         </div>
       </header>
-      
-      {/* Content */}
-          <div className="flex-1 py-12">
-         <div className="text-center max-w-2xl mx-auto px-4 mb-12 space-y-4">
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/50">
-              {heroTitle}
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              {heroDescription}
-            </p>
-         </div>
 
-         <InboxInterface
-           initialAddress={initialAddress}
-           locale={locale}
-           retentionLabel={retentionLabel}
-         />
-
-         {/* Features Grid */}
-         <div className="max-w-6xl mx-auto px-4 mt-24 grid md:grid-cols-3 gap-8">
-            <Feature 
-                icon={<Zap className="h-6 w-6 text-yellow-400" />}
-                title={t.featureInstantTitle}
-                desc={t.featureInstantDesc}
-            />
-            <Feature 
-                icon={<Shield className="h-6 w-6 text-green-400" />}
-                title={t.featurePrivacyTitle}
-                desc={t.featurePrivacyDesc}
-            />
-            <Feature 
-                icon={<Globe className="h-6 w-6 text-blue-400" />}
-                title={t.featureCustomTitle}
-                desc={t.featureCustomDesc}
-            />
-         </div>
-
+      {/* ========== TICKER MARQUEE ========== */}
+      <div style={{ background: 'var(--brutal-accent)', borderBottom: '2px solid var(--ink)', overflow: 'hidden', height: 28, display: 'flex', alignItems: 'center', position: 'sticky', top: 62, zIndex: 49 }}>
+        <div className="brutal-marquee-track">
+          {[1, 2, 3, 4].map((i) => (
+            <span key={i} style={{ fontSize: '0.73rem', fontWeight: 600, color: 'var(--ink)', padding: '0 60px', letterSpacing: '0.01em', fontFamily: 'var(--font-mono)' }}>
+              {tickerText}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <footer className="border-t border-white/5 py-8 mt-12 text-center text-muted-foreground text-sm">
-        <p>© 2026 {resolvedAppName}. modified by Yasir</p>
+      {/* ========== HERO + EMAIL CARD ========== */}
+      <section style={{ paddingTop: 48, paddingBottom: 0, textAlign: 'center', position: 'relative' }}>
+        <div className="hero-grid" />
+        <div className="max-w-6xl mx-auto px-4" style={{ position: 'relative', zIndex: 1 }}>
+          <h1 style={{ fontSize: 'clamp(2.4rem, 7vw, 4.8rem)', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 8 }}>
+            {heroTitleParts.first && <span style={{ color: 'var(--text-primary)' }}>{heroTitleParts.first} </span>}
+            <span style={{ color: 'var(--brutal-accent)' }}>{heroTitleParts.last}</span>
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: 36, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
+            {heroDescription}
+          </p>
+        </div>
+      </section>
+
+      {/* ========== INBOX INTERFACE ========== */}
+      <InboxInterface
+        initialAddress={initialAddress}
+        locale={locale}
+        retentionLabel={retentionLabel}
+      />
+
+      {/* ========== FEATURES ========== */}
+      <section className="max-w-6xl mx-auto px-4 py-20">
+        <div className="grid md:grid-cols-3 gap-6">
+          <Feature
+            icon={<Zap className="h-6 w-6" />}
+            title={t.featureInstantTitle}
+            desc={t.featureInstantDesc}
+          />
+          <Feature
+            icon={<Shield className="h-6 w-6" />}
+            title={t.featurePrivacyTitle}
+            desc={t.featurePrivacyDesc}
+          />
+          <Feature
+            icon={<Globe className="h-6 w-6" />}
+            title={t.featureCustomTitle}
+            desc={t.featureCustomDesc}
+          />
+        </div>
+      </section>
+
+      {/* ========== HOW TO USE ========== */}
+      <section className="max-w-6xl mx-auto px-4 pb-20">
+        <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.4rem)', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'center', marginBottom: 8, letterSpacing: '-0.03em' }}>
+          {t.howToTitle}
+        </h2>
+        <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: 40, fontSize: '0.95rem' }}>
+          {t.howToSubtitle}
+        </p>
+        <div className="grid md:grid-cols-3 gap-6">
+          <HowToStep num="01" title={t.howToStep1Title} desc={t.howToStep1Desc} />
+          <HowToStep num="02" title={t.howToStep2Title} desc={t.howToStep2Desc} />
+          <HowToStep num="03" title={t.howToStep3Title} desc={t.howToStep3Desc} />
+        </div>
+      </section>
+
+      {/* ========== FOOTER ========== */}
+      <footer style={{ borderTop: '2px solid var(--ink)', background: 'var(--brutal-accent)', padding: '20px 0', textAlign: 'center' }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>
+            © 2026 {resolvedAppName}. modified by Yasir
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: '0.78rem' }}>
+            <a href="/api-access" className="brutal-link" style={{ color: 'var(--ink)' }}>API Doc</a>
+            <a href="/admin" className="brutal-link" style={{ color: 'var(--ink)' }}>Admin</a>
+            <a href="https://github.com/yasirarism" target="_blank" rel="noopener noreferrer" className="brutal-link" style={{ color: 'var(--ink)' }}>GitHub</a>
+          </div>
+        </div>
       </footer>
     </main>
   );
 }
 
-function Feature({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
-    return (
-        <div className="theme-surface p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-            <div className="mb-4 p-3 rounded-full bg-white/5 w-fit">
-                {icon}
-            </div>
-            <h3 className="text-lg font-bold mb-2">{title}</h3>
-            <p className="text-muted-foreground leading-relaxed">{desc}</p>
-        </div>
-    )
+function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <div className="brutal-card-lg" style={{ padding: '28px 24px', background: 'var(--surface)', textAlign: 'left' }}>
+      <div style={{ marginBottom: 16, padding: 12, borderRadius: 12, background: 'var(--brutal-bg)', border: '2px solid var(--ink)', display: 'inline-flex', color: 'var(--ink)' }}>
+        {icon}
+      </div>
+      <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 8, color: 'var(--text-primary)' }}>{title}</h3>
+      <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontSize: '0.88rem' }}>{desc}</p>
+    </div>
+  );
+}
+
+function HowToStep({ num, title, desc }: { num: string; title: string; desc: string }) {
+  return (
+    <div className="brutal-card" style={{ padding: '28px 24px', textAlign: 'center' }}>
+      <div style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--brutal-accent)', marginBottom: 8, lineHeight: 1, fontFamily: 'var(--font-mono)' }}>
+        {num}
+      </div>
+      <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: 6, color: 'var(--text-primary)' }}>{title}</h3>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5 }}>{desc}</p>
+    </div>
+  );
 }

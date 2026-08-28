@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { RefreshCw, Copy, Mail, Loader2, ArrowRight, Trash2, Shield, History, ChevronDown, X, Settings2, Download, Search } from 'lucide-react';
+import { RefreshCw, Copy, Mail, Loader2, Trash2, History, ChevronDown, X, Settings2, Download, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { cn, getSenderInfo } from '@/lib/utils';
@@ -528,465 +526,594 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   }, [filterQuery]);
   
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 md:p-8 space-y-8">
-      {/* Header / Controls */}
-      <div className="glass-card rounded-2xl p-6 md:p-8 space-y-6 relative z-10">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="space-y-1 text-center md:text-left">
-            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-              {t.inboxTitle}
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              {t.inboxHintPrefix} {t.inboxHintSuffix}{' '}
-              <span className="text-purple-400 font-medium">
-                {retentionLabel || t.retentionOptions.hours24}
-              </span>
-              .
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`h-2 w-2 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
-            <span className="text-xs text-muted-foreground uppercase tracking-wider font-mono">
-                {loading ? t.syncing : t.live}
+    <div className="w-full max-w-6xl mx-auto px-4 md:px-8 space-y-10">
+      {/* ===== EMAIL GENERATION CARD (ruangmail style) ===== */}
+      <div className="brutal-card-lg max-w-xl mx-auto" style={{ padding: '28px 24px 24px', textAlign: 'left' }}>
+        {/* Label + settings row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <p style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', margin: 0, display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)' }}>
+            <Mail className="h-3 w-3" style={{ color: 'var(--brutal-accent)' }} />
+            {t.yourTemporaryEmail}
+          </p>
+          <button
+            type="button"
+            onClick={() => setIsAddDomainOpen(true)}
+            className="brutal-btn brutal-btn-white"
+            style={{ padding: '6px 12px', fontSize: '0.78rem', fontFamily: 'var(--font-sans)' }}
+          >
+            <Settings2 className="h-3.5 w-3.5" />
+            {t.settingsTitle}
+          </button>
+        </div>
+
+        {/* Address input row */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'var(--brutal-bg)', border: '2px solid var(--ink)', borderRadius: 12, minWidth: 0, overflow: 'hidden' }}>
+            <input
+              type="text"
+              value={address.split('@')[0]}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^a-zA-Z0-9._-]/g, '');
+                const currentDomain = address.split('@')[1] || domain;
+                setAddress(`${val}@${currentDomain}`);
+                localStorage.setItem('dispo_address', `${val}@${currentDomain}`);
+              }}
+              onBlur={() => addToHistory(address)}
+              placeholder={t.usernamePlaceholder}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', padding: '13px 4px 13px 14px', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.92rem', color: 'var(--text-primary)', minWidth: 0 }}
+            />
+            <span style={{ padding: '0 2px', fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1rem', color: 'var(--brutal-accent)', flexShrink: 0, userSelect: 'none' }}>
+              @
             </span>
-          </div>
-        </div>
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={() => setShowDomainMenu((prev) => !prev)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '13px 10px 13px 4px', border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}
+              >
+                {domain}
+                <ChevronDown className="h-3 w-3" style={{ transition: 'transform 0.15s', transform: showDomainMenu ? 'rotate(180deg)' : 'none' }} />
+              </button>
 
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 flex flex-col gap-2">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-              <Input 
-                      value={address.split('@')[0]}
-                      onChange={(e) => {
-                          const val = e.target.value.replace(/[^a-zA-Z0-9._-]/g, '');
-                          const currentDomain = address.split('@')[1] || domain;
-                          setAddress(`${val}@${currentDomain}`);
-                          localStorage.setItem('dispo_address', `${val}@${currentDomain}`);
-                      }}
-                      onBlur={() => addToHistory(address)}
-                      className="pr-4 font-mono text-lg bg-black/20 border-white/10 h-12"
-                      placeholder={t.usernamePlaceholder}
-                  />
-              </div>
-              <div className="relative flex items-center">
-                   <span className="text-muted-foreground text-lg px-2">@</span>
-              </div>
-              <div className="relative flex-1 max-w-[250px] flex gap-2">
-                   {/* Domain Selection Logic */}
-                   <div className="relative w-full">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => setShowDomainMenu((prev) => !prev)}
-                        className={cn(
-                          "w-full h-12 pl-3 pr-8 justify-start rounded-md border border-white/10 bg-white/5 text-sm font-mono hover:bg-white/10 glass",
-                          showDomainMenu && "bg-white/10"
-                        )}
+              <AnimatePresence>
+                {showDomainMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowDomainMenu(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                      style={{ position: 'absolute', zIndex: 50, right: 0, top: '100%', marginTop: 6, width: 250, borderRadius: 12, border: '2px solid var(--ink)', background: 'var(--surface)', boxShadow: 'var(--brutal-shadow-lg)', overflow: 'hidden' }}
                     >
-                        {domain}
-                        <ArrowRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 rotate-90" />
-                    </Button>
-
-                    <AnimatePresence>
-                        {showDomainMenu && (
-                            <>
-                                <div className="fixed inset-0 z-40" onClick={() => setShowDomainMenu(false)} />
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                                    className="absolute z-50 mt-2 w-full rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl glass overflow-hidden"
-                                >
-                                    <div className="max-h-60 overflow-y-auto custom-scrollbar p-2 space-y-1">
-                                        {savedDomains.map((d) => (
-                                            <button
-                                                key={d}
-                                                type="button"
-                                                onClick={() => {
-                                                    setDomain(d);
-                                                    const currentUser = address.split('@')[0];
-                                                    const newAddr = `${currentUser}@${d}`;
-                                                    setAddress(newAddr);
-                                                    localStorage.setItem('dispo_address', newAddr);
-                                                    addToHistory(newAddr);
-                                                    setShowDomainMenu(false);
-                                                }}
-                                                className={cn(
-                                                  "w-full text-left px-3 py-2 rounded-lg font-mono text-sm transition-colors",
-                                                  d === domain
-                                                    ? "bg-white/15 text-white"
-                                                    : "text-gray-200 hover:bg-white/10"
-                                                )}
-                                            >
-                                                {d}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            </>
-                        )}
-                    </AnimatePresence>
-                 </div>
-            </div>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {domainStatusLoading ? (
-                <span>{t.domainStatusChecking}</span>
-              ) : domainExpirationDate ? (
-                isDomainExpired ? (
-                  <span className="text-red-300">{t.domainStatusExpired}</span>
-                ) : (
-                  <span>
-                    {t.domainStatusEndsOn}{' '}
-                    <span className="text-purple-200 font-medium">
-                      {domainExpirationDate.toLocaleDateString()}
-                    </span>
-                  </span>
-                )
-              ) : (
-                <span>{t.domainStatusUnavailable}</span>
-              )}
+                      <div className="max-h-60 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                        {savedDomains.map((d) => (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => {
+                              setDomain(d);
+                              const currentUser = address.split('@')[0];
+                              const newAddr = `${currentUser}@${d}`;
+                              setAddress(newAddr);
+                              localStorage.setItem('dispo_address', newAddr);
+                              addToHistory(newAddr);
+                              setShowDomainMenu(false);
+                            }}
+                            style={{
+                              width: '100%',
+                              textAlign: 'left',
+                              padding: '8px 10px',
+                              borderRadius: 8,
+                              border: 'none',
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '0.85rem',
+                              cursor: 'pointer',
+                              background: d === domain ? 'var(--brutal-accent)' : 'transparent',
+                              color: 'var(--text-primary)',
+                              transition: 'background 0.12s',
+                            }}
+                            onMouseEnter={(e) => { if (d !== domain) e.currentTarget.style.background = 'rgba(0,0,0,0.06)'; }}
+                            onMouseLeave={(e) => { if (d !== domain) e.currentTarget.style.background = 'transparent'; }}
+                          >
+                            {d}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           </div>
-          <div className="flex gap-2 items-center">
-            {/* Settings Button */}
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsAddDomainOpen(true)}
-                className="h-12 w-12 border border-white/10 hover:bg-white/5 text-purple-400 hover:text-purple-300"
-                title={t.settingsTitle}
-            >
-                <Settings2 className="h-5 w-5" />
-            </Button>
 
-            <div className="relative">
-                <Button 
-                    onClick={() => setShowHistory(!showHistory)} 
-                    variant="ghost" 
-                    size="icon" 
-                    className={cn("h-12 w-12 border border-white/10 hover:bg-white/5 relative", showHistory && "bg-white/10 ring-2 ring-white/10")}
-                    title={t.historyTitle}
-                >
-                    <History className="h-5 w-5" />
-                    {history.length > 0 && (
-                        <span className="absolute top-2 right-2 h-2 w-2 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                    )}
-                </Button>
-                
-                <AnimatePresence>
-                    {showHistory && (
-                        <>
-                            <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.96 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.96 }}
-                                className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:absolute sm:inset-auto sm:right-0 sm:top-14 sm:block sm:p-0"
-                            >
-                                <div className="w-full max-w-[22rem] rounded-2xl border border-white/10 bg-zinc-900 p-0 text-white shadow-2xl backdrop-blur-xl sm:w-80">
-                                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-white/5">
-                                    <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">{t.historyTitle}</span>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        {history.length > 0 && (
-                                            <button 
-                                                onClick={() => {
-                                                    setHistory([]);
-                                                    localStorage.removeItem('dispo_history');
-                                                }}
-                                                className="text-[10px] uppercase font-bold text-red-400 hover:text-red-300 transition-colors"
-                                            >
-                                                {t.historyClearAll}
-                                            </button>
-                                        )}
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10"
-                                            onClick={() => setShowHistory(false)}
-                                            aria-label="Close history"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-2 space-y-1">
-                                    {history.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground space-y-2">
-                                            <History className="h-8 w-8 opacity-20" />
-                                            <p className="text-sm">{t.historyEmpty}</p>
-                                        </div>
-                                    ) : (
-                                        history.map((histAddr) => (
-                                            <div key={histAddr} className="flex group items-center gap-3 rounded-lg border border-transparent hover:border-white/10">
-                                                <button
-                                                    type="button"
-                                                    className="flex-1 min-w-0 rounded-lg p-3 text-left transition-colors hover:bg-white/5"
-                                                    onClick={() => {
-                                                        setAddress(histAddr);
-                                                        const parts = histAddr.split('@');
-                                                        if(parts[1]) setDomain(parts[1]);
-                                                        localStorage.setItem('dispo_address', histAddr);
-                                                        setShowHistory(false);
-                                                    }}
-                                                >
-                                                    <p className="font-mono text-sm truncate text-gray-200">{histAddr}</p>
-                                                    <p className="text-[11px] text-purple-200/80 truncate mt-0.5">
-                                                        {emails.length > 0 && address === histAddr ? t.historyActive : t.historyRestore}
-                                                    </p>
-                                                </button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="mr-2 h-7 w-7 opacity-70 hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
-                                                    onClick={() => {
-                                                        const newHist = history.filter(h => h !== histAddr);
-                                                        setHistory(newHist);
-                                                        localStorage.setItem('dispo_history', JSON.stringify(newHist));
-                                                    }}
-                                                    aria-label={`Remove ${histAddr}`}
-                                                >
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                                </div>
-                            </motion.div>
-                        </>
-                    )}
-                </AnimatePresence>
-            </div>
-            <Button onClick={copyAddress} variant="secondary" size="lg" className="h-12 w-full md:w-auto">
-              <Copy className="mr-2 h-4 w-4" /> {t.copy}
-            </Button>
-            <Button onClick={generateAddress} variant="outline" size="lg" className="h-12 border-white/10 hover:bg-white/5 w-full md:w-auto">
-              <RefreshCw className="mr-2 h-4 w-4" /> {t.newAlias}
-            </Button>
-          </div>
+          {/* Copy button */}
+          <button
+            type="button"
+            onClick={copyAddress}
+            title={t.copy}
+            style={{ flexShrink: 0, width: 48, background: 'var(--brutal-accent)', border: '2px solid var(--ink)', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: 'var(--brutal-shadow-sm)', transition: 'transform 0.15s, box-shadow 0.15s' }}
+          >
+            <Copy className="h-4 w-4" />
+          </button>
         </div>
 
-        <SettingsDialog
-            open={isAddDomainOpen}
-            onOpenChange={setIsAddDomainOpen}
-            systemDomains={systemDomains}
-            savedDomains={savedDomains}
-            translations={t}
-            onUpdateDomains={(newDomains) => {
-                const customDomains = newDomains.filter(
-                    (item) => !systemDomains.includes(item)
-                );
-                const combined = normalizeDomains([...systemDomains, ...customDomains]);
-                setSavedDomains(combined);
-                localStorage.setItem('dispo_domains', JSON.stringify(customDomains));
-            }}
-        />
+        {/* Domain status + retention line */}
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 14, textAlign: 'center' }}>
+          {domainStatusLoading ? (
+            <span>{t.domainStatusChecking}</span>
+          ) : domainExpirationDate ? (
+            isDomainExpired ? (
+              <span style={{ color: '#d93025', fontWeight: 700 }}>{t.domainStatusExpired}</span>
+            ) : (
+              <span>
+                📅 <strong style={{ color: 'var(--text-primary)' }}>{domain}</strong> &middot; {t.domainStatusEndsOn}{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>{domainExpirationDate.toLocaleDateString()}</strong>
+              </span>
+            )
+          ) : (
+            <span>{t.domainStatusUnavailable}</span>
+          )}
+        </p>
+
+        {/* Generate new email */}
+        <button
+          type="button"
+          onClick={generateAddress}
+          style={{
+            width: '100%',
+            padding: 14,
+            background: 'var(--brutal-accent)',
+            color: 'var(--ink)',
+            border: '2px solid var(--ink)',
+            borderRadius: 12,
+            fontSize: '0.95rem',
+            fontWeight: 800,
+            fontFamily: 'var(--font-mono)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            boxShadow: 'var(--brutal-shadow), 0 0 14px rgba(139,211,221,0.45)',
+            letterSpacing: '-0.01em',
+            transition: 'transform 0.15s, box-shadow 0.15s',
+          }}
+        >
+          <RefreshCw className="h-4 w-4" />
+          {t.newAlias}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[88vh]">
-        {/* Email List */}
-        <div className="md:col-span-1 glass-card rounded-2xl overflow-hidden flex flex-col min-h-[45vh] md:min-h-0">
-            <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/20">
-                <h3 className="font-semibold flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-blue-400" /> {t.inboxLabel}
-                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-muted-foreground">
-                      {t.inboxCountTotal}: {emailCount}
-                    </span>
-                    <span className="text-xs bg-blue-500/20 px-2 py-0.5 rounded-full text-blue-100">
-                      {t.inboxCountUnread}: {unreadCount}
-                    </span>
-                </h3>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowFilter((prev) => !prev)}
-                    aria-pressed={showFilter}
-                    aria-label={t.inboxFilterPlaceholder}
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => fetchEmails(true)} disabled={loading}>
-                      <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-                  </Button>
-                </div>
+      {/* ===== STATS CARDS ===== */}
+      <div className="max-w-3xl mx-auto w-full" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+        <BrutalStat value={emails.length} label={t.statsEmailsReceived} />
+        <BrutalStat value={savedDomains.length} label={t.statsActiveDomains} />
+        <BrutalStat value={t.statsInstant} label="⚡" />
+        <BrutalStat value={t.statsOtp} label="🔐" />
+      </div>
+
+      {/* ===== INBOX SECTION ===== */}
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              {t.inboxLabel}
+            </h2>
+            <span
+              style={{ width: 10, height: 10, borderRadius: '50%', background: loading ? 'var(--brutal-accent-2)' : '#3fb950', boxShadow: loading ? 'none' : '0 0 8px rgba(63,185,80,0.6)', transition: 'background 0.3s' }}
+            />
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              {loading ? t.syncing : t.live}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowHistory((prev) => !prev)}
+              title={t.historyTitle}
+              style={{ position: 'relative', width: 38, height: 38, borderRadius: 10, border: '2px solid var(--ink)', background: showHistory ? 'var(--brutal-accent)' : 'var(--surface)', color: 'var(--ink)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--brutal-shadow-sm)', transition: 'transform 0.12s, box-shadow 0.12s, background 0.12s' }}
+            >
+              <History className="h-4 w-4" />
+              {history.length > 0 && (
+                <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 999, background: 'var(--brutal-accent-2)', border: '2px solid var(--ink)', color: 'var(--ink)', fontSize: '0.6rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>
+                  {history.length}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => fetchEmails(true)}
+              disabled={loading}
+              className="brutal-btn brutal-btn-white"
+              style={{ padding: '8px 16px', fontSize: '0.8rem', fontFamily: 'var(--font-sans)' }}
+            >
+              <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+              {t.refresh}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[88vh]">
+          {/* ===== EMAIL LIST ===== */}
+          <div className="md:col-span-1 brutal-card-lg overflow-hidden flex flex-col min-h-[45vh] md:min-h-0" style={{ background: 'var(--surface)' }}>
+            <div style={{ padding: '14px 16px', borderBottom: '2px solid var(--ink)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--brutal-bg)' }}>
+              <h3 style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                <Mail className="h-4 w-4" style={{ color: 'var(--brutal-accent)' }} />
+                {t.inboxLabel}
+                <span className="brutal-chip" style={{ fontSize: '0.68rem' }}>
+                  {t.inboxCountTotal}: {emailCount}
+                </span>
+                {unreadCount > 0 && (
+                  <span className="brutal-chip" style={{ fontSize: '0.68rem', background: 'var(--brutal-accent)', color: 'var(--ink)' }}>
+                    {t.inboxCountUnread}: {unreadCount}
+                  </span>
+                )}
+              </h3>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setShowFilter((prev) => !prev)}
+                  aria-pressed={showFilter}
+                  aria-label={t.inboxFilterPlaceholder}
+                  title={t.inboxFilterPlaceholder}
+                  style={{ width: 34, height: 34, borderRadius: 8, border: '2px solid var(--ink)', background: showFilter ? 'var(--brutal-accent-2)' : 'var(--surface)', color: 'var(--ink)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--brutal-shadow-sm)', transition: 'transform 0.12s, box-shadow 0.12s' }}
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
             </div>
+
             {(showFilter || filterQuery) && (
-              <div className="p-4 border-b border-white/5 bg-black/10">
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-                  <Input
+              <div style={{ padding: '10px 14px', borderBottom: '2px solid var(--ink)', background: 'var(--brutal-bg)' }}>
+                <div style={{ position: 'relative' }}>
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+                  <input
                     value={filterQuery}
                     onChange={(event) => setFilterQuery(event.target.value)}
                     placeholder={t.inboxFilterPlaceholder}
-                    className="pl-9 bg-black/30 border-white/10 text-sm"
+                    className="brutal-input"
+                    style={{ width: '100%', padding: '8px 12px 8px 34px', fontSize: '0.85rem', outline: 'none', fontFamily: 'var(--font-sans)' }}
                   />
                 </div>
               </div>
             )}
-            <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
-                <AnimatePresence mode="popLayout">
-                    {filteredEmails.length === 0 ? (
-                        <motion.div 
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                            className="h-full flex flex-col items-center justify-center text-center p-4 text-muted-foreground space-y-2 opacity-50"
-                        >
-                            <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-                            <p>{filterQuery ? t.inboxFilterEmpty : t.waitingForIncoming}</p>
-                        </motion.div>
-                    ) : (
-                        paginatedEmails.map((email) => {
-                            const sender = getSenderInfo(email.from);
-                            return (
-                            <motion.div
-                                key={email.id}
-                                layout
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                onClick={() => openEmail(email)}
-                                className={cn(
-                                    "p-4 rounded-xl cursor-pointer transition-all border border-transparent hover:bg-white/5",
-                                    selectedEmail?.id === email.id ? "bg-white/10 border-blue-500/30" : "bg-black/20",
-                                    !readEmailIds.has(email.id) && "border-blue-400/30 bg-blue-500/10"
-                                )}
-                            >
-                                <div className="flex justify-between items-start mb-1">
-                                    <span className={cn("truncate max-w-[150px] text-sm", readEmailIds.has(email.id) ? "font-medium" : "font-semibold text-white")}>
-                                      {sender.label}
-                                    </span>
-                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                        {formatDistanceToNow(new Date(email.receivedAt), { addSuffix: true })}
-                                    </span>
-                                </div>
-                                <h4 className="text-sm font-semibold truncate text-blue-100">{email.subject}</h4>
-                                <div className="mt-1 flex items-center gap-2">
-                                  <p className="flex-1 text-xs text-muted-foreground truncate">
-                                    {getListPreviewText(email).slice(0, 90)}
-                                  </p>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      deleteEmail(email.id);
-                                    }}
-                                    disabled={deletingEmailId === email.id}
-                                    className="h-6 w-6 text-white/50 hover:bg-red-500/20 hover:text-red-300"
-                                  >
-                                    {deletingEmailId === email.id ? (
-                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    )}
-                                  </Button>
-                                </div>
-                            </motion.div>
-                        )})
-                    )}
-                </AnimatePresence>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+              <AnimatePresence mode="popLayout">
+                {filteredEmails.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '24px 16px', gap: 8 }}
+                  >
+                    <div style={{ border: '3px dashed var(--ink)', borderRadius: 16, padding: '24px 32px', opacity: 0.55, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                      {loading ? (
+                        <Loader2 className="h-8 w-8 animate-spin" style={{ color: 'var(--brutal-accent)' }} />
+                      ) : (
+                        <Mail className="h-8 w-8" style={{ color: 'var(--brutal-accent)' }} />
+                      )}
+                      <p style={{ fontWeight: 800, fontSize: '0.95rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                        {filterQuery ? t.inboxFilterEmpty : t.emptyInbox}
+                      </p>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {filterQuery ? t.inboxFilterEmpty : t.waitingForIncoming}
+                      </p>
+                    </div>
+                  </motion.div>
+                ) : (
+                  paginatedEmails.map((email) => {
+                    const sender = getSenderInfo(email.from);
+                    const isUnread = !readEmailIds.has(email.id);
+                    const isSelected = selectedEmail?.id === email.id;
+                    return (
+                      <motion.div
+                        key={email.id}
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        onClick={() => openEmail(email)}
+                        style={{
+                          padding: '12px 14px',
+                          borderRadius: 12,
+                          cursor: 'pointer',
+                          border: '2px solid',
+                          borderColor: isSelected ? 'var(--brutal-accent)' : 'var(--ink)',
+                          background: isUnread ? 'rgba(139,211,221,0.18)' : 'var(--brutal-bg)',
+                          boxShadow: isSelected ? 'var(--brutal-shadow-sm)' : 'none',
+                          transition: 'transform 0.12s, box-shadow 0.12s, background 0.15s',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4, gap: 8 }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160, fontSize: '0.85rem', fontWeight: isUnread ? 800 : 600, color: 'var(--text-primary)' }}>
+                            {sender.label}
+                          </span>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>
+                            {formatDistanceToNow(new Date(email.receivedAt), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <h4 style={{ fontSize: '0.88rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)', marginBottom: 2 }}>
+                          {email.subject}
+                        </h4>
+                        <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <p style={{ flex: 1, fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {getListPreviewText(email).slice(0, 90)}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              deleteEmail(email.id);
+                            }}
+                            disabled={deletingEmailId === email.id}
+                            title="Delete"
+                            style={{ width: 28, height: 28, borderRadius: 8, border: '2px solid var(--ink)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'color 0.12s, background 0.12s' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.color = '#d93025'; e.currentTarget.style.background = 'rgba(217,48,37,0.1)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'var(--surface)'; }}
+                          >
+                            {deletingEmailId === email.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </AnimatePresence>
             </div>
+
             {filteredEmails.length > pageSize && (
-              <div className="flex items-center justify-between border-t border-white/10 p-2 text-xs">
-                <span className="text-muted-foreground">Page {currentPage}/{totalPages}</span>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="ghost" disabled={currentPage <= 1} onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}>Prev</Button>
-                  <Button size="sm" variant="ghost" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}>Next</Button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '2px solid var(--ink)', padding: '8px 12px', fontSize: '0.75rem', background: 'var(--brutal-bg)' }}>
+                <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  Page {currentPage}/{totalPages}
+                </span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    className="brutal-btn brutal-btn-white"
+                    style={{ padding: '4px 12px', fontSize: '0.72rem' }}
+                  >
+                    Prev
+                  </button>
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    className="brutal-btn brutal-btn-white"
+                    style={{ padding: '4px 12px', fontSize: '0.72rem' }}
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
             )}
-        </div>
+          </div>
 
-        {/* Email Content */}
-        <div className="md:col-span-2 glass-card rounded-2xl overflow-hidden flex flex-col h-auto md:h-full min-h-[62vh] md:min-h-0 bg-black/40">
+          {/* ===== EMAIL CONTENT ===== */}
+          <div className="md:col-span-2 brutal-card-lg overflow-hidden flex flex-col h-auto md:h-full min-h-[62vh] md:min-h-0" style={{ background: 'var(--surface)' }}>
             {selectedEmail ? (
-                <div className="flex flex-col h-full">
-                    {/* Header */}
-                    <div className="p-3 md:p-6 border-b border-white/5 space-y-3 md:space-y-4 bg-black/20">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                            <h1 className="text-base md:text-xl font-bold text-white leading-snug">{selectedEmail.subject}</h1>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => deleteEmail(selectedEmail.id)}
-                                disabled={deletingEmailId === selectedEmail.id}
-                                className="text-red-200 hover:bg-red-500/20 hover:text-red-100"
-                              >
-                                {deletingEmailId === selectedEmail.id ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                )}
-                                Hapus
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={downloadEmail}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Download Email
-                              </Button>
-                              <span className="text-xs text-muted-foreground border border-white/10 px-2 py-1 rounded-md">
-                                  {new Date(selectedEmail.receivedAt).toLocaleString()}
-                              </span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 text-sm">
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs">
-                                {selectedSender?.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="font-medium text-white">{selectedSender?.label}</span>
-                                <span className="text-muted-foreground text-xs">
-                                  {t.toLabel} {selectedEmail.to || address}
-                                </span>
-                            </div>
-                        </div>
-                        {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
-                          <div className="space-y-2">
-                            <p className="text-xs uppercase tracking-widest text-white/60">
-                              Attachments
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {selectedEmail.attachments.map((attachment, index) => (
-                                <Button
-                                  key={`${attachment.filename || 'attachment'}-${index}`}
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => downloadAttachment(index)}
-                                >
-                                  <Download className="mr-2 h-4 w-4" />
-                                  {attachment.filename || `Attachment ${index + 1}`}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
+              <div className="flex flex-col h-full">
+                <div style={{ padding: '14px 18px', borderBottom: '2px solid var(--ink)', background: 'var(--brutal-bg)' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3, flex: 1, minWidth: 200 }}>
+                      {selectedEmail.subject}
+                    </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => deleteEmail(selectedEmail.id)}
+                        disabled={deletingEmailId === selectedEmail.id}
+                        className="brutal-btn brutal-btn-white"
+                        style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                      >
+                        {deletingEmailId === selectedEmail.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
                         )}
+                        Hapus
+                      </button>
+                      <button
+                        type="button"
+                        onClick={downloadEmail}
+                        className="brutal-btn brutal-btn-white"
+                        style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Download
+                      </button>
+                      <span className="brutal-chip" style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>
+                        {new Date(selectedEmail.receivedAt).toLocaleString()}
+                      </span>
                     </div>
-                    
-                    {/* Body */}
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white">
-                        <iframe
-                          ref={previewFrameRef}
-                          title="email-preview"
-                          className="w-full border-0 bg-white"
-                          style={{ height: previewHeight, minHeight: 320 }}
-                          sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
-                          srcDoc={previewSrcDoc}
-                          onLoad={handlePreviewLoad}
-                        />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--brutal-accent)', border: '2px solid var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--ink)', fontSize: '0.85rem', flexShrink: 0 }}>
+                      {selectedSender?.name.charAt(0).toUpperCase()}
                     </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{selectedSender?.label}</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                        {t.toLabel} {selectedEmail.to || address}
+                      </span>
+                    </div>
+                  </div>
+                  {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <p style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>
+                        Attachments
+                      </p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {selectedEmail.attachments.map((attachment, index) => (
+                          <button
+                            key={`${attachment.filename || 'attachment'}-${index}`}
+                            type="button"
+                            onClick={() => downloadAttachment(index)}
+                            className="brutal-btn brutal-btn-accent"
+                            style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            {attachment.filename || `Attachment ${index + 1}`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ background: '#fff' }}>
+                  <iframe
+                    ref={previewFrameRef}
+                    title="email-preview"
+                    className="w-full border-0 bg-white"
+                    style={{ height: previewHeight, minHeight: 320 }}
+                    sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
+                    srcDoc={previewSrcDoc}
+                    onLoad={handlePreviewLoad}
+                  />
+                </div>
+              </div>
             ) : (
-                <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-4 text-base md:text-lg font-semibold">
-                    <div className="p-4 rounded-full bg-white/5 border border-white/5">
-                        <Mail className="h-8 w-8 opacity-50" />
-                    </div>
-                    <p>{t.selectEmail}</p>
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text-muted)', textAlign: 'center', padding: 24 }}>
+                <div style={{ padding: 18, borderRadius: 14, border: '2px solid var(--ink)', background: 'var(--brutal-bg)' }}>
+                  <Mail className="h-8 w-8" style={{ color: 'var(--brutal-accent)' }} />
                 </div>
+                <p style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{t.selectEmail}</p>
+              </div>
             )}
+          </div>
         </div>
+      </div>
+
+      {/* ===== SETTINGS DIALOG ===== */}
+      <SettingsDialog
+        open={isAddDomainOpen}
+        onOpenChange={setIsAddDomainOpen}
+        systemDomains={systemDomains}
+        savedDomains={savedDomains}
+        translations={t}
+        onUpdateDomains={(newDomains) => {
+          const customDomains = newDomains.filter(
+            (item) => !systemDomains.includes(item)
+          );
+          const combined = normalizeDomains([...systemDomains, ...customDomains]);
+          setSavedDomains(combined);
+          localStorage.setItem('dispo_domains', JSON.stringify(customDomains));
+        }}
+      />
+
+      {/* ===== HISTORY POPUP ===== */}
+      <AnimatePresence>
+        {showHistory && (
+          <>
+            <div className="fixed inset-0 z-[90]" onClick={() => setShowHistory(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              style={{ position: 'fixed', zIndex: 100, top: 80, right: 24 }}
+            >
+              <div style={{ width: 'min(22rem, calc(100vw - 48px))', borderRadius: 14, border: '2px solid var(--ink)', background: 'var(--surface)', boxShadow: 'var(--brutal-shadow-lg)', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '12px 16px', borderBottom: '2px solid var(--ink)', background: 'var(--brutal-bg)' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <History className="h-4 w-4" style={{ color: 'var(--brutal-accent)' }} />
+                    {t.historyTitle}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {history.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setHistory([]);
+                          localStorage.removeItem('dispo_history');
+                        }}
+                        style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: '#d93025', background: 'none', border: 'none', cursor: 'pointer' }}
+                      >
+                        {t.historyClearAll}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowHistory(false)}
+                      aria-label="Close history"
+                      style={{ width: 28, height: 28, borderRadius: 8, border: '2px solid var(--ink)', background: 'var(--surface)', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-2 space-y-1">
+                  {history.length === 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px 16px', textAlign: 'center', gap: 8, color: 'var(--text-muted)' }}>
+                      <History className="h-8 w-8" style={{ opacity: 0.3 }} />
+                      <p style={{ fontSize: '0.85rem' }}>{t.historyEmpty}</p>
+                    </div>
+                  ) : (
+                    history.map((histAddr) => (
+                      <div key={histAddr} style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, border: '2px solid transparent' }}>
+                        <button
+                          type="button"
+                          style={{ flex: 1, minWidth: 0, borderRadius: 10, padding: '10px 12px', textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', transition: 'background 0.12s' }}
+                          onClick={() => {
+                            setAddress(histAddr);
+                            const parts = histAddr.split('@');
+                            if (parts[1]) setDomain(parts[1]);
+                            localStorage.setItem('dispo_address', histAddr);
+                            setShowHistory(false);
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                        >
+                          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                            {histAddr}
+                          </p>
+                          <p style={{ fontSize: '0.68rem', marginTop: 2, color: 'var(--brutal-accent)' }}>
+                            {emails.length > 0 && address === histAddr ? t.historyActive : t.historyRestore}
+                          </p>
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${histAddr}`}
+                          onClick={() => {
+                            const newHist = history.filter((h) => h !== histAddr);
+                            setHistory(newHist);
+                            localStorage.setItem('dispo_history', JSON.stringify(newHist));
+                          }}
+                          style={{ marginRight: 6, width: 28, height: 28, borderRadius: 8, border: '2px solid var(--ink)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: 0.7, transition: 'color 0.12s, opacity 0.12s' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = '#d93025'; e.currentTarget.style.opacity = '1'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.opacity = '0.7'; }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function BrutalStat({ value, label }: { value: React.ReactNode; label: React.ReactNode }) {
+  return (
+    <div className="brutal-card" style={{ padding: '16px 12px', textAlign: 'center' }}>
+      <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--ink)', lineHeight: 1, marginBottom: 6, fontFamily: 'var(--font-mono)', wordBreak: 'break-word' }}>
+        {value}
+      </div>
+      <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+        {label}
       </div>
     </div>
   );
