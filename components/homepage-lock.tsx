@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
 
@@ -11,6 +11,7 @@ type HomepageLockProps = {
 
 export function HomepageLock({ appName = DEFAULT_APP_NAME }: HomepageLockProps) {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -78,13 +79,21 @@ export function HomepageLock({ appName = DEFAULT_APP_NAME }: HomepageLockProps) 
             <div style={{ position: 'relative' }}>
               <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 className="brutal-input"
-                style={{ width: '100%', padding: '12px 12px 12px 36px', fontSize: '0.9rem', outline: 'none' }}
+                style={{ width: '100%', padding: '12px 40px 12px 36px', fontSize: '0.9rem', outline: 'none' }}
                 placeholder="Masukkan password"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
             <button
               type="submit"

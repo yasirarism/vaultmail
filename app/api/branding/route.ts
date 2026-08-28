@@ -8,6 +8,7 @@ type BrandingSettings = {
   appName?: string;
   headerTitle?: string;
   headerDescription?: string;
+  announcement?: string;
   updatedAt?: string;
 };
 
@@ -41,6 +42,10 @@ export async function GET() {
       headerDescription:
         settings?.headerDescription ||
         'Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.',
+      announcement:
+        typeof settings?.announcement === 'string'
+          ? settings.announcement
+          : '',
       defaultTheme
     },
     { headers: { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' } }

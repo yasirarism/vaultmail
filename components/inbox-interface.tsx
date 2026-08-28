@@ -348,7 +348,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   };
 
   const generateAddress = () => {
-    // Generate pronounceable random string (e.g. weidipoffeutre)
+    // Generate pronounceable random string without numbers (e.g. weidipoffeutre)
     const vowels = 'aeiou';
     const consonants = 'bcdfghjklmnpqrstvwxyz';
     let name = '';
@@ -360,9 +360,8 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
         name += set[Math.floor(Math.random() * set.length)];
     }
 
-    const num = Math.floor(Math.random() * 9000) + 1000; // 4 digit number
-    const newAddress = `${name}-${num}@${domain}`;
-    
+    const newAddress = `${name}@${domain}`;
+
     setAddress(newAddress);
     localStorage.setItem('dispo_address', newAddress);
     setEmails([]);
@@ -670,22 +669,41 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
         </div>
 
         {/* Domain status line */}
-        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 14, textAlign: 'center' }}>
-          {domainStatusLoading ? (
-            <span>{t.domainStatusChecking}</span>
-          ) : domainExpirationDate ? (
-            isDomainExpired ? (
-              <span style={{ color: '#d93025', fontWeight: 700 }}>{t.domainStatusExpired}</span>
-            ) : (
+        {domainExpirationDate && isDomainExpired ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'rgba(217,48,37,0.08)',
+              border: '2px solid #d93025',
+              borderRadius: 10,
+              padding: '10px 14px',
+              marginBottom: 14,
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              color: '#d93025',
+              textAlign: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <span style={{ fontSize: '1rem' }}>⚠️</span>
+            {t.domainStatusExpired}
+          </div>
+        ) : (
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 14, textAlign: 'center' }}>
+            {domainStatusLoading ? (
+              <span>{t.domainStatusChecking}</span>
+            ) : domainExpirationDate ? (
               <span>
                 📅 <strong style={{ color: 'var(--text-primary)' }}>{domain}</strong> &middot; {t.domainStatusEndsOn}{' '}
                 <strong style={{ color: 'var(--text-primary)' }}>{domainExpirationDate.toLocaleDateString()}</strong>
               </span>
-            )
-          ) : (
-            <span>{t.domainStatusUnavailable}</span>
-          )}
-        </p>
+            ) : (
+              <span>{t.domainStatusUnavailable}</span>
+            )}
+          </p>
+        )}
 
         {/* Generate new email */}
         <button
@@ -720,25 +738,24 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       <div className="max-w-3xl mx-auto w-full" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
         <BrutalStat icon="📧" value={emails.length} label={t.statsEmailsReceived} />
         <BrutalStat icon="🌐" value={savedDomains.length} label={t.statsActiveDomains} />
-        <BrutalStat icon="⚡" value={t.statsInstant} label={t.statsInstant} />
         <BrutalStat icon="🔐" value={t.statsOtp} label={t.statsOtp} />
       </div>
 
       {/* ===== INBOX SECTION ===== */}
       <div>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4 max-w-3xl mx-auto">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
               {t.inboxLabel}
             </h2>
             <span
               style={{ width: 8, height: 8, borderRadius: '50%', background: loading ? 'var(--brutal-accent-2)' : 'var(--brutal-success)', border: '1.5px solid var(--ink)', flexShrink: 0, transition: 'background 0.3s' }}
             />
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', display: 'inline-block', minWidth: 96, whiteSpace: 'nowrap' }}>
               {loading ? t.syncing : t.live}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" style={{ flexShrink: 0 }}>
             <button
               type="button"
               onClick={() => setShowHistory((prev) => !prev)}
@@ -849,7 +866,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                       padding: '14px 16px',
                       cursor: 'pointer',
                       borderLeft: '4px solid transparent',
-                      borderBottom: '1px solid rgba(26,26,26,0.15)',
+                      borderBottom: '1px solid var(--brutal-divider)',
                       transition: 'background 0.1s, transform 0.15s',
                     }}
                     onMouseEnter={(e) => {

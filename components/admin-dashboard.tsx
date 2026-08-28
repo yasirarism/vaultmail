@@ -35,6 +35,7 @@ type BrandingSettings = {
   appName: string;
   headerTitle?: string;
   headerDescription?: string;
+  announcement?: string;
 };
 
 type HomepageLockSettings = {
@@ -96,6 +97,7 @@ export function AdminDashboard() {
   const [appName, setAppName] = useState(DEFAULT_APP_NAME);
   const [headerTitle, setHeaderTitle] = useState('Temp Mail');
   const [headerDescription, setHeaderDescription] = useState('Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.');
+  const [announcement, setAnnouncement] = useState('');
   const [homepageLockEnabled, setHomepageLockEnabled] = useState(false);
   const [homepageLockPassword, setHomepageLockPassword] = useState('');
   const [homepageLockSaving, setHomepageLockSaving] = useState(false);
@@ -201,6 +203,7 @@ export function AdminDashboard() {
       if (brandingData?.appName) setAppName(brandingData.appName);
       if (brandingData?.headerTitle) setHeaderTitle(brandingData.headerTitle);
       if (brandingData?.headerDescription) setHeaderDescription(brandingData.headerDescription);
+      if (typeof brandingData?.announcement === 'string') setAnnouncement(brandingData.announcement);
       setHomepageLockEnabled(Boolean(homepageLockData?.enabled));
       setHomepageLockHasPassword(Boolean(homepageLockData?.hasPassword));
       setImapSettings({ ...imapSettings, ...imapData });
@@ -288,7 +291,7 @@ export function AdminDashboard() {
       const response = await fetch('/api/admin/branding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ appName, headerTitle, headerDescription })
+        body: JSON.stringify({ appName, headerTitle, headerDescription, announcement })
       });
       if (!response.ok) {
         throw new Error('Unauthorized or failed to save branding.');
@@ -733,6 +736,13 @@ export function AdminDashboard() {
                   value={headerDescription}
                   onChange={(event) => setHeaderDescription(event.target.value)}
                   placeholder="Spin up secure temporary inboxes in seconds..."
+                  className="mt-3 bg-black/30 text-white placeholder:text-white/40"
+                />
+                <label className="mt-4 block text-xs font-semibold uppercase tracking-widest text-white/60">Pengumuman (opsional, tampil di ticker navbar)</label>
+                <Input
+                  value={announcement}
+                  onChange={(event) => setAnnouncement(event.target.value)}
+                  placeholder="Pengumuman gratis untuk pengguna..."
                   className="mt-3 bg-black/30 text-white placeholder:text-white/40"
                 />
               </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { InboxInterface } from "@/components/inbox-interface";
-import { Menu, Zap, Shield, Globe, Code2, Mail, Sun, Moon, Github, Wrench } from "lucide-react";
+import { Menu, Zap, Shield, Globe, Code2, Mail, Sun, Moon, Github, Wrench, Send } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
   const [customAppName, setCustomAppName] = useState<string | null>(null);
   const [heroTitle, setHeroTitle] = useState('Temp Mail');
   const [heroDescription, setHeroDescription] = useState('Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.');
+  const [announcement, setAnnouncement] = useState('');
   const { theme, setTheme } = useVisualTheme();
 
   useEffect(() => {
@@ -73,11 +74,12 @@ export function HomePage({ initialAddress }: HomePageProps) {
       try {
         const response = await fetch("/api/branding");
         if (!response.ok) return;
-        const data = (await response.json()) as { appName?: string; headerTitle?: string; headerDescription?: string };
+        const data = (await response.json()) as { appName?: string; headerTitle?: string; headerDescription?: string; announcement?: string };
         const value = data?.appName?.trim();
         setCustomAppName(value || DEFAULT_APP_NAME);
         if (data?.headerTitle?.trim()) setHeroTitle(data.headerTitle.trim());
         if (data?.headerDescription?.trim()) setHeroDescription(data.headerDescription.trim());
+        if (typeof data?.announcement === 'string') setAnnouncement(data.announcement.trim());
       } catch (error) {
         console.error(error);
       }
@@ -118,8 +120,8 @@ export function HomePage({ initialAddress }: HomePageProps) {
     return { first: words.join(' '), last };
   }, [heroTitle]);
 
-  // Tick text
-  const tickerText = heroDescription || t.heroSubtitle;
+  // Tick text — uses announcement if set, else description
+  const tickerText = announcement || heroDescription || t.heroSubtitle;
 
   return (
     <main className="min-h-screen relative flex flex-col" style={{ background: 'var(--brutal-bg)', color: 'var(--text-primary)' }}>
@@ -407,9 +409,18 @@ export function HomePage({ initialAddress }: HomePageProps) {
           <span>modified by Yasir</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <a href="/api-access" style={{ color: 'inherit', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>API Doc</a>
-          <a href="/admin" style={{ color: 'inherit', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>Admin</a>
-          <a href="https://github.com/yasirarism" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>GitHub</a>
+          <a href="https://github.com/yasirarism" target="_blank" rel="noopener noreferrer" title="GitHub" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'inline-flex' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}>
+            <Github className="h-4 w-4" />
+          </a>
+          <a href="https://t.me/yasirarism" target="_blank" rel="noopener noreferrer" title="Telegram" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'inline-flex' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}>
+            <Send className="h-4 w-4" />
+          </a>
+          <a href="mailto:mail@ysweb.eu.org" title="Email" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'inline-flex' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}>
+            <Mail className="h-4 w-4" />
+          </a>
+          <a href="/api-access" title="API Doc" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'inline-flex' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}>
+            <Code2 className="h-4 w-4" />
+          </a>
         </div>
       </footer>
     </main>

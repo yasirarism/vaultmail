@@ -12,6 +12,7 @@ type BrandingSettings = {
   appName: string;
   headerTitle?: string;
   headerDescription?: string;
+  announcement?: string;
   updatedAt: string;
 };
 
@@ -51,6 +52,8 @@ export async function GET() {
     headerDescription:
       settings?.headerDescription ||
       'Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.',
+    announcement:
+      typeof settings?.announcement === 'string' ? settings.announcement : '',
     updatedAt: settings?.updatedAt || new Date().toISOString()
   });
 }
@@ -67,11 +70,14 @@ export async function POST(request: Request) {
     typeof body?.headerDescription === 'string'
       ? body.headerDescription.trim()
       : 'Spin up secure temporary inboxes in seconds. Bring your own domain or use the default.';
+  const announcement =
+    typeof body?.announcement === 'string' ? body.announcement.trim() : '';
 
   const settings: BrandingSettings = {
     appName,
     headerTitle,
     headerDescription,
+    announcement,
     updatedAt: new Date().toISOString()
   };
 

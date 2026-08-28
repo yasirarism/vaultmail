@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function AdminLogin() {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -57,13 +58,23 @@ export function AdminLogin() {
           </div>
 
           <div className="mt-8 space-y-4">
-            <Input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Password admin"
-              className="bg-black/30 text-white placeholder:text-white/40"
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Password admin"
+                className="bg-black/30 pr-10 text-white placeholder:text-white/40"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-white/60 transition hover:text-white"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             <Button onClick={handleLogin} disabled={loading} className="w-full">
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
