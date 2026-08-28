@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function AdminLogin() {
@@ -44,47 +42,78 @@ export function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/60 text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-xl items-center px-6 py-12">
-        <div className="w-full rounded-3xl border border-white/10 bg-white/5 p-8 shadow-lg backdrop-blur">
-          <div className="flex flex-col gap-2 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-300">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <h1 className="text-2xl font-semibold">Admin Login</h1>
-            <p className="text-sm text-white/70">
-              Masukkan password admin untuk mengakses dashboard.
-            </p>
+    <main
+      className="min-h-screen relative flex flex-col items-center justify-center px-4"
+      style={{ background: 'var(--brutal-bg)', color: 'var(--text-primary)' }}
+    >
+      <div className="hero-grid" />
+      <div style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 1 }}>
+        <div className="brutal-card-lg" style={{ padding: '32px 28px', textAlign: 'center' }}>
+          <div style={{ width: 56, height: 56, borderRadius: 14, background: 'var(--text-primary)', border: '2px solid var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Mail className="h-7 w-7" style={{ color: 'var(--brutal-accent)' }} />
           </div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>
+            Admin Login
+          </h1>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 24 }}>
+            Masukkan password admin untuk mengakses dashboard.
+          </p>
 
-          <div className="mt-8 space-y-4">
-            <div className="relative">
-              <Input
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ position: 'relative' }}>
+              <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                className="brutal-input"
+                style={{ width: '100%', padding: '12px 40px 12px 14px', fontSize: '0.9rem', outline: 'none' }}
                 placeholder="Password admin"
-                className="bg-black/30 pr-10 text-white placeholder:text-white/40"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !loading) handleLogin();
+                }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-white/60 transition hover:text-white"
+                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <Button onClick={handleLogin} disabled={loading} className="w-full">
+            <button
+              type="button"
+              onClick={handleLogin}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '12px 20px',
+                background: 'var(--brutal-accent)',
+                color: 'var(--brutal-on-accent)',
+                border: '2px solid var(--ink)',
+                borderRadius: 12,
+                fontSize: '0.95rem',
+                fontWeight: 800,
+                fontFamily: 'var(--font-mono)',
+                cursor: 'pointer',
+                boxShadow: 'var(--brutal-shadow)',
+                transition: 'transform 0.12s, box-shadow 0.12s',
+                opacity: loading ? 0.7 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 'Masuk'
               )}
-            </Button>
+            </button>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

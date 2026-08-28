@@ -18,7 +18,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { DEFAULT_APP_NAME } from '@/lib/branding';
-import { applyTheme, isVisualTheme, type VisualTheme } from '@/lib/theme';
+import { applyTheme, DEFAULT_THEME, isVisualTheme, type VisualTheme } from '@/lib/theme';
 
 type TelegramSettings = {
   enabled: boolean;
@@ -64,13 +64,14 @@ type ThemeSettings = {
   updatedAt?: string;
 };
 
-const THEME_OPTIONS: { value: VisualTheme; label: string; preview: string }[] = [
-  { value: 'glass', label: 'Glassmorphism', preview: 'theme-preview-glass' },
-  { value: 'neomorph', label: 'Neomorph', preview: 'theme-preview-neomorph' }
+const THEME_OPTIONS: { value: VisualTheme; label: string; preview: string; desc: string }[] = [
+  { value: 'brutal', label: 'Neo Brutal', preview: 'theme-preview-brutal', desc: 'RuangMail style (light)' },
+  { value: 'glass', label: 'Glassmorphism', preview: 'theme-preview-glass', desc: 'Glassmorphism + blur' },
+  { value: 'neomorph', label: 'Neomorph', preview: 'theme-preview-neomorph', desc: 'Soft UI neomorph' }
 ];
 
 const normalizeThemeSetting = (value: unknown): VisualTheme =>
-  typeof value === 'string' && isVisualTheme(value) ? value : 'glass';
+  typeof value === 'string' && isVisualTheme(value) ? value : DEFAULT_THEME;
 
 type AdminStats = {
   inboxCount: number;
@@ -114,7 +115,7 @@ export function AdminDashboard() {
   const [imapSaving, setImapSaving] = useState(false);
   const [imapTesting, setImapTesting] = useState(false);
   const [imapSupported, setImapSupported] = useState(true);
-  const [defaultTheme, setDefaultTheme] = useState<VisualTheme>('glass');
+  const [defaultTheme, setDefaultTheme] = useState<VisualTheme>(DEFAULT_THEME);
   const [themeSaving, setThemeSaving] = useState(false);
   const [storageDriver, setStorageDriver] = useState<'d1' | 'mongo' | 'unknown'>('unknown');
 
@@ -788,9 +789,7 @@ export function AdminDashboard() {
                           {option.label}
                         </span>
                         <span className="block text-xs text-white/50">
-                          {option.value === 'glass'
-                            ? 'Glassmorphism + blur'
-                            : 'Soft UI neomorph'}
+                          {option.desc}
                         </span>
                       </span>
                       {active && (

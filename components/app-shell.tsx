@@ -93,7 +93,7 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
   useEffect(() => {
     const loadBranding = async () => {
       try {
-        const response = await fetch('/api/branding');
+        const response = await fetch('/api/branding', { cache: 'no-store' });
         if (!response.ok) return;
         const data = (await response.json()) as { appName?: string };
         setCustomAppName(data?.appName?.trim() || DEFAULT_APP_NAME);

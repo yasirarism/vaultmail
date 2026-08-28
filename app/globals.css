@@ -526,6 +526,34 @@ html[data-theme='brutal'] .text-white\/70 {
   color: var(--text-muted) !important;
 }
 
+/* Accent text variants (legacy light-on-dark) -> dark readable on light */
+html[data-theme='brutal'] .text-blue-200\/70,
+html[data-theme='brutal'] .text-blue-300,
+html[data-theme='brutal'] .text-blue-400 {
+  color: #1d4ed8 !important;
+}
+
+html[data-theme='brutal'] .text-purple-300,
+html[data-theme='brutal'] .text-purple-400 {
+  color: #7e22ce !important;
+}
+
+html[data-theme='brutal'] .text-emerald-200,
+html[data-theme='brutal'] .text-emerald-300 {
+  color: #047857 !important;
+}
+
+html[data-theme='brutal'] .text-orange-200,
+html[data-theme='brutal'] .text-orange-300 {
+  color: #c2410c !important;
+}
+
+html[data-theme='brutal'] .text-red-200,
+html[data-theme='brutal'] .text-red-300,
+html[data-theme='brutal'] .text-red-400 {
+  color: #b91c1c !important;
+}
+
 html[data-theme='brutal'] ::placeholder {
   color: rgba(26, 26, 26, 0.45) !important;
 }
@@ -541,17 +569,25 @@ html[data-theme='brutal'] .theme-surface {
   -webkit-backdrop-filter: none !important;
 }
 
+/* Outer dark panels -> page bg; inner cards -> light gray for depth */
 html[data-theme='brutal'] .bg-black\/40,
 html[data-theme='brutal'] .bg-black\/30,
 html[data-theme='brutal'] .bg-black\/20,
-html[data-theme='brutal'] .bg-black\/10,
+html[data-theme='brutal'] .bg-black\/10 {
+  background: var(--brutal-bg) !important;
+  border-color: var(--ink) !important;
+}
+
 html[data-theme='brutal'] .bg-white\/5,
 html[data-theme='brutal'] .bg-white\/10,
+html[data-theme='brutal'] .bg-white\/\[0\.02\],
+html[data-theme='brutal'] .bg-white\/\[0\.05\],
+html[data-theme='brutal'] .bg-white\/20,
 html[data-theme='brutal'] .bg-zinc-900,
 html[data-theme='brutal'] .bg-zinc-900\/50,
 html[data-theme='brutal'] .bg-slate-900\/90,
 html[data-theme='brutal'] .bg-slate-950\/80 {
-  background: var(--surface) !important;
+  background: var(--brutal-surface-2) !important;
   border-color: var(--ink) !important;
 }
 

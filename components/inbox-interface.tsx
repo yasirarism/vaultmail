@@ -730,7 +730,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
           }}
         >
           <RefreshCw className="h-4 w-4" />
-          {t.newAlias}
+          {t.generateNewEmail}
         </button>
       </div>
 
@@ -738,7 +738,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       <div className="max-w-3xl mx-auto w-full" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
         <BrutalStat icon="📧" value={emails.length} label={t.statsEmailsReceived} />
         <BrutalStat icon="🌐" value={savedDomains.length} label={t.statsActiveDomains} />
-        <BrutalStat icon="🔐" value={t.statsOtp} label={t.statsOtp} />
+        <BrutalStat icon="🔐" value={t.statsInstant} label={t.statsOtp} />
       </div>
 
       {/* ===== INBOX SECTION ===== */}

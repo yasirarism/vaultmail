@@ -72,7 +72,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
   useEffect(() => {
     const loadBranding = async () => {
       try {
-        const response = await fetch("/api/branding");
+        const response = await fetch("/api/branding", { cache: 'no-store' });
         if (!response.ok) return;
         const data = (await response.json()) as { appName?: string; headerTitle?: string; headerDescription?: string; announcement?: string };
         const value = data?.appName?.trim();
