@@ -64,7 +64,7 @@ export function SettingsDialog({
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '2px solid var(--ink)', background: 'var(--brutal-bg)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <div style={{ width: 40, height: 40, borderRadius: 12, border: '2px solid var(--ink)', background: 'var(--brutal-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)' }}>
+                                        <div style={{ width: 40, height: 40, borderRadius: 12, border: '2px solid var(--ink)', background: 'var(--brutal-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brutal-on-accent)' }}>
                                             <Settings2 className="h-5 w-5" />
                                         </div>
                                         <div>
@@ -92,7 +92,7 @@ export function SettingsDialog({
                                                 {systemDomains.map(domain => (
                                                     <div key={domain} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, border: '2px solid var(--ink)', background: 'var(--brutal-bg)' }}>
                                                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{domain}</span>
-                                                        <span className="brutal-chip" style={{ fontSize: '0.65rem', background: 'var(--brutal-accent)', color: 'var(--ink)' }}>{t.defaultBadge}</span>
+                                                        <span className="brutal-chip" style={{ fontSize: '0.65rem', background: 'var(--brutal-accent)', color: 'var(--brutal-on-accent)' }}>{t.defaultBadge}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -110,7 +110,7 @@ export function SettingsDialog({
                                                     className="brutal-input"
                                                     style={{ height: 40, fontSize: '0.85rem' }}
                                                 />
-                                                <Button type="submit" size="icon" disabled={!newDomain.trim()} className="shrink-0" style={{ width: 40, height: 40, borderRadius: 10, border: '2px solid var(--ink)', background: 'var(--brutal-accent)', color: 'var(--ink)', boxShadow: 'var(--brutal-shadow-sm)' }}>
+                                                <Button type="submit" size="icon" disabled={!newDomain.trim()} className="shrink-0" style={{ width: 40, height: 40, borderRadius: 10, border: '2px solid var(--ink)', background: 'var(--brutal-accent)', color: 'var(--brutal-on-accent)', boxShadow: 'var(--brutal-shadow-sm)' }}>
                                                     <Plus className="h-4 w-4" />
                                                 </Button>
                                             </form>

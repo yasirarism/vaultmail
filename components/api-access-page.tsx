@@ -21,7 +21,7 @@ function ApiAccessContent() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, border: '2px solid var(--ink)', background: 'var(--brutal-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, border: '2px solid var(--ink)', background: 'var(--brutal-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brutal-on-accent)' }}>
               <Code2 className="h-5 w-5" />
             </div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{t.apiAccessTitle}</h1>

@@ -129,8 +129,8 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
           style={{ background: 'var(--brutal-accent)', borderBottom: '2px solid var(--ink)' }}
         >
           <div className="max-w-6xl mx-auto px-4 h-[62px] flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 no-underline" style={{ color: 'var(--ink)' }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Link href="/" className="flex items-center gap-2.5 no-underline" style={{ color: 'var(--brutal-on-accent)' }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Mail className="h-5 w-5" style={{ color: 'var(--brutal-accent)' }} />
               </div>
               <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.03em' }}>{resolvedAppName}</span>
@@ -146,7 +146,7 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
                     border: 'none',
                     borderRight: '2px solid var(--ink)',
                     background: locale === 'en' ? 'var(--brutal-accent-2)' : 'var(--surface)',
-                    color: 'var(--ink)',
+                    color: locale === 'en' ? 'var(--brutal-on-accent)' : 'var(--text-primary)',
                     fontWeight: 800,
                     fontSize: '0.72rem',
                     letterSpacing: '0.06em',
@@ -161,7 +161,7 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
                     padding: '5px 11px',
                     border: 'none',
                     background: locale === 'id' ? 'var(--brutal-accent-2)' : 'var(--surface)',
-                    color: 'var(--ink)',
+                    color: locale === 'id' ? 'var(--brutal-on-accent)' : 'var(--text-primary)',
                     fontWeight: 800,
                     fontSize: '0.72rem',
                     letterSpacing: '0.06em',
@@ -186,82 +186,13 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--ink)',
+                  color: 'var(--text-primary)',
                   boxShadow: 'var(--brutal-shadow-sm)',
                   transition: 'transform 0.12s, box-shadow 0.12s',
                 }}
               >
                 {theme === 'brutal' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
-
-              <Link
-                href="/api-access"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '7px 14px',
-                  background: 'var(--surface)',
-                  color: 'var(--ink)',
-                  borderRadius: 8,
-                  border: '2px solid var(--ink)',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  textDecoration: 'none',
-                  boxShadow: 'var(--brutal-shadow-sm)',
-                  transition: 'transform 0.12s, box-shadow 0.12s',
-                  letterSpacing: '0.01em',
-                }}
-              >
-                <Code2 className="h-3.5 w-3.5" />
-                API Doc
-              </Link>
-
-              <Link
-                href="/tools"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '7px 14px',
-                  background: 'var(--surface)',
-                  color: 'var(--ink)',
-                  borderRadius: 8,
-                  border: '2px solid var(--ink)',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  textDecoration: 'none',
-                  boxShadow: 'var(--brutal-shadow-sm)',
-                  transition: 'transform 0.12s, box-shadow 0.12s',
-                  letterSpacing: '0.01em',
-                }}
-              >
-                <Wrench className="h-3.5 w-3.5" />
-                Tools
-              </Link>
-
-              <Link
-                href="/admin"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '7px 18px',
-                  background: 'var(--brutal-accent)',
-                  color: 'var(--ink)',
-                  borderRadius: 8,
-                  border: '2px solid var(--ink)',
-                  fontSize: '0.82rem',
-                  fontWeight: 800,
-                  textDecoration: 'none',
-                  letterSpacing: '0.01em',
-                  boxShadow: 'var(--brutal-shadow-sm)',
-                  transition: 'transform 0.12s, box-shadow 0.12s',
-                }}
-              >
-                <Shield className="h-3.5 w-3.5" />
-                Admin
-              </Link>
 
               {/* Menu */}
               <div className="relative">
@@ -277,7 +208,7 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'var(--ink)',
+                    color: 'var(--text-primary)',
                     boxShadow: 'var(--brutal-shadow-sm)',
                     transition: 'transform 0.12s, box-shadow 0.12s',
                   }}
@@ -312,22 +243,41 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
                           </div>
                           <ThemePicker t={t} compact />
                           <a
+                            href="/api-access"
+                            onClick={() => setShowMenu(false)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', borderRadius: 8, fontSize: '0.85rem', color: 'var(--text-primary)', textDecoration: 'none', transition: 'background 0.15s' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                          >
+                            <Code2 className="h-4 w-4" />
+                            API Doc
+                          </a>
+                          <a
+                            href="/tools"
+                            onClick={() => setShowMenu(false)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', borderRadius: 8, fontSize: '0.85rem', color: 'var(--text-primary)', textDecoration: 'none', transition: 'background 0.15s' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                          >
+                            <Wrench className="h-4 w-4" />
+                            Tools
+                          </a>
+                          <a
+                            href="/admin"
+                            onClick={() => setShowMenu(false)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', borderRadius: 8, fontSize: '0.85rem', color: 'var(--text-primary)', textDecoration: 'none', transition: 'background 0.15s' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                          >
+                            <Shield className="h-4 w-4" />
+                            Admin
+                          </a>
+                          <a
                             href="https://github.com/yasirarism"
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={() => setShowMenu(false)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              width: '100%',
-                              padding: '8px 12px',
-                              borderRadius: 8,
-                              fontSize: '0.85rem',
-                              color: 'var(--text-primary)',
-                              textDecoration: 'none',
-                              transition: 'background 0.15s',
-                            }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', borderRadius: 8, fontSize: '0.85rem', color: 'var(--text-primary)', textDecoration: 'none', transition: 'background 0.15s' }}
                             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; }}
                             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                           >

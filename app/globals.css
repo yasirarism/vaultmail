@@ -395,45 +395,62 @@ html[data-theme='neomorph'] .theme-progress-fill {
 
 /* Fonts */
 :root {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: 'IBM Plex Mono', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* Theme-aware brutal tokens (defined for every theme so the brutal
    components stay coherent when users switch themes) */
 :root,
-html[data-theme='glass'] {
+html[data-theme='brutal'] {
   --ink: #1a1a1a;
   --surface: #ffffff;
-  --brutal-bg: #f5f3ef;
-  --brutal-accent: #8bd3dd;
-  --brutal-accent-2: #faa72a;
+  --brutal-bg: #fafafa;
+  --brutal-accent: #faae2a; /* amber - primary accent (navbar, generate) */
+  --brutal-accent-2: #8bd3dd; /* light blue - secondary (ticker, copy, admin) */
+  --brutal-on-accent: #1a1a1a; /* text on accent backgrounds */
   --text-primary: #1a1a1a;
-  --text-muted: #5f5f5f;
+  --text-muted: #666666;
   --brutal-shadow: 4px 4px 0 var(--ink);
   --brutal-shadow-sm: 3px 3px 0 var(--ink);
-  --brutal-shadow-lg: 8px 8px 0 var(--ink);
+  --brutal-shadow-lg: 6px 6px 0 var(--ink);
+  --brutal-radius: 18px;
+}
+
+html[data-theme='glass'] {
+  --ink: rgba(255, 255, 255, 0.22);
+  --surface: rgba(255, 255, 255, 0.06);
+  --brutal-bg: #0b1120;
+  --brutal-accent: #60a5fa;
+  --brutal-accent-2: #fbbf24;
+  --brutal-on-accent: #0f172a;
+  --text-primary: #f8fafc;
+  --text-muted: rgba(255, 255, 255, 0.65);
+  --brutal-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+  --brutal-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --brutal-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.4);
   --brutal-radius: 16px;
 }
 
 html[data-theme='neomorph'] {
-  --ink: rgba(197, 208, 228, 0.28);
+  --ink: transparent;
   --surface: #2b3244;
   --brutal-bg: #2b3244;
   --brutal-accent: #7da7f5;
   --brutal-accent-2: #f5b84b;
+  --brutal-on-accent: #16203a;
   --text-primary: #eef3fb;
   --text-muted: #c5d0e4;
-  --brutal-shadow: none;
-  --brutal-shadow-sm: none;
-  --brutal-shadow-lg: none;
+  --brutal-shadow: 8px 8px 16px #1d2230, -8px -8px 16px #3b4560;
+  --brutal-shadow-sm: 5px 5px 10px #1d2230, -5px -5px 10px #3b4560;
+  --brutal-shadow-lg: 8px 8px 16px #1d2230, -8px -8px 16px #3b4560;
   --brutal-radius: 16px;
 }
 
 /* Brutal (ruangmail.biz.id) default theme — light, hard borders, mono */
 html[data-theme='brutal'] {
   /* Tailwind HSL tokens -> light */
-  --background: 48 20% 96%;
+  --background: 48 20% 98%;
   --foreground: 0 0% 10%;
   --card: 0 0% 100%;
   --card-foreground: 0 0% 10%;
@@ -441,31 +458,19 @@ html[data-theme='brutal'] {
   --popover-foreground: 0 0% 10%;
   --primary: 0 0% 10%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 187 54% 71%;
+  --secondary: 42 95% 57%;
   --secondary-foreground: 0 0% 10%;
-  --muted: 48 20% 92%;
-  --muted-foreground: 0 0% 38%;
-  --accent: 187 54% 71%;
+  --muted: 48 20% 94%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 42 95% 57%;
   --accent-foreground: 0 0% 10%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
   --border: 0 0% 10%;
   --input: 0 0% 10%;
-  --ring: 187 54% 45%;
+  --ring: 42 95% 45%;
   --radius: 0.5rem;
   color-scheme: light;
-
-  --ink: #1a1a1a;
-  --surface: #ffffff;
-  --brutal-bg: #f5f3ef;
-  --brutal-accent: #8bd3dd;
-  --brutal-accent-2: #faa72a;
-  --text-primary: #1a1a1a;
-  --text-muted: #5f5f5f;
-  --brutal-shadow: 4px 4px 0 var(--ink);
-  --brutal-shadow-sm: 3px 3px 0 var(--ink);
-  --brutal-shadow-lg: 8px 8px 0 var(--ink);
-  --brutal-radius: 16px;
 }
 
 html[data-theme='brutal'],
@@ -616,7 +621,7 @@ html[data-theme='brutal'] [data-sonner-toast] [data-button] {
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
-  color: var(--ink);
+  color: var(--text-primary);
   box-shadow: var(--brutal-shadow-sm);
   transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease, filter 0.15s ease;
 }
@@ -639,17 +644,17 @@ html[data-theme='brutal'] [data-sonner-toast] [data-button] {
 
 .brutal-btn-accent {
   background: var(--brutal-accent);
-  color: var(--ink);
+  color: var(--brutal-on-accent);
 }
 
 .brutal-btn-accent2 {
   background: var(--brutal-accent-2);
-  color: var(--ink);
+  color: var(--brutal-on-accent);
 }
 
 .brutal-btn-white {
   background: var(--surface);
-  color: var(--ink);
+  color: var(--text-primary);
 }
 
 .brutal-input {

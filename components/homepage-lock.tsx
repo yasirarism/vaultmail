@@ -61,7 +61,7 @@ export function HomepageLock({ appName = DEFAULT_APP_NAME }: HomepageLockProps) 
       <div className="hero-grid" />
       <div style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 1 }}>
         <div className="brutal-card-lg" style={{ padding: '32px 28px', textAlign: 'center' }}>
-          <div style={{ width: 56, height: 56, borderRadius: 14, background: 'var(--ink)', border: '2px solid var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <div style={{ width: 56, height: 56, borderRadius: 14, background: 'var(--text-primary)', border: '2px solid var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <Mail className="h-7 w-7" style={{ color: 'var(--brutal-accent)' }} />
           </div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>
@@ -93,7 +93,7 @@ export function HomepageLock({ appName = DEFAULT_APP_NAME }: HomepageLockProps) 
                 width: '100%',
                 padding: '12px 20px',
                 background: 'var(--brutal-accent)',
-                color: 'var(--ink)',
+                color: 'var(--brutal-on-accent)',
                 border: '2px solid var(--ink)',
                 borderRadius: 12,
                 fontSize: '0.95rem',

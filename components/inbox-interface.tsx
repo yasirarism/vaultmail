@@ -548,7 +548,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
 
         {/* Address input row */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'var(--brutal-bg)', border: '2px solid var(--ink)', borderRadius: 12, minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'var(--brutal-bg)', border: '2px solid var(--ink)', borderRadius: 12, minWidth: 0 }}>
             <input
               type="text"
               value={address.split('@')[0]}
@@ -634,7 +634,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
             type="button"
             onClick={copyAddress}
             title={t.copy}
-            style={{ flexShrink: 0, width: 48, background: 'var(--brutal-accent)', border: '2px solid var(--ink)', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: 'var(--brutal-shadow-sm)', transition: 'transform 0.15s, box-shadow 0.15s' }}
+            style={{ flexShrink: 0, width: 48, background: 'var(--brutal-accent-2)', border: '2px solid var(--ink)', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brutal-on-accent)', boxShadow: 'var(--brutal-shadow-sm)', transition: 'transform 0.15s, box-shadow 0.15s' }}
           >
             <Copy className="h-4 w-4" />
           </button>
@@ -666,7 +666,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
             width: '100%',
             padding: 14,
             background: 'var(--brutal-accent)',
-            color: 'var(--ink)',
+            color: 'var(--brutal-on-accent)',
             border: '2px solid var(--ink)',
             borderRadius: 12,
             fontSize: '0.95rem',
@@ -714,11 +714,11 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
               type="button"
               onClick={() => setShowHistory((prev) => !prev)}
               title={t.historyTitle}
-              style={{ position: 'relative', width: 38, height: 38, borderRadius: 10, border: '2px solid var(--ink)', background: showHistory ? 'var(--brutal-accent)' : 'var(--surface)', color: 'var(--ink)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--brutal-shadow-sm)', transition: 'transform 0.12s, box-shadow 0.12s, background 0.12s' }}
+              style={{ position: 'relative', width: 38, height: 38, borderRadius: 10, border: '2px solid var(--ink)', background: showHistory ? 'var(--brutal-accent)' : 'var(--surface)', color: showHistory ? 'var(--brutal-on-accent)' : 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--brutal-shadow-sm)', transition: 'transform 0.12s, box-shadow 0.12s, background 0.12s' }}
             >
               <History className="h-4 w-4" />
               {history.length > 0 && (
-                <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 999, background: 'var(--brutal-accent-2)', border: '2px solid var(--ink)', color: 'var(--ink)', fontSize: '0.6rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>
+                <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 999, background: 'var(--brutal-accent-2)', border: '2px solid var(--ink)', color: 'var(--brutal-on-accent)', fontSize: '0.6rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>
                   {history.length}
                 </span>
               )}
@@ -747,7 +747,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                   {t.inboxCountTotal}: {emailCount}
                 </span>
                 {unreadCount > 0 && (
-                  <span className="brutal-chip" style={{ fontSize: '0.68rem', background: 'var(--brutal-accent)', color: 'var(--ink)' }}>
+                  <span className="brutal-chip" style={{ fontSize: '0.68rem', background: 'var(--brutal-accent)', color: 'var(--brutal-on-accent)' }}>
                     {t.inboxCountUnread}: {unreadCount}
                   </span>
                 )}
@@ -759,7 +759,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                   aria-pressed={showFilter}
                   aria-label={t.inboxFilterPlaceholder}
                   title={t.inboxFilterPlaceholder}
-                  style={{ width: 34, height: 34, borderRadius: 8, border: '2px solid var(--ink)', background: showFilter ? 'var(--brutal-accent-2)' : 'var(--surface)', color: 'var(--ink)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--brutal-shadow-sm)', transition: 'transform 0.12s, box-shadow 0.12s' }}
+                  style={{ width: 34, height: 34, borderRadius: 8, border: '2px solid var(--ink)', background: showFilter ? 'var(--brutal-accent-2)' : 'var(--surface)', color: showFilter ? 'var(--brutal-on-accent)' : 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--brutal-shadow-sm)', transition: 'transform 0.12s, box-shadow 0.12s' }}
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -936,7 +936,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem' }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--brutal-accent)', border: '2px solid var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--ink)', fontSize: '0.85rem', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--brutal-accent)', border: '2px solid var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--brutal-on-accent)', fontSize: '0.85rem', flexShrink: 0 }}>
                       {selectedSender?.name.charAt(0).toUpperCase()}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -1109,7 +1109,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
 function BrutalStat({ value, label }: { value: React.ReactNode; label: React.ReactNode }) {
   return (
     <div className="brutal-card" style={{ padding: '16px 12px', textAlign: 'center' }}>
-      <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--ink)', lineHeight: 1, marginBottom: 6, fontFamily: 'var(--font-mono)', wordBreak: 'break-word' }}>
+      <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1, marginBottom: 6, fontFamily: 'var(--font-mono)', wordBreak: 'break-word' }}>
         {value}
       </div>
       <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
