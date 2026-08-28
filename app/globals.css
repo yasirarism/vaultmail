@@ -414,7 +414,14 @@ html[data-theme='brutal'] {
   --brutal-shadow: 4px 4px 0 var(--ink);
   --brutal-shadow-sm: 3px 3px 0 var(--ink);
   --brutal-shadow-lg: 6px 6px 0 var(--ink);
+  --brutal-shadow-xl: 8px 8px 0 var(--ink);
   --brutal-radius: 18px;
+  --brutal-radius-2xl: 24px;
+  --brutal-radius-full: 9999px;
+  --brutal-accent-light: #fff8e1; /* amber tint (hover) */
+  --brutal-surface-2: #f5f5f5; /* secondary surface (hover/track) */
+  --brutal-success: #22c55e;
+  --brutal-howto-bg: #d6eff2; /* how-to wrapper (light blue tint) */
 }
 
 html[data-theme='glass'] {
@@ -429,7 +436,14 @@ html[data-theme='glass'] {
   --brutal-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
   --brutal-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.25);
   --brutal-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.4);
+  --brutal-shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.5);
   --brutal-radius: 16px;
+  --brutal-radius-2xl: 20px;
+  --brutal-radius-full: 9999px;
+  --brutal-accent-light: rgba(96, 165, 250, 0.14);
+  --brutal-surface-2: rgba(255, 255, 255, 0.04);
+  --brutal-success: #22c55e;
+  --brutal-howto-bg: rgba(214, 239, 242, 0.12);
 }
 
 html[data-theme='neomorph'] {
@@ -444,7 +458,14 @@ html[data-theme='neomorph'] {
   --brutal-shadow: 8px 8px 16px #1d2230, -8px -8px 16px #3b4560;
   --brutal-shadow-sm: 5px 5px 10px #1d2230, -5px -5px 10px #3b4560;
   --brutal-shadow-lg: 8px 8px 16px #1d2230, -8px -8px 16px #3b4560;
+  --brutal-shadow-xl: 10px 10px 20px #1d2230, -10px -10px 20px #3b4560;
   --brutal-radius: 16px;
+  --brutal-radius-2xl: 20px;
+  --brutal-radius-full: 9999px;
+  --brutal-accent-light: rgba(125, 167, 245, 0.16);
+  --brutal-surface-2: #323a4f;
+  --brutal-success: #3fb950;
+  --brutal-howto-bg: #39435a;
 }
 
 /* Brutal (ruangmail.biz.id) default theme — light, hard borders, mono */
@@ -572,8 +593,7 @@ html[data-theme='brutal'] select {
   color: var(--text-primary) !important;
 }
 
-html[data-theme='brutal'] header,
-html[data-theme='brutal'] footer {
+html[data-theme='brutal'] header {
   background: var(--brutal-accent) !important;
   border-color: var(--ink) !important;
 }

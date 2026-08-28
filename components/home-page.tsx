@@ -348,32 +348,68 @@ export function HomePage({ initialAddress }: HomePageProps) {
         </div>
       </section>
 
-      {/* ========== HOW TO USE ========== */}
-      <section className="max-w-6xl mx-auto px-4 pb-20">
-        <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.4rem)', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'center', marginBottom: 8, letterSpacing: '-0.03em' }}>
-          {t.howToTitle}
-        </h2>
-        <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: 40, fontSize: '0.95rem' }}>
-          {t.howToSubtitle}
-        </p>
-        <div className="grid md:grid-cols-3 gap-6">
-          <HowToStep num="01" title={t.howToStep1Title} desc={t.howToStep1Desc} />
-          <HowToStep num="02" title={t.howToStep2Title} desc={t.howToStep2Desc} />
-          <HowToStep num="03" title={t.howToStep3Title} desc={t.howToStep3Desc} />
+      {/* ========== HOW TO USE (ruangmail cara-pakai style) ========== */}
+      <section id="cara-pakai-section" style={{ background: 'var(--brutal-bg)', padding: '20px 0 48px' }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <div
+            style={{
+              background: 'var(--brutal-howto-bg)',
+              border: '2px solid var(--ink)',
+              borderRadius: 16,
+              boxShadow: 'var(--brutal-shadow)',
+              padding: '40px 32px',
+              maxWidth: 900,
+              margin: '0 auto',
+              overflow: 'hidden',
+              position: 'relative',
+              transform: 'translateZ(0)',
+            }}
+          >
+            <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'center', marginBottom: 8, letterSpacing: '-0.03em' }}>
+              {t.howToTitle}
+            </h2>
+            <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 32, fontWeight: 500 }}>
+              {t.howToSubtitle}
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+              <HowToStep num="01" title={t.howToStep1Title} desc={t.howToStep1Desc} bg="#faae2a" />
+              <HowToStep num="02" title={t.howToStep2Title} desc={t.howToStep2Desc} bg="#8bd3dd" />
+              <HowToStep num="03" title={t.howToStep3Title} desc={t.howToStep3Desc} bg="#c2ace6" />
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ========== FOOTER ========== */}
-      <footer style={{ borderTop: '2px solid var(--ink)', background: 'var(--brutal-accent)', padding: '20px 0', textAlign: 'center' }}>
-        <div className="max-w-6xl mx-auto px-4">
-          <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--brutal-on-accent)', marginBottom: 8 }}>
-            © 2026 {resolvedAppName}. modified by Yasir
-          </p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: '0.78rem' }}>
-            <a href="/api-access" className="brutal-link" style={{ color: 'var(--brutal-on-accent)' }}>API Doc</a>
-            <a href="/admin" className="brutal-link" style={{ color: 'var(--brutal-on-accent)' }}>Admin</a>
-            <a href="https://github.com/yasirarism" target="_blank" rel="noopener noreferrer" className="brutal-link" style={{ color: 'var(--brutal-on-accent)' }}>GitHub</a>
-          </div>
+      {/* ========== FOOTER (ruangmail slim sticky bar) ========== */}
+      <footer
+        className="site-footer"
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 100,
+          padding: '12px 24px',
+          fontSize: '0.78rem',
+          color: 'var(--text-muted)',
+          borderTop: '2px solid var(--ink)',
+          background: 'var(--brutal-bg)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', color: 'var(--text-primary)', fontWeight: 600 }}>
+          <span>© 2026</span>
+          <span style={{ opacity: 0.4 }}>|</span>
+          <span>{resolvedAppName}</span>
+          <span style={{ opacity: 0.4 }}>|</span>
+          <span>modified by Yasir</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <a href="/api-access" style={{ color: 'inherit', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>API Doc</a>
+          <a href="/admin" style={{ color: 'inherit', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>Admin</a>
+          <a href="https://github.com/yasirarism" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>GitHub</a>
         </div>
       </footer>
     </main>
@@ -392,14 +428,14 @@ function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; 
   );
 }
 
-function HowToStep({ num, title, desc }: { num: string; title: string; desc: string }) {
+function HowToStep({ num, title, desc, bg }: { num: string; title: string; desc: string; bg: string }) {
   return (
-    <div className="brutal-card" style={{ padding: '28px 24px', textAlign: 'center' }}>
-      <div style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--brutal-accent)', marginBottom: 8, lineHeight: 1, fontFamily: 'var(--font-mono)' }}>
+    <div style={{ background: bg, borderRadius: 12, padding: 24, border: '2px solid var(--ink)', boxShadow: '3px 3px 0 var(--ink)', color: '#1a1a1a' }}>
+      <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 10, lineHeight: 1, fontFamily: 'var(--font-mono)' }}>
         {num}
       </div>
-      <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: 6, color: 'var(--text-primary)' }}>{title}</h3>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5 }}>{desc}</p>
+      <p style={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 6, fontSize: '0.95rem' }}>{title}</p>
+      <p style={{ fontSize: '0.82rem', color: '#1a1a1a', lineHeight: 1.5, opacity: 0.7 }}>{desc}</p>
     </div>
   );
 }
