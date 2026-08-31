@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { Code2, Mail, Menu, Shield, Sun, Moon, Wrench, Github } from 'lucide-react';
 
 import { ThemePicker } from '@/components/theme-picker';
+import { Starfield } from '@/components/starfield';
 import { cn } from '@/lib/utils';
 import {
   DEFAULT_LOCALE,
@@ -121,8 +122,10 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
     <AppChromeContext.Provider value={value}>
       <main
         className="min-h-screen relative flex flex-col"
-        style={{ background: 'var(--brutal-bg)', color: 'var(--text-primary)' }}
+        style={{ background: 'var(--brutal-bg)', color: 'var(--text-primary)', isolation: 'isolate' }}
       >
+        {/* Space background: twinkling stars + shooting stars (theme-aware) */}
+        <Starfield density={0.35} />
         {/* ========== NAVBAR ========== */}
         <header
           className="sticky top-0 z-50"
