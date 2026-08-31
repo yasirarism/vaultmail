@@ -17,17 +17,18 @@ export async function GET(req: Request) {
     return NextResponse.redirect('/api-access?github=error&reason=missing');
   }
 
-  const stateOk = await consumeOAuthState(state);
-  if (!stateOk) {
-    return NextResponse.redirect('/api-access?github=error&reason=state');
-  }
-
   try {
-    const token = await exchangeCodeForToken(code);
+    const stateOk = await consumeOAuthState(state);
+    if (!stateOk) {
+      return NextResponse.redirect('/api-access?github=error&reason=state');
+    }
+
+    const token = await exchangeCodeForToken(code, req);
     const user = await fetchGitHubUser(token);
     const session = await createSession(user);
 
-    const res = NextResponse.redirect('/api-access?github=ok');    res.cookies.set('vm_session', session.id, {
+    const res = NextResponse.redirect('/api-access?github=ok');
+    res.cookies.set('vm_session', session.id, {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
@@ -37,6 +38,7 @@ export async function GET(req: Request) {
     return res;
   } catch (error) {
     console.error('GitHub OAuth callback error:', error);
-    return NextResponse.redirect('/api-access?github=error&reason=token');
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.redirect(`/api-access?github=error&reason=${encodeURIComponent(msg)}`);
   }
 }

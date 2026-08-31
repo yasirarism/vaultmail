@@ -35,8 +35,12 @@ export const isGithubAuthConfigured = async () => {
 };
 
 export const getApiSettings = async (): Promise<ApiSettings> => {
-  const raw = await storage.get(API_SETTINGS_KEY).catch(() => null);
-  if (raw && typeof raw === 'object') return raw as ApiSettings;
+  try {
+    const raw = await storage.get(API_SETTINGS_KEY);
+    if (raw && typeof raw === 'object') return raw as ApiSettings;
+  } catch (error) {
+    console.error('getApiSettings: storage unavailable, falling back to env:', error);
+  }
   return {};
 };
 
@@ -86,7 +90,7 @@ export const consumeOAuthState = async (state: string) => {
   return true;
 };
 
-export const exchangeCodeForToken = async (code: string) => {
+export const exchangeCodeForToken = async (code: string, req?: Request) => {
   const res = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
     headers: {
@@ -97,7 +101,7 @@ export const exchangeCodeForToken = async (code: string) => {
       client_id: await githubClientId(),
       client_secret: await githubClientSecret(),
       code,
-      redirect_uri: await githubRedirectUri(),
+      redirect_uri: await githubRedirectUri(req),
     }),
   });
   const data = (await res.json()) as { access_token?: string; error?: string };
