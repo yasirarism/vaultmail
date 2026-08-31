@@ -1,168 +1,26 @@
-import { inboxKey, lastUidKey } from '@/lib/storage-keys';
+import { inboxKey } from '@/lib/storage-keys';
 import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
-import { RETENTION_SETTINGS_KEY } from '@/lib/admin-auth';
-import { IMAP_SETTINGS_KEY } from '@/lib/admin-auth';
-import { isImapSupported } from '@/lib/runtime';
+import { getInboxEmails } from '@/lib/inbox-service';
 
 export const dynamic = 'force-dynamic';
 
-type RetentionSettings = {
-  seconds: number;
-};
-type ImapSettings = { enabled?: boolean };
-
-const parseRetentionSettings = (value: unknown): RetentionSettings | null => {
-  if (!value) return null;
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value) as RetentionSettings;
-    } catch {
-      return null;
-    }
-  }
-  if (typeof value === 'object') {
-    return value as RetentionSettings;
-  }
-  return null;
-};
-
-const parseImapSettings = (value: unknown): ImapSettings | null => {
-  if (!value) return null;
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value) as ImapSettings;
-    } catch {
-      return null;
-    }
-  }
-  if (typeof value === 'object') {
-    return value as ImapSettings;
-  }
-  return null;
-};
-
-const getRetentionSeconds = async () => {
-  const raw = await storage.get(RETENTION_SETTINGS_KEY);
-  return parseRetentionSettings(raw)?.seconds || 86400;
-};
-
-
-const stripHeaderLines = (value: string) =>
-  value
-    .split('\n')
-    .filter((line) => !/^(delivered-to|from|to|cc|subject|date|message-id):/i.test(line.trim()))
-    .join('\n')
-    .trim();
-
-const escapeHtml = (value: string) =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-
-const normalizeEmailPayload = (item: unknown) => {
-  if (!item || typeof item !== 'object') return item;
-  const email = item as Record<string, unknown>;
-  const text = typeof email.text === 'string' ? email.text : '';
-  const cleanedText = stripHeaderLines(text);
-  const html = typeof email.html === 'string' ? email.html : '';
-  const hasHtml = /<[^>]+>/.test(html);
-  return {
-    ...email,
-    text: cleanedText || text,
-    html: hasHtml ? html : `<p>${escapeHtml(cleanedText || text || '')}</p>`
-  };
-};
-
-const cleanupExpiredMessages = async (address: string) => {
-  const retentionSeconds = await getRetentionSeconds();
-  const threshold = new Date(Date.now() - retentionSeconds * 1000).toISOString();
-  await storage.ldeleteOlderThanIsoDate(inboxKey(address), threshold);
-};
-
+/**
+ * INTERNAL route used by the web UI. No API key required —
+ * the public developer API lives under /api/v1/* with key auth.
+ */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const address = searchParams.get('address');
   const forceResync = searchParams.get('resync') === '1';
 
-  // API key enforcement for external callers (OpenAI-style Bearer).
-  // Web UI keeps session/anonymous access unless REQUIRE_API_KEY=1 is set,
-  // in which case a valid session OR API key is required.
   if (!address) {
     return NextResponse.json({ error: 'Address required' }, { status: 400 });
   }
 
   try {
-    if (process.env.REQUIRE_API_KEY === '1') {
-      const { authenticateApiRequest } = await import('@/lib/api-auth');
-      const auth = await authenticateApiRequest(req);
-      if (!auth) {
-        return NextResponse.json(
-          { error: 'Unauthorized. Provide a valid API key via Authorization: Bearer <key> or log in.' },
-          { status: 401 }
-        );
-      }
-    }
-    await cleanupExpiredMessages(address);
-    if (forceResync) {
-      await storage.del(lastUidKey(address));
-      await storage.del(inboxKey(address));
-    }
-
-    const existing = await storage.lrange(inboxKey(address), 0, -1);
-    const existingSourceIds = new Set(
-      (existing || [])
-        .map((item) => (item && typeof item === 'object' ? (item as { sourceId?: string }).sourceId : undefined))
-        .filter((value): value is string => Boolean(value))
-    );
-
-    const imapSettingsRaw = await storage.get(IMAP_SETTINGS_KEY);
-    const imapSettings = parseImapSettings(imapSettingsRaw);
-    const imapEnabled = isImapSupported() && Boolean(imapSettings?.enabled);
-    const retentionSeconds = await getRetentionSeconds();
-    const thresholdMs = Date.now() - retentionSeconds * 1000;
-    const imapResult = imapEnabled
-      ? await (await import('@/lib/imap-fetch')).fetchFromImap(address, existingSourceIds, {
-          sinceMs: thresholdMs,
-        })
-      : {
-          emails: [],
-          debug: {
-            totalUids: 0,
-            recipientFiltered: 0,
-            duplicateFiltered: 0,
-            expiredFiltered: 0,
-            returned: 0,
-            search: '',
-            skipped: isImapSupported() ? 'imap_disabled' : 'cloudflare_webhook_only'
-          }
-        };
-    const imapEmails = imapResult.emails;
-    const freshImapEmails = imapEmails.filter((email) => {
-      const ts = new Date(email.receivedAt).getTime();
-      return Number.isFinite(ts) && ts >= thresholdMs;
-    });
-    if (freshImapEmails.length > 0) {
-      const current = await storage.lrange(inboxKey(address), 0, -1);
-      const known = new Set(
-        (current || [])
-          .map((item) => (item && typeof item === 'object' ? (item as { sourceId?: string }).sourceId : undefined))
-          .filter((value): value is string => Boolean(value))
-      );
-      for (const email of freshImapEmails) {
-        if (known.has(email.sourceId)) continue;
-        await storage.lpush(inboxKey(address), email);
-        known.add(email.sourceId);
-      }
-      await storage.expire(inboxKey(address), retentionSeconds);
-    }
-
-    const emails = await storage.lrange(inboxKey(address), 0, -1);
-    const normalizedEmails = (emails || []).map(normalizeEmailPayload);
-    return NextResponse.json({ emails: normalizedEmails, imapDebug: imapResult.debug }, { headers: { 'Cache-Control': 'no-store' } });
+    const result = await getInboxEmails(address, forceResync);
+    return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('Inbox Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown inbox error';

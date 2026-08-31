@@ -212,19 +212,19 @@ function ApiAccessContent() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
             <div className="brutal-chip" style={{ borderRadius: 8, justifyContent: 'flex-start', padding: '10px 12px', wordBreak: 'break-all', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}>
               <span style={{ color: 'var(--brutal-accent)', fontWeight: 800 }}>GET</span>{' '}
-              <span style={{ color: 'var(--text-primary)' }}>/api/inbox?address=nama@domain.com</span>
+              <span style={{ color: 'var(--text-primary)' }}>/api/v1/inbox?address=nama@domain.com</span>
             </div>
             <div className="brutal-chip" style={{ borderRadius: 8, justifyContent: 'flex-start', padding: '10px 12px', wordBreak: 'break-all', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}>
               <span style={{ color: 'var(--brutal-accent)', fontWeight: 800 }}>GET</span>{' '}
-              <span style={{ color: 'var(--text-primary)' }}>/api/download?address=nama@domain.com&amp;emailId=uuid&amp;type=email</span>
+              <span style={{ color: 'var(--text-primary)' }}>/api/v1/download?address=nama@domain.com&amp;emailId=uuid&amp;type=email</span>
             </div>
             <div className="brutal-chip" style={{ borderRadius: 8, justifyContent: 'flex-start', padding: '10px 12px', wordBreak: 'break-all', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}>
               <span style={{ color: 'var(--brutal-accent)', fontWeight: 800 }}>GET</span>{' '}
-              <span style={{ color: 'var(--text-primary)' }}>/api/retention</span>
+              <span style={{ color: 'var(--text-primary)' }}>/api/v1/retention</span>
             </div>
             <div className="brutal-chip" style={{ borderRadius: 8, justifyContent: 'flex-start', padding: '10px 12px', wordBreak: 'break-all', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}>
               <span style={{ color: 'var(--brutal-accent)', fontWeight: 800 }}>DELETE</span>{' '}
-              <span style={{ color: 'var(--text-primary)' }}>/api/inbox?address=nama@domain.com&amp;emailId=uuid</span>
+              <span style={{ color: 'var(--text-primary)' }}>/api/v1/inbox?address=nama@domain.com&amp;emailId=uuid</span>
             </div>
           </div>
         </div>
