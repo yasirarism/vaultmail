@@ -7,6 +7,7 @@ import {
 } from '@/lib/github-auth';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -39,6 +40,15 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('GitHub OAuth callback error:', error);
     const msg = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.redirect(`/api-access?github=error&reason=${encodeURIComponent(msg)}`);
+    // Return the actual error as JSON so the cause is visible in the browser
+    // instead of a generic 500 page.
+    return NextResponse.json(
+      {
+        error: 'GitHub OAuth callback failed',
+        reason: msg,
+        hint: 'Biasanya karena: (1) redirect_uri tidak cocok dengan yang didaftarkan di GitHub OAuth App, (2) MongoDB/storage tidak terhubung, (3) Client ID/Secret salah.',
+      },
+      { status: 500 }
+    );
   }
 }

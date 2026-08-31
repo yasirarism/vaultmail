@@ -99,6 +99,7 @@ export const exchangeCodeForToken = async (code: string, req?: Request) => {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
+      'User-Agent': 'vaultmail',
     },
     body: JSON.stringify({
       client_id: await githubClientId(),
@@ -114,15 +115,23 @@ export const exchangeCodeForToken = async (code: string, req?: Request) => {
 
 export const fetchGitHubUser = async (token: string): Promise<GitHubUser> => {
   const res = await fetch('https://api.github.com/user', {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'vaultmail',
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
   });
+  if (!res.ok) {
+    throw new Error(`GitHub user fetch failed: HTTP ${res.status} ${res.statusText}`);
+  }
   const data = (await res.json()) as {
     id?: number;
     login?: string;
     name?: string | null;
     avatar_url?: string | null;
   };
-  if (!data.id) throw new Error('GitHub user fetch failed');
+  if (!data.id) throw new Error('GitHub user fetch failed: no id in response');
   return {
     id: String(data.id),
     login: data.login || 'unknown',
