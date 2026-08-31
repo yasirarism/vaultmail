@@ -135,7 +135,6 @@ html[data-theme='neomorph'] main {
 
 html[data-theme='neomorph'] * {
   backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }
 
 html[data-theme='neomorph'] .theme-blob {
@@ -390,6 +389,80 @@ html[data-theme='neomorph'] .theme-progress-fill {
 }
 
 /* ============================================================
+   GLASS THEME — make brutal components truly glassmorphism
+   ============================================================ */
+html[data-theme='glass'] .brutal-card,
+html[data-theme='glass'] .brutal-card-lg {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.72)) !important;
+  backdrop-filter: blur(18px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+}
+
+html[data-theme='glass'] .brutal-btn,
+html[data-theme='glass'] .brutal-btn-white {
+  background: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: none !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme='glass'] .brutal-btn-accent,
+html[data-theme='glass'] .brutal-btn-accent2 {
+  background: var(--brutal-accent) !important;
+  color: var(--brutal-on-accent) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+html[data-theme='glass'] .brutal-input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+html[data-theme='glass'] .brutal-chip {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+}
+
+/* Header: dark glassy bar instead of solid accent */
+html[data-theme='glass'] header {
+  background: rgba(10, 16, 28, 0.72) !important;
+  backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+html[data-theme='glass'] header a[href='/'] {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme='glass'] header .language-toggle,
+html[data-theme='glass'] header [class*='language-toggle'] {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='glass'] .theme-blob {
+  display: block !important;
+}
+
+/* Email list items: subtle glass row */
+html[data-theme='glass'] div[style*='borderLeft: 4px solid transparent'] {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+/* Email reader modal body stays readable on glass */
+html[data-theme='glass'] .custom-scrollbar,
+html[data-theme='glass'] [class*='custom-scrollbar'] {
+  background: transparent !important;
+}
+
+/* ============================================================
    BRUTAL DESIGN SYSTEM (ruangmail.biz.id inspired)
    ============================================================ */
 
@@ -565,7 +638,6 @@ html[data-theme='brutal'] .theme-surface {
   border: 2px solid var(--ink) !important;
   box-shadow: var(--brutal-shadow-lg) !important;
   backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }
 
 /* Outer dark panels -> page bg; inner cards -> light gray for depth */
