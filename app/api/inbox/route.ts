@@ -88,11 +88,24 @@ export async function GET(req: Request) {
   const address = searchParams.get('address');
   const forceResync = searchParams.get('resync') === '1';
 
+  // API key enforcement for external callers (OpenAI-style Bearer).
+  // Web UI keeps session/anonymous access unless REQUIRE_API_KEY=1 is set,
+  // in which case a valid session OR API key is required.
   if (!address) {
     return NextResponse.json({ error: 'Address required' }, { status: 400 });
   }
 
   try {
+    if (process.env.REQUIRE_API_KEY === '1') {
+      const { authenticateApiRequest } = await import('@/lib/api-auth');
+      const auth = await authenticateApiRequest(req);
+      if (!auth) {
+        return NextResponse.json(
+          { error: 'Unauthorized. Provide a valid API key via Authorization: Bearer <key> or log in.' },
+          { status: 401 }
+        );
+      }
+    }
     await cleanupExpiredMessages(address);
     if (forceResync) {
       await storage.del(lastUidKey(address));

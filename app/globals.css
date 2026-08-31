@@ -407,14 +407,44 @@ html[data-theme='glass'] .brutal-card-lg {
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
 }
-
 html[data-theme='glass'] .brutal-btn,
 html[data-theme='glass'] .brutal-btn-white {
-  background: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
   box-shadow: none !important;
   color: var(--text-primary) !important;
+}
+
+/* Accent buttons (generate/copy/OTP) keep their color but gain glass blur */
+html[data-theme='glass'] .brutal-card-lg button[style*='var(--brutal-accent)'],
+html[data-theme='glass'] .brutal-card-lg button[style*='var(--brutal-accent-2)'] {
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Surface/outline buttons inside the card get a translucent glass look */
+html[data-theme='glass'] .brutal-card-lg button[style*='var(--surface)'],
+html[data-theme='glass'] .brutal-card-lg button[style*='var(--text-primary)']:not([style*='var(--brutal-accent)']) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: none !important;
+}
+
+/* Domain selector trigger + dropdown: readable glass */
+html[data-theme='glass'] div[style*='flexShrink: 0'] button[type='button'] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 8px !important;
+  color: var(--text-primary) !important;
+  padding: 8px 10px !important;
+}
+html[data-theme='glass'] .domain-menu-panel {
+  background: rgba(10, 16, 28, 0.92) !important;
+  backdrop-filter: blur(18px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45) !important;
 }
 
 html[data-theme='glass'] .brutal-btn-accent,
@@ -496,6 +526,19 @@ html[data-theme='glass'] .brutal-menu-dropdown {
   backdrop-filter: blur(18px) !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+/* History popup: opaque glass + clear text */
+html[data-theme='glass'] div[style*='maxHeight: 60vh'],
+html[data-theme='glass'] div[style*='max-height: 60vh'] {
+  background: rgba(10, 16, 28, 0.6) !important;
+  border-radius: 0 0 12px 12px !important;
+}
+
+/* Email list sender/subject readable on glass */
+html[data-theme='glass'] div[style*='borderLeft: 4px solid transparent'] p {
+  color: var(--text-primary) !important;
+  opacity: 1 !important;
 }
 html[data-theme='neomorph'] .brutal-menu-dropdown {
   background: #323a4f !important;
@@ -781,6 +824,22 @@ html[data-theme='brutal'] [data-sonner-toast] [data-title] {
 html[data-theme='brutal'] [data-sonner-toast] [data-description],
 html[data-theme='brutal'] [data-sonner-toast] [data-button] {
   color: var(--text-muted) !important;
+}
+
+/* Glass toasts: frosted glass effect */
+html[data-theme='glass'] [data-sonner-toast] {
+  background: rgba(30, 41, 59, 0.72) !important;
+  backdrop-filter: blur(18px) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+html[data-theme='glass'] [data-sonner-toast] [data-title],
+html[data-theme='glass'] [data-sonner-toast] [data-description],
+html[data-theme='glass'] [data-sonner-toast] [data-button],
+html[data-theme='glass'] [data-sonner-toast] [data-icon] {
+  color: var(--text-primary) !important;
 }
 
 /* ---------- Brutal component utilities (theme-agnostic) ---------- */
