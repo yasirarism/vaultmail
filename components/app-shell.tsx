@@ -122,7 +122,7 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
     <AppChromeContext.Provider value={value}>
       <main
         className="min-h-screen relative flex flex-col"
-        style={{ background: 'var(--brutal-bg)', color: 'var(--text-primary)', isolation: 'isolate' }}
+        style={{ background: 'transparent', color: 'var(--text-primary)', isolation: 'isolate' }}
       >
         {/* Space background: twinkling stars + shooting stars (theme-aware) */}
         <Starfield density={0.35} />

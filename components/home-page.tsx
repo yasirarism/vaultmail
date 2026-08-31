@@ -125,9 +125,9 @@ export function HomePage({ initialAddress }: HomePageProps) {
   const tickerText = announcement || heroDescription || t.heroSubtitle;
 
   return (
-    <main className="min-h-screen relative flex flex-col" style={{ background: 'var(--brutal-bg)', color: 'var(--text-primary)', isolation: 'isolate' }}>
+    <main className="min-h-screen relative flex flex-col" style={{ background: 'transparent', color: 'var(--text-primary)', isolation: 'isolate' }}>
       {/* Space background: twinkling stars + shooting stars (theme-aware) */}
-      <Starfield density={0.45} />
+      <Starfield density={0.5} />
       {/* ========== NAVBAR ========== */}
       <header className="sticky top-0 z-50" style={{ background: 'var(--brutal-accent)', borderBottom: '2px solid var(--ink)' }}>
         <div className="max-w-6xl mx-auto px-4 h-[62px] flex items-center justify-between">
@@ -397,6 +397,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
           color: 'var(--text-muted)',
           borderTop: '2px solid var(--ink)',
           background: 'var(--brutal-bg)',
+          isolation: 'isolate',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',

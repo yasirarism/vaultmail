@@ -71,7 +71,7 @@ export function Starfield({ density = 0.5, className, style }: StarfieldProps) {
         // meteor gradient colors
         meteorRgb: dark ? '200,210,255' : '26,26,26',
         // overall opacity multiplier (light theme stays subtle)
-        opacity: dark ? 1 : 0.55,
+        opacity: dark ? 1 : 0.8,
       };
     };
 
@@ -139,6 +139,7 @@ export function Starfield({ density = 0.5, className, style }: StarfieldProps) {
       if (!prefersReduced) rotation += 22e-5;
 
       // Stars (orbit + twinkle)
+      const starLightScale = dark ? 1 : 0.7; // light mode: bigger stars so they stay visible
       for (const star of stars) {
         const t = star.angle + rotation * star.speed;
         const x = centerX + Math.cos(t) * star.radius;
@@ -148,7 +149,7 @@ export function Starfield({ density = 0.5, className, style }: StarfieldProps) {
           ? star.alpha
           : Math.max(0, Math.min(1, star.alpha + 0.3 * Math.sin(star.twinklePhase)));
         ctx.beginPath();
-        ctx.arc(x, y, star.r, 0, 2 * Math.PI);
+        ctx.arc(x, y, star.r * starLightScale, 0, 2 * Math.PI);
         ctx.fillStyle = `rgba(${starRgb},${(tw * opacity).toFixed(3)})`;
         ctx.fill();
       }

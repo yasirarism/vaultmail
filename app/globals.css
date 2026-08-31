@@ -503,7 +503,6 @@ html[data-theme='brutal'] main {
   background: var(--brutal-bg);
   color: var(--text-primary);
 }
-
 html[data-theme='brutal'] .theme-blob {
   display: none;
 }
