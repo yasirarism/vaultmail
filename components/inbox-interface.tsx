@@ -556,7 +556,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   return (
     <div className="w-full max-w-6xl mx-auto px-4 md:px-8 space-y-10">
       {/* ===== EMAIL GENERATION CARD (ruangmail style) ===== */}
-      <div className="brutal-card-lg max-w-xl mx-auto" style={{ padding: '28px 24px 24px', textAlign: 'left' }}>
+      <div className="brutal-card-lg max-w-xl mx-auto" style={{ padding: '28px 24px 24px', textAlign: 'left', position: 'relative', zIndex: 5 }}>
         {/* Label + settings row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <p style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', margin: 0, display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)' }}>
@@ -611,6 +611,7 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowDomainMenu(false)} />
                     <motion.div
+                      className="domain-menu-panel"
                       initial={{ opacity: 0, y: 10, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.98 }}

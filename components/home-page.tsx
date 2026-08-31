@@ -1,6 +1,7 @@
 'use client';
 
 import { InboxInterface } from "@/components/inbox-interface";
+import { Starfield } from "@/components/starfield";
 import { Menu, Zap, Shield, Globe, Code2, Mail, Sun, Moon, Github, Wrench, Send } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -124,7 +125,9 @@ export function HomePage({ initialAddress }: HomePageProps) {
   const tickerText = announcement || heroDescription || t.heroSubtitle;
 
   return (
-    <main className="min-h-screen relative flex flex-col" style={{ background: 'var(--brutal-bg)', color: 'var(--text-primary)' }}>
+    <main className="min-h-screen relative flex flex-col" style={{ background: 'transparent', color: 'var(--text-primary)', isolation: 'isolate' }}>
+      {/* Space background: twinkling stars + shooting stars (theme-aware) */}
+      <Starfield density={0.7} />
       {/* ========== NAVBAR ========== */}
       <header className="sticky top-0 z-50" style={{ background: 'var(--brutal-accent)', borderBottom: '2px solid var(--ink)' }}>
         <div className="max-w-6xl mx-auto px-4 h-[62px] flex items-center justify-between">
@@ -224,6 +227,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
                     <motion.div
+                      className="brutal-menu-dropdown"
                       initial={{ opacity: 0, y: 10, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -351,7 +355,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
       </section>
 
       {/* ========== HOW TO USE (ruangmail cara-pakai style) ========== */}
-      <section id="cara-pakai-section" style={{ background: 'var(--brutal-bg)', padding: '20px 0 48px' }}>
+      <section id="cara-pakai-section" style={{ background: 'transparent', padding: '20px 0 48px' }}>
         <div className="max-w-6xl mx-auto px-4">
           <div
             style={{
@@ -384,22 +388,23 @@ export function HomePage({ initialAddress }: HomePageProps) {
 
       {/* ========== FOOTER (ruangmail slim sticky bar) ========== */}
       <footer
-        className="site-footer"
-        style={{
-          position: 'sticky',
-          bottom: 0,
-          zIndex: 100,
-          padding: '12px 24px',
-          fontSize: '0.78rem',
-          color: 'var(--text-muted)',
-          borderTop: '2px solid var(--ink)',
-          background: 'var(--brutal-bg)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-          flexWrap: 'wrap',
-        }}
+      className="site-footer"
+      style={{
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 100,
+        padding: '12px 24px',
+        fontSize: '0.78rem',
+        color: 'var(--text-muted)',
+        borderTop: '2px solid var(--ink)',
+        background: 'transparent',
+        isolation: 'isolate',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '16px',
+        flexWrap: 'wrap',
+      }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', color: 'var(--text-primary)', fontWeight: 600 }}>
           <span>© 2026</span>
@@ -441,8 +446,8 @@ function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; 
 
 function HowToStep({ num, title, desc, bg }: { num: string; title: string; desc: string; bg: string }) {
   return (
-    <div style={{ background: bg, borderRadius: 12, padding: 24, border: '2px solid var(--ink)', boxShadow: '3px 3px 0 var(--ink)', color: '#1a1a1a' }}>
-      <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 10, lineHeight: 1, fontFamily: 'var(--font-mono)' }}>
+    <div className="howto-step-card" style={{ background: bg, borderRadius: 12, padding: 24, border: '2px solid var(--ink)', boxShadow: '3px 3px 0 var(--ink)', color: '#1a1a1a' }}>
+      <div data-step-num style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 10, lineHeight: 1, fontFamily: 'var(--font-mono)' }}>
         {num}
       </div>
       <p style={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 6, fontSize: '0.95rem' }}>{title}</p>
