@@ -9,26 +9,29 @@ import {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+const getBase = (req: Request) => new URL(req.url).origin;
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
+  const base = getBase(req);
 
   if (!code || !state) {
-    return NextResponse.redirect('/api-access?github=error&reason=missing');
+    return NextResponse.redirect(`${base}/api-access?github=error&reason=missing`);
   }
 
   try {
     const stateOk = await consumeOAuthState(state);
     if (!stateOk) {
-      return NextResponse.redirect('/api-access?github=error&reason=state');
+      return NextResponse.redirect(`${base}/api-access?github=error&reason=state`);
     }
 
     const token = await exchangeCodeForToken(code, req);
     const user = await fetchGitHubUser(token);
     const session = await createSession(user);
 
-    const res = NextResponse.redirect('/api-access?github=ok');
+    const res = NextResponse.redirect(`${base}/api-access?github=ok`);
     res.cookies.set('vm_session', session.id, {
       httpOnly: true,
       sameSite: 'lax',
@@ -40,8 +43,6 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('GitHub OAuth callback error:', error);
     const msg = error instanceof Error ? error.message : 'Unknown error';
-    // Return the actual error as JSON so the cause is visible in the browser
-    // instead of a generic 500 page.
     return NextResponse.json(
       {
         error: 'GitHub OAuth callback failed',
