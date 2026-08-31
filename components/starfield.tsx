@@ -10,6 +10,9 @@ type Star = {
   speed: number;
   twinklePhase: number;
   twinkleSpeed: number;
+  // fixed position (light mode uniform layout); undefined = orbit around center
+  x?: number;
+  y?: number;
 };
 
 type Meteor = {
@@ -66,8 +69,8 @@ export function Starfield({ density = 0.5, className, style }: StarfieldProps) {
       const dark = t === 'glass' || t === 'neomorph';
       return {
         dark,
-        // star fill
-        starRgb: dark ? '255,255,255' : '26,26,26',
+        // star fill — light mode uses near-black for high contrast
+        starRgb: dark ? '255,255,255' : '10,10,10',
         // meteor gradient colors
         meteorRgb: dark ? '200,210,255' : '26,26,26',
         // overall opacity multiplier (light theme stays subtle)
@@ -92,14 +95,16 @@ export function Starfield({ density = 0.5, className, style }: StarfieldProps) {
     const centerX = w / 2;
     const centerY = h / 2;
 
-    // Twinkling stars orbiting a center (like premiumisme) — or static when reduced motion
-    const count = Math.round(((w * h) / 9000) * Math.max(0.15, density));
+    // Stars: orbit around viewport center (like premiumisme) — radius clamped so
+    // every star stays on screen and visibly drifts. Light mode: bigger/darker dots.
+    const count = Math.round(((w * h) / 3500) * Math.max(0.15, density));
+    const maxRadius = Math.min(w, h) / 2 + 20;
     const stars: Star[] = Array.from({ length: count }, () => ({
       angle: Math.random() * Math.PI * 2,
-      radius: Math.sqrt(Math.random()) * (Math.hypot(w, h) / 2 + 60),
-      r: 1.3 * Math.random() + 0.3,
+      radius: Math.sqrt(Math.random()) * Math.max(30, maxRadius),
+      r: theme.dark ? 1.3 * Math.random() + 0.3 : 1.8 * Math.random() + 1.0,
       alpha: 0.5 * Math.random() + 0.25,
-      speed: 0.4 * Math.random() + 0.6,
+      speed: 0.5 * Math.random() + 0.5,
       twinklePhase: Math.random() * Math.PI * 2,
       twinkleSpeed: 0.02 * Math.random() + 0.006,
     }));
@@ -134,22 +139,20 @@ export function Starfield({ density = 0.5, className, style }: StarfieldProps) {
     const draw = () => {
       if (disposed) return;
       ctx.clearRect(0, 0, w, h);
-      const { starRgb, meteorRgb, opacity, dark } = theme;
+      const { starRgb, meteorRgb, opacity } = theme;
 
-      if (!prefersReduced) rotation += 22e-5;
+      if (!prefersReduced) rotation += 0.0015;
 
-      // Stars (orbit + twinkle)
-      const starScale = dark ? 1 : 1.15; // light mode: bigger stars so they stay visible
+      // Stars (orbit + twinkle for dark; fixed-position twinkle for light)
       for (const star of stars) {
-        const t = star.angle + rotation * star.speed;
-        const x = centerX + Math.cos(t) * star.radius;
-        const y = centerY + Math.sin(t) * star.radius;
+        const sx = star.x ?? (centerX + Math.cos(star.angle + rotation * star.speed) * star.radius);
+        const sy = star.y ?? (centerY + Math.sin(star.angle + rotation * star.speed) * star.radius);
         if (!prefersReduced) star.twinklePhase += star.twinkleSpeed;
         const tw = prefersReduced
           ? star.alpha
           : Math.max(0, Math.min(1, star.alpha + 0.3 * Math.sin(star.twinklePhase)));
         ctx.beginPath();
-        ctx.arc(x, y, star.r * starScale, 0, 2 * Math.PI);
+        ctx.arc(sx, sy, star.r, 0, 2 * Math.PI);
         ctx.fillStyle = `rgba(${starRgb},${(tw * opacity).toFixed(3)})`;
         ctx.fill();
       }
