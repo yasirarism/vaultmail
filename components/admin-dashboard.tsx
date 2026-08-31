@@ -618,8 +618,8 @@ export function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/60 text-white">
-      <div className="mx-auto w-full max-w-4xl px-6 py-12">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-lg backdrop-blur">
+      <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 py-8 sm:py-12">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-8 shadow-lg backdrop-blur">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex flex-col gap-2">
               <p className="text-sm uppercase tracking-[0.2em] text-blue-200/70">
@@ -994,8 +994,8 @@ export function AdminDashboard() {
               </p>
               <ol className="mt-3 list-inside list-decimal space-y-1.5 text-xs text-white/70">
                 <li>Buka <a href="https://github.com/settings/developers" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">GitHub OAuth Apps</a> → New OAuth App</li>
-                <li>Homepage URL: <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px]">{apiAppUrl || window.location.origin}</code></li>
-                <li>Callback URL: <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px]">{apiAppUrl || window.location.origin}/api/auth/github/callback</code></li>
+                <li>Homepage URL: <code className="block w-full break-all rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px]">{apiAppUrl || window.location.origin}</code></li>
+                <li>Callback URL: <code className="block w-full break-all rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px]">{apiAppUrl || window.location.origin}/api/auth/github/callback</code></li>
                 <li>Generate Client Secret, lalu isi di bawah</li>
               </ol>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">

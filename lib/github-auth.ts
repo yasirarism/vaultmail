@@ -72,8 +72,11 @@ export const githubRedirectUri = async (req?: Request) => {
     req?.headers.get('x-forwarded-host') ||
     req?.headers.get('host') ||
     'localhost:3000';
-  const proto = req?.headers.get('x-forwarded-proto') || 'http';
   const cleanHost = host.split(',')[0].trim();
+  const forwardedProto = req?.headers.get('x-forwarded-proto');
+  // Prefer https unless explicitly forwarded as http (and not localhost)
+  const proto =
+    forwardedProto === 'http' && !cleanHost.includes('localhost') ? 'https' : (forwardedProto || 'https');
   return `${proto}://${cleanHost}/api/auth/github/callback`;
 };
 
