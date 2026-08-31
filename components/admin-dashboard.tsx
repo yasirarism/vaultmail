@@ -118,6 +118,11 @@ export function AdminDashboard() {
   const [defaultTheme, setDefaultTheme] = useState<VisualTheme>(DEFAULT_THEME);
   const [themeSaving, setThemeSaving] = useState(false);
   const [storageDriver, setStorageDriver] = useState<'d1' | 'mongo' | 'unknown'>('unknown');
+  const [apiClientId, setApiClientId] = useState('');
+  const [apiClientSecret, setApiClientSecret] = useState('');
+  const [apiAppUrl, setApiAppUrl] = useState('');
+  const [apiRequireKey, setApiRequireKey] = useState(false);
+  const [apiSaving, setApiSaving] = useState(false);
 
   const retentionOptions = useMemo(
     () => [
@@ -141,7 +146,8 @@ export function AdminDashboard() {
         homepageLockResponse,
         imapResponse,
         themeResponse,
-        runtimeResponse
+        runtimeResponse,
+        apiResponse
       ] = await Promise.all([
         fetch('/api/admin/telegram'),
         fetch('/api/admin/retention'),
@@ -150,7 +156,8 @@ export function AdminDashboard() {
         fetch('/api/admin/homepage-lock'),
         fetch('/api/admin/imap'),
         fetch('/api/admin/theme'),
-        fetch('/api/runtime')
+        fetch('/api/runtime'),
+        fetch('/api/admin/api-settings')
       ]);
       if (
         !telegramResponse.ok ||
@@ -173,6 +180,18 @@ export function AdminDashboard() {
       const imapData = (await imapResponse.json()) as ImapSettings & { supported?: boolean };
       const themeData = (await themeResponse.json()) as ThemeSettings;
       setDefaultTheme(normalizeThemeSetting(themeData?.defaultTheme));
+      if (apiResponse.ok) {
+        const apiData = (await apiResponse.json()) as {
+          githubClientId?: string;
+          githubClientSecret?: string;
+          appUrl?: string;
+          requireApiKey?: boolean;
+        };
+        setApiClientId(apiData.githubClientId || '');
+        setApiClientSecret(apiData.githubClientSecret || '');
+        setApiAppUrl(apiData.appUrl || '');
+        setApiRequireKey(Boolean(apiData.requireApiKey));
+      }
       if (runtimeResponse.ok) {
         const runtime = (await runtimeResponse.json()) as {
           storageDriver?: 'd1' | 'mongo';
@@ -303,6 +322,31 @@ export function AdminDashboard() {
       toast.error('Failed to save site name.');
     } finally {
       setBrandingSaving(false);
+    }
+  };
+
+  const saveApiSettings = async () => {
+    setApiSaving(true);
+    try {
+      const response = await fetch('/api/admin/api-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          githubClientId: apiClientId,
+          githubClientSecret: apiClientSecret,
+          appUrl: apiAppUrl,
+          requireApiKey: apiRequireKey
+        })
+      });
+      if (!response.ok) {
+        throw new Error('Unauthorized or failed to save API settings.');
+      }
+      toast.success('API / GitHub settings saved.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to save API settings.');
+    } finally {
+      setApiSaving(false);
     }
   };
 
@@ -939,6 +983,53 @@ export function AdminDashboard() {
                     ))
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* ===== API & INTEGRATIONS ===== */}
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+              <h2 className="text-lg font-semibold text-white">API & Integrations</h2>
+              <p className="mt-1 text-sm text-white/60">
+                Konfigurasi GitHub OAuth untuk API key generation. Panduan:
+              </p>
+              <ol className="mt-3 list-inside list-decimal space-y-1.5 text-xs text-white/70">
+                <li>Buka <a href="https://github.com/settings/developers" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">GitHub OAuth Apps</a> → New OAuth App</li>
+                <li>Homepage URL: <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px]">{apiAppUrl || window.location.origin}</code></li>
+                <li>Callback URL: <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px]">{apiAppUrl || window.location.origin}/api/auth/github/callback</code></li>
+                <li>Generate Client Secret, lalu isi di bawah</li>
+              </ol>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-widest text-white/60">GitHub Client ID</label>
+                  <Input value={apiClientId} onChange={(e) => setApiClientId(e.target.value)} placeholder="Iv1.xxxxxxxxxxxx" className="mt-3 bg-black/30 text-white placeholder:text-white/40" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-widest text-white/60">GitHub Client Secret</label>
+                  <Input value={apiClientSecret} onChange={(e) => setApiClientSecret(e.target.value)} placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" type="password" className="mt-3 bg-black/30 text-white placeholder:text-white/40" />
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-widest text-white/60">APP URL (kosongkan untuk auto-detect)</label>
+                  <Input value={apiAppUrl} onChange={(e) => setApiAppUrl(e.target.value)} placeholder="https://domainkamu.com" className="mt-3 bg-black/30 text-white placeholder:text-white/40" />
+                  <p className="mt-1 text-[11px] text-white/50">Default: {window.location.origin}</p>
+                </div>
+                <div className="flex items-end pb-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-white/60">REQUIRE_API_KEY</span>
+                    <Button variant={apiRequireKey ? 'default' : 'secondary'} onClick={() => setApiRequireKey((prev) => !prev)}>
+                      {apiRequireKey ? 'Aktif' : 'Nonaktif'}
+                    </Button>
+                    {apiRequireKey && <span className="text-[11px] text-yellow-400">⚠️ Wajib session/login</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-3">
+                <Button onClick={saveApiSettings} disabled={apiSaving}>
+                  {apiSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Simpan API Settings
+                </Button>
+                <a href="/api-access" className="text-xs text-blue-400 underline">Lihat API Docs</a>
               </div>
             </div>
 

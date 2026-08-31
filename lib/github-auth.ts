@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from 'crypto';
 import { storage } from '@/lib/storage';
 import { githubStateKey, sessionKey } from '@/lib/api-keys-keys';
+import { API_SETTINGS_KEY } from '@/lib/admin-auth';
 
 export type GitHubUser = {
   id: string;
@@ -18,17 +19,58 @@ export type Session = {
   createdAt: string;
 };
 
+export type ApiSettings = {
+  githubClientId?: string;
+  githubClientSecret?: string;
+  appUrl?: string;
+  requireApiKey?: boolean;
+  updatedAt?: string;
+};
+
 const SESSION_TTL = 60 * 60 * 24 * 7; // 7 days
 
-export const isGithubAuthConfigured = () =>
-  Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET);
+export const isGithubAuthConfigured = async () => {
+  const settings = await getApiSettings();
+  return Boolean(settings.githubClientId && settings.githubClientSecret);
+};
 
-export const githubClientId = () => process.env.GITHUB_CLIENT_ID || '';
+export const getApiSettings = async (): Promise<ApiSettings> => {
+  const raw = await storage.get(API_SETTINGS_KEY).catch(() => null);
+  if (raw && typeof raw === 'object') return raw as ApiSettings;
+  return {};
+};
 
-export const githubRedirectUri = () => {
-  const base = process.env.APP_URL || '';
-  if (base) return `${base.replace(/\/$/, '')}/api/auth/github/callback`;
-  return `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/auth/github/callback`;
+export const githubClientId = async () => {
+  const settings = await getApiSettings();
+  return settings.githubClientId || process.env.GITHUB_CLIENT_ID || '';
+};
+
+export const githubClientSecret = async () => {
+  const settings = await getApiSettings();
+  return settings.githubClientSecret || process.env.GITHUB_CLIENT_SECRET || '';
+};
+
+/**
+ * Build the OAuth redirect/callback URL. Order of preference:
+ * 1. appUrl stored in admin settings (or APP_URL env)
+ * 2. Auto-detect from the incoming request (Host / x-forwarded-host)
+ */
+export const githubRedirectUri = async (req?: Request) => {
+  const settings = await getApiSettings();
+  const appUrl = settings.appUrl?.trim() || process.env.APP_URL?.trim() || '';
+
+  if (appUrl) {
+    return `${appUrl.replace(/\/$/, '')}/api/auth/github/callback`;
+  }
+
+  // Auto-detect from request
+  const host =
+    req?.headers.get('x-forwarded-host') ||
+    req?.headers.get('host') ||
+    'localhost:3000';
+  const proto = req?.headers.get('x-forwarded-proto') || 'http';
+  const cleanHost = host.split(',')[0].trim();
+  return `${proto}://${cleanHost}/api/auth/github/callback`;
 };
 
 export const createOAuthState = async () => {
@@ -52,10 +94,10 @@ export const exchangeCodeForToken = async (code: string) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      client_id: process.env.GITHUB_CLIENT_ID,
-      client_secret: process.env.GITHUB_CLIENT_SECRET,
+      client_id: await githubClientId(),
+      client_secret: await githubClientSecret(),
       code,
-      redirect_uri: githubRedirectUri(),
+      redirect_uri: await githubRedirectUri(),
     }),
   });
   const data = (await res.json()) as { access_token?: string; error?: string };

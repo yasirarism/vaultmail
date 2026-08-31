@@ -416,10 +416,18 @@ html[data-theme='glass'] .brutal-btn-white {
   color: var(--text-primary) !important;
 }
 
-/* Accent buttons (generate/copy/OTP) keep their color but gain glass blur */
+/* Accent buttons (generate/copy/OTP) — translucent glass tint */
 html[data-theme='glass'] .brutal-card-lg button[style*='var(--brutal-accent)'],
 html[data-theme='glass'] .brutal-card-lg button[style*='var(--brutal-accent-2)'] {
   backdrop-filter: blur(8px) !important;
+}
+html[data-theme='glass'] .brutal-card-lg button[style*='var(--brutal-accent-2)'] {
+  background: rgba(251, 191, 36, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+html[data-theme='glass'] .brutal-card-lg button[style*='var(--brutal-accent)']:not([style*='var(--brutal-accent-2)']) {
+  background: rgba(96, 165, 250, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
 }
 
 /* Surface/outline buttons inside the card get a translucent glass look */

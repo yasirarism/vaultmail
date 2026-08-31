@@ -27,8 +27,7 @@ export async function GET(req: Request) {
     const user = await fetchGitHubUser(token);
     const session = await createSession(user);
 
-    const res = NextResponse.redirect('/api-access?github=ok');
-    res.cookies.set('vm_session', session.id, {
+    const res = NextResponse.redirect('/api-access?github=ok');    res.cookies.set('vm_session', session.id, {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',

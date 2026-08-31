@@ -3,15 +3,16 @@ import { createOAuthState, githubClientId, githubRedirectUri } from '@/lib/githu
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+export async function GET(req: Request) {
+  if (!(await import('@/lib/github-auth')).isGithubAuthConfigured()) {
     return NextResponse.json({ error: 'GitHub OAuth is not configured on this server.' }, { status: 503 });
   }
   const state = await createOAuthState();
   const scope = 'read:user user:email';
+  const redirectUri = await githubRedirectUri(req);
   const params = new URLSearchParams({
-    client_id: githubClientId(),
-    redirect_uri: githubRedirectUri(),
+    client_id: await githubClientId(),
+    redirect_uri: redirectUri,
     scope,
     state,
     allow_signup: 'true',

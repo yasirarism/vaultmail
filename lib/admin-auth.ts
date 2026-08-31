@@ -10,6 +10,7 @@ export const BRANDING_SETTINGS_KEY = withPrefix('settings:branding');
 export const THEME_SETTINGS_KEY = withPrefix('settings:theme');
 export const HOMEPAGE_LOCK_SETTINGS_KEY = withPrefix('settings:homepage-lock');
 export const IMAP_SETTINGS_KEY = withPrefix('settings:imap');
+export const API_SETTINGS_KEY = withPrefix('settings:api');
 
 export const isAdminSessionValid = async (token?: string | null) => {
   if (!token) return false;
