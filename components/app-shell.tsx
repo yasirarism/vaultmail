@@ -224,6 +224,7 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
                       <motion.div
+                        className="brutal-menu-dropdown"
                         initial={{ opacity: 0, y: 10, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}

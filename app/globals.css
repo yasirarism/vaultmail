@@ -215,9 +215,9 @@ html[data-theme='neomorph'] .bg-black\/70 {
 
 /* Toast popups (sonner) follow the neomorph surface. */
 html[data-theme='neomorph'] [data-sonner-toast] {
-  background: var(--neo-bg) !important;
+  background: #39435a !important;
   color: var(--neo-text) !important;
-  border: none !important;
+  border: 1px solid rgba(238, 243, 251, 0.16) !important;
   box-shadow: var(--neo-raised) !important;
 }
 
@@ -227,7 +227,16 @@ html[data-theme='neomorph'] [data-sonner-toast] [data-title] {
 
 html[data-theme='neomorph'] [data-sonner-toast] [data-description],
 html[data-theme='neomorph'] [data-sonner-toast] [data-button] {
-  color: var(--neo-muted) !important;
+  color: var(--neo-text) !important;
+}
+
+html[data-theme='neomorph'] [data-sonner-toast] [data-icon] {
+  color: var(--neo-text) !important;
+}
+
+html[data-theme='neomorph'] [data-sonner-toast] button {
+  background: var(--brutal-accent) !important;
+  color: var(--brutal-on-accent) !important;
 }
 
 html[data-theme='neomorph'] input,
@@ -462,6 +471,55 @@ html[data-theme='glass'] [class*='custom-scrollbar'] {
   background: transparent !important;
 }
 
+/* Footer: semi-transparent so stars drift behind it */
+html[data-theme='brutal'] footer.site-footer {
+  background: rgba(250, 250, 250, 0.92) !important;
+  backdrop-filter: blur(6px) !important;
+}
+html[data-theme='glass'] footer.site-footer {
+  background: rgba(11, 17, 32, 0.82) !important;
+  backdrop-filter: blur(12px) !important;
+}
+html[data-theme='neomorph'] footer.site-footer {
+  background: rgba(43, 50, 68, 0.9) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Hamburger dropdown: opaque enough to read text in glass/neomorph */
+html[data-theme='brutal'] .brutal-menu-dropdown {
+  background: var(--surface) !important;
+  border: 2px solid var(--ink) !important;
+  box-shadow: var(--brutal-shadow-lg) !important;
+}
+html[data-theme='glass'] .brutal-menu-dropdown {
+  background: rgba(10, 16, 28, 0.92) !important;
+  backdrop-filter: blur(18px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
+}
+html[data-theme='neomorph'] .brutal-menu-dropdown {
+  background: #323a4f !important;
+  box-shadow: var(--neo-raised) !important;
+  border: none !important;
+}
+
+/* How-to step cards: theme-aware colors (light palette in brutal, muted dark in glass/neo) */
+html[data-theme='glass'] .howto-step-card,
+html[data-theme='neomorph'] .howto-step-card {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+  color: var(--text-primary) !important;
+}
+html[data-theme='glass'] .howto-step-card [data-step-num],
+html[data-theme='glass'] .howto-step-card [data-step-num] span,
+html[data-theme='glass'] .howto-step-card p,
+html[data-theme='neomorph'] .howto-step-card [data-step-num],
+html[data-theme='neomorph'] .howto-step-card [data-step-num] span,
+html[data-theme='neomorph'] .howto-step-card p {
+  color: var(--text-primary) !important;
+}
+
 /* ============================================================
    BRUTAL DESIGN SYSTEM (ruangmail.biz.id inspired)
    ============================================================ */
@@ -494,7 +552,7 @@ html[data-theme='brutal'] {
   --brutal-accent-light: #fff8e1; /* amber tint (hover) */
   --brutal-surface-2: #f5f5f5; /* secondary surface (hover/track) */
   --brutal-success: #22c55e;
-  --brutal-howto-bg: #d6eff2; /* how-to wrapper (light blue tint) */
+  --brutal-howto-bg: rgba(214, 239, 242, 0.55); /* how-to wrapper (semi-transparent) */
   --brutal-divider: rgba(26, 26, 26, 0.15); /* list separator */
 }
 
@@ -540,7 +598,7 @@ html[data-theme='neomorph'] {
   --brutal-accent-light: rgba(125, 167, 245, 0.16);
   --brutal-surface-2: #323a4f;
   --brutal-success: #3fb950;
-  --brutal-howto-bg: #39435a;
+  --brutal-howto-bg: rgba(57, 67, 90, 0.62);
   --brutal-divider: rgba(197, 208, 228, 0.16);
 }
 

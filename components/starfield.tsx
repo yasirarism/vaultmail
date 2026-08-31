@@ -13,6 +13,8 @@ type Star = {
   // fixed position (light mode uniform layout); undefined = orbit around center
   x?: number;
   y?: number;
+  // fixed colorful rgb for light mode; null = use theme starRgb
+  colorRgb?: string | null;
 };
 
 type Meteor = {
@@ -69,8 +71,8 @@ export function Starfield({ density = 0.5, className, style }: StarfieldProps) {
       const dark = t === 'glass' || t === 'neomorph';
       return {
         dark,
-        // star fill — light mode uses near-black for high contrast
-        starRgb: dark ? '255,255,255' : '10,10,10',
+        // star fill — light mode uses a colorful palette (brutal), white in dark themes
+        starRgb: dark ? '255,255,255' : '',
         // meteor gradient colors
         meteorRgb: dark ? '200,210,255' : '26,26,26',
         // overall opacity multiplier (light theme stays subtle)
@@ -96,9 +98,10 @@ export function Starfield({ density = 0.5, className, style }: StarfieldProps) {
     const centerY = h / 2;
 
     // Stars: orbit around viewport center (like premiumisme) — radius clamped so
-    // every star stays on screen and visibly drifts. Light mode: bigger/darker dots.
+    // every star stays on screen and visibly drifts. Light mode: bigger, colorful.
     const count = Math.round(((w * h) / 3500) * Math.max(0.15, density));
     const maxRadius = Math.min(w, h) / 2 + 20;
+    const LIGHT_PALETTE = ['255,107,107', '255,159,28', '250,204,21', '74,222,128', '96,165,250', '167,139,250', '244,114,182', '45,212,191'];
     const stars: Star[] = Array.from({ length: count }, () => ({
       angle: Math.random() * Math.PI * 2,
       radius: Math.sqrt(Math.random()) * Math.max(30, maxRadius),
@@ -107,6 +110,10 @@ export function Starfield({ density = 0.5, className, style }: StarfieldProps) {
       speed: 0.5 * Math.random() + 0.5,
       twinklePhase: Math.random() * Math.PI * 2,
       twinkleSpeed: 0.02 * Math.random() + 0.006,
+      // fixed colorful rgb for light mode; ignored in dark mode (white stars)
+      colorRgb: theme.dark
+        ? null
+        : LIGHT_PALETTE[Math.floor(Math.random() * LIGHT_PALETTE.length)],
     }));
 
     const meteors: Meteor[] = [];
@@ -153,7 +160,7 @@ export function Starfield({ density = 0.5, className, style }: StarfieldProps) {
           : Math.max(0, Math.min(1, star.alpha + 0.3 * Math.sin(star.twinklePhase)));
         ctx.beginPath();
         ctx.arc(sx, sy, star.r, 0, 2 * Math.PI);
-        ctx.fillStyle = `rgba(${starRgb},${(tw * opacity).toFixed(3)})`;
+        ctx.fillStyle = `rgba(${star.colorRgb ?? starRgb},${(tw * opacity).toFixed(3)})`;
         ctx.fill();
       }
 
