@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Code2, ExternalLink, Github, Key, Copy, Trash2, Check, Loader2, LogOut } from 'lucide-react';
+import { Code2, ExternalLink, Github, Key, Copy, Trash2, Check, Loader2, LogOut, Play, Terminal } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppShell, useAppChrome } from '@/components/app-shell';
 
@@ -25,6 +25,13 @@ function ApiAccessContent() {
   const [generating, setGenerating] = useState(false);
   const [newKeyPlain, setNewKeyPlain] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // ===== API Tester state =====
+  const [testerKey, setTesterKey] = useState('');
+  const [testerEndpoint, setTesterEndpoint] = useState('/api/v1/inbox');
+  const [testerParams, setTesterParams] = useState('address=nama@domain.com');
+  const [testerResponse, setTesterResponse] = useState<{ status: number; body: string; durationMs: number } | null>(null);
+  const [testerLoading, setTesterLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -89,6 +96,46 @@ function ApiAccessContent() {
     setUser(null);
     setKeys([]);
     toast.success('Logged out');
+  };
+
+  // ===== API Tester =====
+  const getOrigin = () => {
+    if (typeof window !== 'undefined') return window.location.origin;
+    return process.env.APP_URL || '';
+  };
+
+  const buildTesterUrl = () => {
+    const base = getOrigin();
+    const trimmed = testerParams.trim();
+    return `${base}${testerEndpoint}${trimmed ? (testerEndpoint.includes('?') ? '&' : '?') + trimmed : ''}`;
+  };
+
+  const handleTest = async () => {
+    setTesterLoading(true);
+    setTesterResponse(null);
+    const startedAt = performance.now();
+    try {
+      const url = buildTesterUrl();
+      const headers: Record<string, string> = {};
+      if (testerKey.trim()) {
+        headers.Authorization = `Bearer ${testerKey.trim()}`;
+      }
+      const res = await fetch(url, { headers, cache: 'no-store' });
+      const durationMs = Math.round(performance.now() - startedAt);
+      const text = await res.text();
+      let body = text;
+      try { body = JSON.stringify(JSON.parse(text), null, 2); } catch { /* not JSON */ }
+      setTesterResponse({ status: res.status, body, durationMs });
+    } catch (error) {
+      const durationMs = Math.round(performance.now() - startedAt);
+      setTesterResponse({
+        status: 0,
+        body: error instanceof Error ? error.message : 'Request failed',
+        durationMs,
+      });
+    } finally {
+      setTesterLoading(false);
+    }
   };
 
   const AUTO_ADD = '?address=nama@domain.com';
@@ -259,6 +306,128 @@ function ApiAccessContent() {
             {t.apiAccessWebhookHint}
           </p>
         </div>
+      </div>
+
+      {/* ========== API Tester (Playground) ========== */}
+      <div className="brutal-card" style={{ padding: '20px 18px', marginTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <Terminal className="h-4 w-4" style={{ color: 'var(--brutal-accent)' }} />
+          <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>API Tester</p>
+        </div>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 14 }}>
+          Preview request &amp; response untuk endpoint public API. Masukkan API key-mu untuk autentikasi.
+        </p>
+
+        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+          {/* API key input */}
+          <div>
+            <label style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>
+              API Key
+            </label>
+            <input
+              type="password"
+              value={testerKey}
+              onChange={(e) => setTesterKey(e.target.value)}
+              placeholder="vm-xxxxxxxx..."
+              style={{ width: '100%', marginTop: 6, padding: '8px 10px', borderRadius: 8, border: '2px solid var(--ink)', background: 'var(--surface)', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}
+            />
+            {user && keys.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setTesterKey(keys[0].prefix)}
+                style={{ marginTop: 6, fontSize: '0.7rem', color: 'var(--brutal-accent)', border: 'none', background: 'none', cursor: 'pointer' }}
+              >
+                (prefix key pertama)
+              </button>
+            )}
+          </div>
+
+          {/* Endpoint select */}
+          <div>
+            <label style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>
+              Endpoint
+            </label>
+            <select
+              value={testerEndpoint}
+              onChange={(e) => {
+                const v = e.target.value;
+                setTesterEndpoint(v);
+                if (v === '/api/v1/inbox') setTesterParams('address=nama@domain.com');
+                else if (v === '/api/v1/retention') setTesterParams('');
+                else if (v === '/api/v1/download') setTesterParams('address=nama@domain.com&emailId=uuid&type=email');
+              }}
+              style={{ width: '100%', marginTop: 6, padding: '8px 10px', borderRadius: 8, border: '2px solid var(--ink)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '0.78rem' }}
+            >
+              <option value="/api/v1/inbox">GET /api/v1/inbox</option>
+              <option value="/api/v1/retention">GET /api/v1/retention</option>
+              <option value="/api/v1/download">GET /api/v1/download</option>
+            </select>
+          </div>
+
+          {/* Query params */}
+          <div>
+            <label style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>
+              Query Params
+            </label>
+            <input
+              type="text"
+              value={testerParams}
+              onChange={(e) => setTesterParams(e.target.value)}
+              placeholder="address=nama@domain.com"
+              style={{ width: '100%', marginTop: 6, padding: '8px 10px', borderRadius: 8, border: '2px solid var(--ink)', background: 'var(--surface)', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}
+            />
+          </div>
+        </div>
+
+        {/* Full URL preview */}
+        <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 8, background: 'var(--brutal-bg)', border: '1px solid var(--ink)', fontFamily: 'var(--font-mono)', fontSize: '0.74rem', color: 'var(--text-primary)', wordBreak: 'break-all' }}>
+          <span style={{ color: 'var(--text-muted)' }}># Request</span><br />
+          curl -H "Authorization: Bearer {testerKey.trim() || 'vm-xxx...'}"<br />
+          &nbsp;&nbsp;{buildTesterUrl()}
+        </div>
+
+        {/* Send button */}
+        <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            type="button"
+            onClick={handleTest}
+            disabled={testerLoading}
+            className="brutal-btn brutal-btn-accent"
+            style={{ padding: '8px 18px', fontSize: '0.82rem', opacity: testerLoading ? 0.7 : 1 }}
+          >
+            {testerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            {testerLoading ? 'Sending...' : 'Send Request'}
+          </button>
+          {testerResponse && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {testerResponse.durationMs}ms
+            </span>
+          )}
+        </div>
+
+        {/* Response */}
+        {testerResponse && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <span
+                style={{
+                  padding: '2px 10px', borderRadius: 6, fontSize: '0.72rem', fontWeight: 800,
+                  background: testerResponse.status >= 200 && testerResponse.status < 300 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)',
+                  color: testerResponse.status >= 200 && testerResponse.status < 300 ? '#22c55e' : '#ef4444',
+                  border: '1px solid var(--ink)',
+                }}
+              >
+                HTTP {testerResponse.status || 'ERR'}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                {testerResponse.durationMs}ms
+              </span>
+            </div>
+            <pre style={{ margin: 0, padding: '12px 14px', borderRadius: 8, background: 'var(--brutal-bg)', border: '1px solid var(--ink)', fontSize: '0.74rem', color: 'var(--text-primary)', overflowX: 'auto', maxHeight: 320, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+              {testerResponse.body}
+            </pre>
+          </div>
+        )}
       </div>
     </div>
   );

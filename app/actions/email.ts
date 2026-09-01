@@ -3,44 +3,21 @@
 import { getInboxEmails } from '@/lib/inbox-service';
 import { storage } from '@/lib/storage';
 import { inboxKey } from '@/lib/storage-keys';
-import { getSessionFromRequest } from '@/lib/github-auth';
 
 /**
- * Server-side data fetching — no browser fetch to raw API endpoints.
+ * Server-side data fetching for the web UI.
+ *
+ * Security model:
+ * - These run on the server with Next.js server-action CSRF protection
+ *   (POST-only, Next-Action header, same-origin), so they can't be
+ *   replayed by an external script the way a plain GET /api/* could.
+ * - The data they serve (temp-mail inbox for a known address) is public
+ *   by design — anyone who knows the address can read it.
+ * - The RAW API endpoints (/api/*, /api/v1/*) are the protected surface
+ *   for external developers (require GitHub session / API key).
  */
 
-// Helper: validate GitHub session or register guest session lazily
-const getSession = async (): Promise<{ userId?: string; guestId?: string } | null> => {
-  const { cookies } = await import('next/headers');
-  const cookieStore = await cookies();
-  const vmGuest = cookieStore.get('vm_guest')?.value;
-  const vmSession = cookieStore.get('vm_session')?.value;
-
-  if (vmSession) {
-    const session = await (await import('@/lib/github-auth')).getSession(vmSession);
-    if (session) return { userId: session.userId };
-  }
-
-  if (vmGuest) {
-    // Lazy registration: if the cookie exists but hasn't been persisted yet,
-    // register it now. This keeps the middleware edge-safe (no storage).
-    const guest = await storage.get(`guest:${vmGuest}`);
-    if (guest && typeof guest === 'object' && (guest as { valid: boolean }).valid) {
-      return { guestId: vmGuest };
-    }
-    // First-time visit — register guest session
-    await storage.set(`guest:${vmGuest}`, { valid: true, createdAt: new Date().toISOString() }, { ex: 60 * 60 * 24 * 7 });
-    return { guestId: vmGuest };
-  }
-
-  return null;
-};
-
 export async function getInboxData(address: string, forceResync = false) {
-  const session = await getSession();
-  if (!session) {
-    return { error: 'Unauthorized. Please login or enable guest session.' };
-  }
   if (!address) return { error: 'Address required' };
   try {
     const result = await getInboxEmails(address, forceResync);
@@ -53,8 +30,6 @@ export async function getInboxData(address: string, forceResync = false) {
 }
 
 export async function deleteInboxEmail(address: string, emailId: string) {
-  const session = await getSession();
-  if (!session) return { error: 'Unauthorized' };
   if (!address || !emailId) return { error: 'Address and emailId required' };
   try {
     const deleted = await storage.ldeleteByIds(inboxKey(address), [emailId]);
@@ -66,8 +41,6 @@ export async function deleteInboxEmail(address: string, emailId: string) {
 }
 
 export async function getDomainsData() {
-  const session = await getSession();
-  if (!session) return { error: 'Unauthorized', domains: [] };
   try {
     const { DOMAINS_SETTINGS_KEY } = await import('@/lib/admin-auth');
     const raw = await storage.get(DOMAINS_SETTINGS_KEY);
@@ -80,12 +53,17 @@ export async function getDomainsData() {
 }
 
 export async function getDomainExpiration(domain: string) {
-  const session = await getSession();
-  if (!session) return { error: 'Unauthorized', expiresAt: null };
   try {
-    const raw = await storage.get(`domain:expiration:${domain}`);
-    const expiresAt = raw && typeof raw === 'string' ? raw : null;
-    return { expiresAt, checkedAt: new Date().toISOString() };
+    const { domainExpirationKey } = await import('@/lib/storage-keys');
+    const raw = await storage.get(domainExpirationKey(domain));
+    const record =
+      raw && typeof raw === 'object'
+        ? (raw as { expiresAt?: string | null; checkedAt?: string })
+        : null;
+    return {
+      expiresAt: record?.expiresAt ?? null,
+      checkedAt: record?.checkedAt ?? new Date().toISOString(),
+    };
   } catch {
     return { expiresAt: null, checkedAt: new Date().toISOString() };
   }
@@ -114,8 +92,6 @@ export async function getBrandingSettings() {
 }
 
 export async function downloadEmailContent(address: string, emailId: string) {
-  const session = await getSession();
-  if (!session) return { error: 'Unauthorized' };
   try {
     const emails = await storage.lrange(inboxKey(address), 0, -1);
     const email = (emails || []).find((e: unknown) => {
@@ -133,8 +109,6 @@ export async function downloadEmailContent(address: string, emailId: string) {
 }
 
 export async function downloadAttachmentContent(address: string, emailId: string, index: number) {
-  const session = await getSession();
-  if (!session) return { error: 'Unauthorized' };
   try {
     const emails = await storage.lrange(inboxKey(address), 0, -1);
     const email = (emails || []).find((e: unknown) => {
