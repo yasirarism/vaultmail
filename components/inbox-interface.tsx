@@ -10,6 +10,7 @@ import { DEFAULT_DOMAIN_FALLBACK, DEFAULT_EMAIL, getDefaultEmailDomain } from '@
 import { getTranslations, Locale } from '@/lib/i18n';
 import { buildGmailPreviewDocument } from '@/lib/email-preview';
 import type { ParsedAttachment } from '@/lib/email-mime';
+import { getInboxData, deleteInboxEmail, getDomainsData, getDomainExpiration, downloadEmailContent, downloadAttachmentContent } from '@/app/actions/email';
 
 // Types
 interface Email {
@@ -90,22 +91,16 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     if (!selectedEmail) return;
     const download = async () => {
       try {
-        const response = await fetch(
-          `/api/download?address=${encodeURIComponent(address)}&emailId=${encodeURIComponent(
-            selectedEmail.id
-          )}&type=email`
-        );
-        if (!response.ok) {
-          throw new Error('Download failed');
+        const result = await downloadEmailContent(address, selectedEmail.id);
+        if (!result || (result as { error?: string }).error) {
+          throw new Error((result as { error?: string }).error || 'Download failed');
         }
-        const blob = await response.blob();
-        const disposition = response.headers.get('content-disposition') || '';
-        const match = disposition.match(/filename="([^"]+)"/);
-        const fileName = match?.[1] || 'email.eml';
+        const { content, filename, type } = result as { content: string; filename: string; type: string };
+        const blob = new Blob([content], { type });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = fileName;
+        link.download = filename;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -123,22 +118,21 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       if (!selectedEmail) return;
       const download = async () => {
         try {
-          const response = await fetch(
-            `/api/download?address=${encodeURIComponent(
-              address
-            )}&emailId=${encodeURIComponent(selectedEmail.id)}&type=attachment&index=${index}`
-          );
-          if (!response.ok) {
-            throw new Error('Download failed');
+          const result = await downloadAttachmentContent(address, selectedEmail.id, index);
+          if (!result || (result as { error?: string }).error) {
+            throw new Error((result as { error?: string }).error || 'Download failed');
           }
-          const blob = await response.blob();
-          const disposition = response.headers.get('content-disposition') || '';
-          const match = disposition.match(/filename="([^"]+)"/);
-          const fileName = match?.[1] || 'attachment';
+          const { content, filename, type, isBase64 } = result as {
+            content: string; filename: string; type: string; isBase64?: boolean;
+          };
+          const byteString = isBase64 ? atob(content) : content;
+          const bytes = new Uint8Array(byteString.length);
+          for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
+          const blob = new Blob([bytes], { type });
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = fileName;
+          link.download = filename;
           document.body.appendChild(link);
           link.click();
           link.remove();
@@ -216,18 +210,11 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     const fetchExpiration = async () => {
       setDomainStatusLoading(true);
       try {
-        const response = await fetch(
-          `/api/domain-expiration?domain=${encodeURIComponent(domain)}`
-        );
-        if (!response.ok) {
-          throw new Error('Failed to load domain expiration');
-        }
-        const data = (await response.json()) as {
-          expiresAt: string | null;
-          checkedAt: string;
-        };
-        if (active) {
-          setDomainExpiration(data.expiresAt ?? null);
+        const data = await getDomainExpiration(domain);
+        if (active && !(data as { error?: string }).error) {
+          setDomainExpiration((data as { expiresAt: string | null }).expiresAt ?? null);
+        } else if (active) {
+          setDomainExpiration(null);
         }
       } catch (error) {
         console.error(error);
@@ -275,14 +262,12 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     let active = true;
     const loadDomains = async () => {
       try {
-        const response = await fetch('/api/domains');
-        if (!response.ok) {
-          throw new Error('Failed to load domains');
-        }
-        const data = (await response.json()) as { domains?: string[] };
-        const normalized = normalizeDomains(data.domains || []);
-        if (active) {
+        const data = await getDomainsData();
+        if (active && !(data as { error?: string }).error) {
+          const normalized = normalizeDomains((data as { domains: string[] }).domains || []);
           setSystemDomains(normalized.length > 0 ? normalized : [DEFAULT_DOMAIN_FALLBACK]);
+        } else if (active) {
+          setSystemDomains([DEFAULT_DOMAIN_FALLBACK]);
         }
       } catch (error) {
         console.error(error);
@@ -383,26 +368,19 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
     fetchInFlight.current = true;
     try {
       setLoading(true);
-      const res = await fetch(`/api/inbox?address=${encodeURIComponent(address)}&t=${Date.now()}${forceResync ? '&resync=1' : ''}`, { cache: 'no-store' });
-      const data = await res.json();
+      const data = await getInboxData(address, forceResync);
       if (forceResync) {
         toast.info('IMAP resync dijalankan, mengambil ulang email dari server.');
       }
-      if (data?.imapDebug) {
-        console.info('[IMAP_SYNC_DEBUG]', { address, ...data.imapDebug });
+      if ((data as { error?: string }).error) {
+        toast.error(`Gagal memuat inbox: ${(data as { error?: string }).error || 'Unknown error'}`);
+        return;
       }
-      if (data?.imapError) {
-        toast.error(`IMAP sync error: ${data.imapMessage || 'Unknown error'}`);
-        console.warn('[IMAP_SYNC_ERROR]', {
-          address,
-          checkedAt: data.checkedAt,
-          message: data.imapMessage || 'Unknown error'
-        });
+      if ((data as { imapDebug?: unknown }).imapDebug) {
+        console.info('[IMAP_SYNC_DEBUG]', { address, ...(data as { imapDebug: object }).imapDebug });
       }
-      if (data.emails) {
-        // Only update if changes to avoid jitter, or just replace for now
-        // De-dupe could be handled here
-        const incoming = data.emails as Email[];
+      if ((data as { emails?: Email[] }).emails) {
+        const incoming = (data as { emails: Email[] }).emails;
         const nextIds = new Set(incoming.map((email) => email.id));
         previousEmailIds.current = nextIds;
         hasLoadedEmails.current = true;
@@ -517,14 +495,9 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
       if (!address) return;
       setDeletingEmailId(emailId);
       try {
-        const response = await fetch(
-          `/api/inbox?address=${encodeURIComponent(address)}&emailId=${encodeURIComponent(
-            emailId
-          )}`,
-          { method: 'DELETE' }
-        );
-        if (!response.ok) {
-          throw new Error('Delete failed');
+        const result = await deleteInboxEmail(address, emailId);
+        if ((result as { error?: string }).error) {
+          throw new Error((result as { error?: string }).error || 'Delete failed');
         }
         setEmails((prev) => prev.filter((item) => item.id !== emailId));
         setReadEmailIds((prev) => {

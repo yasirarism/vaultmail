@@ -18,6 +18,7 @@ import { useVisualTheme } from "@/components/theme-provider";
 import { VISUAL_THEMES, type VisualTheme } from "@/lib/theme";
 import { ThemePicker } from "@/components/theme-picker";
 import Link from "next/link";
+import { getRetentionSettings, getBrandingSettings } from '@/app/actions/email';
 
 interface HomePageProps {
   initialAddress?: string;
@@ -57,9 +58,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
   useEffect(() => {
     const loadRetention = async () => {
       try {
-        const response = await fetch("/api/retention");
-        if (!response.ok) return;
-        const data = (await response.json()) as { seconds?: number };
+        const data = await getRetentionSettings();
         if (data?.seconds) {
           setRetentionSeconds(data.seconds);
         }
@@ -73,14 +72,12 @@ export function HomePage({ initialAddress }: HomePageProps) {
   useEffect(() => {
     const loadBranding = async () => {
       try {
-        const response = await fetch("/api/branding", { cache: 'no-store' });
-        if (!response.ok) return;
-        const data = (await response.json()) as { appName?: string; headerTitle?: string; headerDescription?: string; announcement?: string };
-        const value = data?.appName?.trim();
+        const data = await getBrandingSettings();
+        const value = (data as { appName?: string })?.appName?.trim();
         setCustomAppName(value || DEFAULT_APP_NAME);
-        if (data?.headerTitle?.trim()) setHeroTitle(data.headerTitle.trim());
-        if (data?.headerDescription?.trim()) setHeroDescription(data.headerDescription.trim());
-        if (typeof data?.announcement === 'string') setAnnouncement(data.announcement.trim());
+        if ((data as { headerTitle?: string })?.headerTitle?.trim()) setHeroTitle((data as { headerTitle: string }).headerTitle.trim());
+        if ((data as { headerDescription?: string })?.headerDescription?.trim()) setHeroDescription((data as { headerDescription: string }).headerDescription.trim());
+        if (typeof (data as { announcement?: string })?.announcement === 'string') setAnnouncement((data as { announcement: string }).announcement.trim());
       } catch (error) {
         console.error(error);
       }

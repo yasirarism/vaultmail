@@ -7,6 +7,7 @@ import { ShieldAlert } from 'lucide-react';
 import { AppShell, useAppChrome } from '@/components/app-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getBreachCheck } from '@/app/actions/email';
 
 type BreachDetail = {
   breach?: string;
@@ -58,14 +59,14 @@ function EmailBreachContent() {
     setBreaches([]);
     setDetails([]);
     try {
-      const response = await fetch(`/api/breach-check?email=${encodeURIComponent(trimmed)}`);
-      if (!response.ok) {
-        throw new Error('Request failed');
-      }
-      const data = (await response.json()) as {
+      const data = (await getBreachCheck(trimmed)) as {
         breaches?: string[];
         details?: BreachDetail[];
+        error?: string;
       };
+      if (data?.error) {
+        throw new Error('Request failed');
+      }
       const foundBreaches = Array.isArray(data?.breaches) ? data.breaches : [];
       const foundDetails = Array.isArray(data?.details) ? data.details : [];
       setBreaches(foundBreaches);

@@ -2,13 +2,10 @@ import { inboxKey } from '@/lib/storage-keys';
 import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
 import { getInboxEmails } from '@/lib/inbox-service';
+import { authorizeRawApi, unauthorizedResponse } from '@/lib/raw-api-auth';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * INTERNAL route used by the web UI. No API key required —
- * the public developer API lives under /api/v1/* with key auth.
- */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const address = searchParams.get('address');
@@ -16,6 +13,11 @@ export async function GET(req: Request) {
 
   if (!address) {
     return NextResponse.json({ error: 'Address required' }, { status: 400 });
+  }
+
+  // Raw API requires GitHub session OR API key (NOT the guest cookie).
+  if (!(await authorizeRawApi(req))) {
+    return unauthorizedResponse();
   }
 
   try {
@@ -37,10 +39,11 @@ export async function DELETE(req: Request) {
   const emailId = searchParams.get('emailId');
 
   if (!address || !emailId) {
-    return NextResponse.json(
-      { error: 'Address and emailId required' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Address and emailId required' }, { status: 400 });
+  }
+
+  if (!(await authorizeRawApi(req))) {
+    return unauthorizedResponse();
   }
 
   try {

@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getStoredDomainExpiration, refreshDomainExpiration } from '@/lib/domain-expiration';
+import { authorizeRawApi, unauthorizedResponse } from '@/lib/raw-api-auth';
+
+export const dynamic = 'force-dynamic';
 
 const MAX_AGE_HOURS = 24;
 
 export async function GET(req: Request) {
+  if (!(await authorizeRawApi(req))) {
+    return unauthorizedResponse();
+  }
+
   const { searchParams } = new URL(req.url);
   const domain = searchParams.get('domain')?.toLowerCase();
 

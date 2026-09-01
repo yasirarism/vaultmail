@@ -76,6 +76,10 @@ export async function GET(req: Request) {
   const type = searchParams.get('type');
   const indexParam = searchParams.get('index');
 
+  if (!(await (await import('@/lib/raw-api-auth')).authorizeRawApi(req))) {
+    return (await import('@/lib/raw-api-auth')).unauthorizedResponse();
+  }
+
   if (!address || !emailId || !type) {
     return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
   }

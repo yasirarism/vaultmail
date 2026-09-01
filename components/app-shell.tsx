@@ -27,6 +27,7 @@ import { DEFAULT_APP_NAME } from '@/lib/branding';
 import { useVisualTheme } from '@/components/theme-provider';
 import { VISUAL_THEMES } from '@/lib/theme';
 import { AnimatePresence, motion } from 'framer-motion';
+import { getBrandingSettings } from '@/app/actions/email';
 
 const STORAGE_KEY = 'vaultmail_locale';
 const LOCALE_EVENT = 'vaultmail-locale-change';
@@ -94,10 +95,8 @@ export function AppShell({ children, contentClassName = 'max-w-5xl' }: AppShellP
   useEffect(() => {
     const loadBranding = async () => {
       try {
-        const response = await fetch('/api/branding', { cache: 'no-store' });
-        if (!response.ok) return;
-        const data = (await response.json()) as { appName?: string };
-        setCustomAppName(data?.appName?.trim() || DEFAULT_APP_NAME);
+        const data = await getBrandingSettings();
+        setCustomAppName((data as { appName?: string })?.appName?.trim() || DEFAULT_APP_NAME);
       } catch (error) {
         console.error(error);
       }
