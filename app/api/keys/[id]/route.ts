@@ -1,9 +1,22 @@
 import { NextResponse } from 'next/server';
 import { storage } from '@/lib/storage';
-import { apiKeyUserListKey } from '@/lib/api-keys-keys';
-import { getSessionFromRequest } from '@/lib/github-auth';
+import { apiKeyUserListKey, apiKeyHashKey } from '@/lib/api-keys-keys';
+import { getSessionFromRequest, hashApiKey } from '@/lib/github-auth';
 
 export const dynamic = 'force-dynamic';
+
+type ApiKeyRecord = {
+  id: string;
+  prefix: string;
+  hash: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+};
+
+const parseList = (value: unknown): ApiKeyRecord[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is ApiKeyRecord => Boolean(v && typeof v === 'object'));
+};
 
 export async function DELETE(
   req: Request,
@@ -14,17 +27,14 @@ export async function DELETE(
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
   }
   const { id } = await params;
-  const list = (await storage.get(apiKeyUserListKey(session.userId))) as unknown[];
-  if (!Array.isArray(list)) {
-    return NextResponse.json({ error: 'No keys found.' }, { status: 404 });
-  }
-  const idx = list.findIndex(
-    (k: unknown) => typeof k === 'object' && k && (k as { id?: string }).id === id
-  );
+  const list = parseList(await storage.get(apiKeyUserListKey(session.userId)));
+  const idx = list.findIndex((item) => item.id === id);
   if (idx === -1) {
-    return NextResponse.json({ error: 'Key not found.' }, { status: 404 });
+    return NextResponse.json({ error: 'Key not found' }, { status: 404 });
   }
-  list.splice(idx, 1);
+  const [removed] = list.splice(idx, 1);
   await storage.set(apiKeyUserListKey(session.userId), list);
-  return NextResponse.json({ ok: true });
+  // Also remove the hash index so O(1) lookup won't find it.
+  await storage.del(apiKeyHashKey(removed.hash));
+  return NextResponse.json({ success: true });
 }

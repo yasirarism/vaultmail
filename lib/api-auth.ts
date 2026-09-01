@@ -1,5 +1,5 @@
 import { storage } from '@/lib/storage';
-import { apiKeyUserListKey } from '@/lib/api-keys-keys';
+import { apiKeyUserListKey, apiKeyHashKey } from '@/lib/api-keys-keys';
 import { hashApiKey, apiKeyFromHeader } from '@/lib/github-auth';
 
 type ApiKeyMatch = {
@@ -9,22 +9,27 @@ type ApiKeyMatch = {
   lastUsedAt: string | null;
 };
 
+/**
+ * Look up an API key by its SHA-256 hash.
+ *
+ * Uses the hash index (apikey:hash:<hash> → {userId, id}) stored in kv_store
+ * for O(1) lookup.  This avoids scanning user lists via storage.keys() which
+ * only queries the list_meta collection and would miss kv_store keys entirely.
+ */
 export const findApiKeyByHash = async (hash: string): Promise<ApiKeyMatch | null> => {
-  const patterns = ['apikeys:user:*'];
-  const keys: string[] = [];
-  for (const pattern of patterns) {
-    keys.push(...(await storage.keys(pattern)));
-  }
-  for (const key of keys) {
-    const list = (await storage.get(key)) as unknown[];
-    if (!Array.isArray(list)) continue;
-    for (const item of list) {
-      if (typeof item !== 'object' || !item) continue;
-      const rec = item as { hash?: string; id?: string; prefix?: string; lastUsedAt?: string | null };
-      if (rec.hash === hash) {
-        const userId = key.split(':').pop() || '';
-        return { userId, id: rec.id || '', prefix: rec.prefix || '', lastUsedAt: rec.lastUsedAt || null };
-      }
+  const idx = await storage.get(apiKeyHashKey(hash));
+  if (!idx || typeof idx !== 'object') return null;
+  const { userId, id } = idx as { userId: string; id: string };
+  if (!userId || !id) return null;
+
+  // Fetch the full record from the user's list to get prefix/lastUsedAt.
+  const list = (await storage.get(apiKeyUserListKey(userId))) as unknown[];
+  if (!Array.isArray(list)) return null;
+  for (const item of list) {
+    if (typeof item !== 'object' || !item) continue;
+    const rec = item as { id?: string; prefix?: string; lastUsedAt?: string | null };
+    if (rec.id === id) {
+      return { userId, id, prefix: rec.prefix || '', lastUsedAt: rec.lastUsedAt || null };
     }
   }
   return null;
@@ -51,7 +56,7 @@ export type ApiAuthResult =
 
 /**
  * Auth for the PUBLIC API (not the web UI):
- * - Accepts `Authorization: Bearer <api_key>` (OpenAI style) or `?api_key=`.
+ * - Accepts `Authorization: Bearer <key>` (OpenAI style) or `?api_key=`.
  * - Optionally accepts a logged-in GitHub session cookie too.
  */
 export const authenticateApiRequest = async (req: Request): Promise<ApiAuthResult> => {

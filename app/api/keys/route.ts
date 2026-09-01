@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { storage } from '@/lib/storage';
 import {
   apiKeyUserListKey,
+  apiKeyHashKey,
 } from '@/lib/api-keys-keys';
 import {
   createApiKey,
@@ -53,6 +54,13 @@ export async function POST(req: Request) {
   const list = parseList(await storage.get(apiKeyUserListKey(session.userId)));
   list.push(record);
   await storage.set(apiKeyUserListKey(session.userId), list);
+
+  // Index for O(1) lookup by hash (kv_store, not list_meta — keys() only
+  // scans list_meta, so scanning user lists would never find these).
+  await storage.set(apiKeyHashKey(hash), {
+    userId: session.userId,
+    id: record.id,
+  });
 
   // Key is shown exactly once, in plain text.
   return NextResponse.json({
