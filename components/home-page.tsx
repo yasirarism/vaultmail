@@ -314,7 +314,7 @@ export function HomePage({ initialAddress }: HomePageProps) {
         <div className="hero-grid" />
         <div className="max-w-6xl mx-auto px-4" style={{ position: 'relative', zIndex: 1 }}>
           <h1 style={{ fontSize: 'clamp(2.2rem, 5.5vw, 3.8rem)', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: 8 }}>
-            {heroTitleParts.first && <span style={{ color: 'var(--text-primary)' }}>{heroTitleParts.first} </span>}
+            {heroTitleParts.first && <span style={{ color: 'inherit' }}>{heroTitleParts.first} </span>}
             <span style={{ color: 'var(--brutal-accent)' }}>{heroTitleParts.last}</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.98rem', marginBottom: 24, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.5 }}>

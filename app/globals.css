@@ -503,6 +503,16 @@ html[data-theme='glass'] div[style*='borderLeft: 4px solid transparent'] {
   backdrop-filter: blur(6px) !important;
 }
 
+/* Force white/light text on glass theme */
+html[data-theme='glass'] h1,
+html[data-theme='glass'] h2,
+html[data-theme='glass'] h3,
+html[data-theme='glass'] h4,
+html[data-theme='glass'] .text-foreground,
+html[data-theme='glass'] header span {
+  color: #f8fafc !important;
+}
+
 /* Email reader modal body stays readable on glass */
 html[data-theme='glass'] .custom-scrollbar,
 html[data-theme='glass'] [class*='custom-scrollbar'] {

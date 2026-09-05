@@ -551,300 +551,204 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   
   return (
     <div className="w-full max-w-6xl mx-auto px-4 md:px-8 space-y-10">
-      {/* ===== BENTO HEADER (Generator + Live Metrics) ===== */}
-      <div className="max-w-4xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-        {/* Main Generator Card (8 cols) */}
-        <div
-          className="lg:col-span-8 brutal-card-lg flex flex-col justify-between"
-          style={{ padding: '24px 22px', position: 'relative', zIndex: 10, textAlign: 'left' }}
-        >
-          <div>
-            {/* Label + settings row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <span
-                style={{
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: 'var(--text-muted)',
-                  margin: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontFamily: 'var(--font-mono)',
-                }}
-              >
-                <Mail className="h-3.5 w-3.5" style={{ color: 'var(--brutal-accent)' }} />
-                {t.yourTemporaryEmail}
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsAddDomainOpen(true)}
-                className="brutal-btn brutal-btn-white"
-                style={{ padding: '5px 12px', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: 5 }}
-              >
-                <Settings2 className="h-3.5 w-3.5" />
-                {t.settingsTitle}
-              </button>
-            </div>
+      {/* ===== EMAIL GENERATION CARD (Clean Centered Classic) ===== */}
+      <div
+        className="brutal-card-lg max-w-xl mx-auto"
+        style={{ padding: '28px 24px 24px', textAlign: 'left', position: 'relative', zIndex: 10 }}
+      >
+        {/* Label + settings row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <span
+            style={{
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: 'var(--text-muted)',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontFamily: 'var(--font-mono)',
+            }}
+          >
+            <Mail className="h-3.5 w-3.5" style={{ color: 'var(--brutal-accent)' }} />
+            {t.yourTemporaryEmail}
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsAddDomainOpen(true)}
+            className="brutal-btn brutal-btn-white"
+            style={{ padding: '5px 12px', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: 5 }}
+          >
+            <Settings2 className="h-3.5 w-3.5" />
+            {t.settingsTitle}
+          </button>
+        </div>
 
-            {/* Address input row */}
-            <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface)', border: '2px solid var(--ink)', borderRadius: 12, minWidth: 0, boxShadow: 'var(--brutal-shadow-sm)', marginBottom: 12 }}>
-              <input
-                type="text"
-                value={address.split('@')[0]}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/[^a-zA-Z0-9._-]/g, '');
-                  const currentDomain = address.split('@')[1] || domain;
-                  setAddress(`${val}@${currentDomain}`);
-                  localStorage.setItem('dispo_address', `${val}@${currentDomain}`);
-                }}
-                onBlur={() => addToHistory(address)}
-                placeholder={t.usernamePlaceholder}
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', padding: '12px 4px 12px 14px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.96rem', color: 'var(--text-primary)', minWidth: 0 }}
-              />
-              <span style={{ padding: '0 2px', fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1rem', color: 'var(--brutal-accent)', flexShrink: 0, userSelect: 'none' }}>
-                @
-              </span>
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <button
-                  type="button"
-                  onClick={() => setShowDomainMenu((prev) => !prev)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 12px 12px 4px', border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.86rem', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}
-                >
-                  {domain}
-                  <ChevronDown className="h-3 w-3" style={{ transition: 'transform 0.15s', transform: showDomainMenu ? 'rotate(180deg)' : 'none' }} />
-                </button>
-
-                <AnimatePresence>
-                  {showDomainMenu && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowDomainMenu(false)} />
-                      <motion.div
-                        className="domain-menu-panel"
-                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                        style={{ position: 'absolute', zIndex: 50, right: 0, top: '100%', marginTop: 6, width: 250, borderRadius: 12, border: '2px solid var(--ink)', background: 'var(--surface)', boxShadow: 'var(--brutal-shadow-lg)', overflow: 'hidden' }}
-                      >
-                        <div className="max-h-60 overflow-y-auto custom-scrollbar p-2 space-y-1">
-                          {savedDomains.map((d) => (
-                            <button
-                              key={d}
-                              type="button"
-                              onClick={() => {
-                                setDomain(d);
-                                const currentUser = address.split('@')[0];
-                                const newAddr = `${currentUser}@${d}`;
-                                setAddress(newAddr);
-                                localStorage.setItem('dispo_address', newAddr);
-                                addToHistory(newAddr);
-                                setShowDomainMenu(false);
-                              }}
-                              style={{
-                                width: '100%',
-                                textAlign: 'left',
-                                padding: '8px 10px',
-                                borderRadius: 8,
-                                border: 'none',
-                                fontFamily: 'var(--font-mono)',
-                                fontSize: '0.85rem',
-                                cursor: 'pointer',
-                                background: d === domain ? 'var(--brutal-accent)' : 'transparent',
-                                color: d === domain ? 'var(--brutal-on-accent)' : 'var(--text-primary)',
-                                transition: 'background 0.12s',
-                              }}
-                              onMouseEnter={(e) => { if (d !== domain) e.currentTarget.style.background = 'var(--brutal-surface-2)'; }}
-                              onMouseLeave={(e) => { if (d !== domain) e.currentTarget.style.background = 'transparent'; }}
-                            >
-                              {d}
-                            </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-
-            {/* Domain status line */}
-            {domainExpirationDate && isDomainExpired ? (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  background: 'rgba(217,48,37,0.08)',
-                  border: '2px solid #d93025',
-                  borderRadius: 10,
-                  padding: '8px 12px',
-                  marginBottom: 14,
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  color: '#d93025',
-                }}
-              >
-                <span>⚠️</span>
-                {t.domainStatusExpired}
-              </div>
-            ) : domainExpirationDate ? (
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 14 }}>
-                📅 <strong>{domain}</strong> &middot; {t.domainStatusEndsOn} <strong>{domainExpirationDate.toLocaleDateString()}</strong>
-              </p>
-            ) : null}
-          </div>
-
-          {/* Action Row: Copy Address (Primary) + New + QR Code */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+        {/* Address input row */}
+        <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface)', border: '2px solid var(--ink)', borderRadius: 12, minWidth: 0, boxShadow: 'var(--brutal-shadow-sm)', marginBottom: 12 }}>
+          <input
+            type="text"
+            value={address.split('@')[0]}
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^a-zA-Z0-9._-]/g, '');
+              const currentDomain = address.split('@')[1] || domain;
+              setAddress(`${val}@${currentDomain}`);
+              localStorage.setItem('dispo_address', `${val}@${currentDomain}`);
+            }}
+            onBlur={() => addToHistory(address)}
+            placeholder={t.usernamePlaceholder}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', padding: '12px 4px 12px 14px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.96rem', color: 'var(--text-primary)', minWidth: 0 }}
+          />
+          <span style={{ padding: '0 2px', fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1rem', color: 'var(--brutal-accent)', flexShrink: 0, userSelect: 'none' }}>
+            @
+          </span>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
             <button
               type="button"
-              onClick={copyAddress}
-              className="brutal-btn"
-              style={{
-                flex: 1,
-                padding: '12px 14px',
-                background: copiedAddress ? 'var(--brutal-success)' : 'var(--brutal-accent)',
-                color: 'var(--brutal-on-accent)',
-                fontSize: '0.9rem',
-                fontWeight: 800,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                transition: 'background 0.18s',
-              }}
+              onClick={() => setShowDomainMenu((prev) => !prev)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 12px 12px 4px', border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.86rem', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}
             >
-              {copiedAddress ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              <span>{copiedAddress ? (locale === 'id' ? 'Tersalin ke Clipboard!' : 'Copied to Clipboard!') : t.copy}</span>
+              {domain}
+              <ChevronDown className="h-3 w-3" style={{ transition: 'transform 0.15s', transform: showDomainMenu ? 'rotate(180deg)' : 'none' }} />
             </button>
 
-            <button
-              type="button"
-              onClick={generateAddress}
-              title={t.generateNewEmail}
-              className="brutal-btn brutal-btn-white"
-              style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800, fontSize: '0.85rem' }}
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span>{locale === 'id' ? 'Baru' : 'New'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={openQrModal}
-              title="QR Code"
-              className="brutal-btn brutal-btn-white"
-              style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <QrCode className="h-4 w-4" />
-            </button>
+            <AnimatePresence>
+              {showDomainMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowDomainMenu(false)} />
+                  <motion.div
+                    className="domain-menu-panel"
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                    style={{ position: 'absolute', zIndex: 50, right: 0, top: '100%', marginTop: 6, width: 250, borderRadius: 12, border: '2px solid var(--ink)', background: 'var(--surface)', boxShadow: 'var(--brutal-shadow-lg)', overflow: 'hidden' }}
+                  >
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                      {savedDomains.map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => {
+                            setDomain(d);
+                            const currentUser = address.split('@')[0];
+                            const newAddr = `${currentUser}@${d}`;
+                            setAddress(newAddr);
+                            localStorage.setItem('dispo_address', newAddr);
+                            addToHistory(newAddr);
+                            setShowDomainMenu(false);
+                          }}
+                          style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '8px 10px',
+                            borderRadius: 8,
+                            border: 'none',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                            background: d === domain ? 'var(--brutal-accent)' : 'transparent',
+                            color: d === domain ? 'var(--brutal-on-accent)' : 'var(--text-primary)',
+                            transition: 'background 0.12s',
+                          }}
+                          onMouseEnter={(e) => { if (d !== domain) e.currentTarget.style.background = 'var(--brutal-surface-2)'; }}
+                          onMouseLeave={(e) => { if (d !== domain) e.currentTarget.style.background = 'transparent'; }}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* Side Bento Stack (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col gap-3 justify-between">
-          {/* Card 1: Active Domains */}
+        {/* Domain status line */}
+        {domainExpirationDate && isDomainExpired ? (
           <div
-            className="brutal-card flex items-center justify-between"
-            style={{ padding: '14px 16px', background: 'var(--surface)' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'rgba(217,48,37,0.08)',
+              border: '2px solid #d93025',
+              borderRadius: 10,
+              padding: '8px 12px',
+              marginBottom: 14,
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              color: '#d93025',
+            }}
           >
-            <div>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 2, fontFamily: 'var(--font-mono)' }}>
-                {t.statsActiveDomains}
-              </div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                {domain}
-              </div>
-            </div>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                border: '2px solid var(--ink)',
-                background: 'var(--brutal-accent-2)',
-                color: 'var(--brutal-on-accent)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '0.95rem',
-                fontFamily: 'var(--font-mono)',
-              }}
-            >
-              {savedDomains.length || 1}
-            </div>
+            <span>⚠️</span>
+            {t.domainStatusExpired}
           </div>
+        ) : domainExpirationDate ? (
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 14 }}>
+            📅 <strong>{domain}</strong> &middot; {t.domainStatusEndsOn} <strong>{domainExpirationDate.toLocaleDateString()}</strong>
+          </p>
+        ) : null}
 
-          {/* Card 2: Retention Window */}
-          <div
-            className="brutal-card flex items-center justify-between"
-            style={{ padding: '14px 16px', background: 'var(--surface)' }}
+        {/* Action Row: Copy Address (Fixed width/flex) + New + QR Code */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <button
+            type="button"
+            onClick={copyAddress}
+            className="brutal-btn"
+            style={{
+              flex: 1,
+              padding: '12px 14px',
+              background: copiedAddress ? 'var(--brutal-success)' : 'var(--brutal-accent)',
+              color: 'var(--brutal-on-accent)',
+              fontSize: '0.9rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              transition: 'background 0.18s',
+            }}
           >
-            <div>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 2, fontFamily: 'var(--font-mono)' }}>
-                Retention Window
-              </div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                {retentionLabel || '24 Hours'}
-              </div>
-            </div>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                border: '2px solid var(--ink)',
-                background: 'var(--brutal-accent-light)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1rem',
-              }}
-            >
-              ⏳
-            </div>
-          </div>
+            {copiedAddress ? <Check className="h-4 w-4 shrink-0" /> : <Copy className="h-4 w-4 shrink-0" />}
+            <span style={{ whiteSpace: 'nowrap' }}>
+              {copiedAddress ? (locale === 'id' ? 'Tersalin!' : 'Copied!') : t.copy}
+            </span>
+          </button>
 
-          {/* Card 3: Realtime Status */}
-          <div
-            className="brutal-card flex items-center justify-between"
-            style={{ padding: '14px 16px', background: 'var(--surface)' }}
+          <button
+            type="button"
+            onClick={generateAddress}
+            title={t.generateNewEmail}
+            className="brutal-btn brutal-btn-white"
+            style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800, fontSize: '0.85rem', flexShrink: 0 }}
           >
-            <div>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 2, fontFamily: 'var(--font-mono)' }}>
-                Inbox Status
-              </div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--brutal-success)', display: 'inline-block' }} />
-                {t.live} &middot; {emails.length} {t.inboxCountTotal.toLowerCase()}
-              </div>
-            </div>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                border: '2px solid var(--ink)',
-                background: 'var(--brutal-accent)',
-                color: 'var(--brutal-on-accent)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '0.92rem',
-                fontFamily: 'var(--font-mono)',
-              }}
-            >
-              {emails.length}
-            </div>
-          </div>
+            <RefreshCw className="h-4 w-4 shrink-0" />
+            <span>{locale === 'id' ? 'Baru' : 'New'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={openQrModal}
+            title="QR Code"
+            className="brutal-btn brutal-btn-white"
+            style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          >
+            <QrCode className="h-4 w-4 shrink-0" />
+          </button>
         </div>
+      </div>
+
+      {/* ===== STATS CARDS (Classic Single Source of Truth) ===== */}
+      <div className="max-w-3xl mx-auto w-full" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+        <BrutalStat icon="📧" value={emails.length} label={t.statsEmailsReceived} />
+        <BrutalStat icon="🌐" value={savedDomains.length} label={t.statsActiveDomains} />
+        <BrutalStat icon="🔐" value={t.statsInstant} label={t.statsOtp} />
       </div>
 
       {/* ===== INBOX SECTION ===== */}
