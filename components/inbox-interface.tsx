@@ -31,17 +31,19 @@ import { SettingsDialog } from './settings-dialog';
 function extractOtp(subject: string, body: string): string | null {
   const text = `${subject || ''} ${body || ''}`;
   const patterns = [
-    /(?:verification\s+code|auth(?:entication)?\s+code|security\s+code|access\s+code|login\s+code|sign[- ]in\s+code)\s*(?:is|:|\s)\s*(\d{4,8})/i,
-    /\b(?:otp|pin|code|token|passcode)\s*[:\-–]?\s*(\d{4,8})\b/i,
-    /\b(\d{4,8})\s+(?:is\s+(?:your\s+)?)?(?:the\s+)?(?:verification\s+)?(?:code|otp|pin)\b/i,
-    /\bcode\s+is\s+(\d{4,8})\b/i,
-    /(?:kode\s+verifikasi|kode\s+otp|kode\s+keamanan|kode\s+akses|kode\s+masuk|kode\s+konfirmasi)\s*(?:anda|kamu|mu|nya)?\s*(?:adalah|ialah|:|-|–)?\s*(\d{4,8})/i,
-    /\b(?:kode|sandi|nomor\s+rahasia)\s*[:\-–]?\s*(\d{4,8})\b/i,
-    /\b(\d{4,8})\s+(?:adalah|ialah|merupakan)\s+(?:kode|otp|pin)(?:\s+verifikasi)?/i
+    /(?:verification|verifying|authentication|security|access|login|sign[- ]?in|confirmation|confirm|activation|authorize|authorisation|one[- ]?time|temporary|security)\s+(?:email\s+)?(?:code|passcode|password|pin|token|number|digits?)\s*(?:is|:|：|=|-)?\s*([\d][\d\s-]{3,14}\d)/i,
+    /(?:code|passcode|password|pin|token|otp|kode|sandi|nomor\s+rahasia)\s*(?:is|:|：|=|-|adalah|ialah)?\s*([\d][\d\s-]{3,14}\d)/i,
+    /([\d][\d\s-]{3,14}\d)\s+(?:is\s+(?:your\s+)?)?(?:the\s+)?(?:verification|authentication|security|login|sign[- ]?in|confirmation|activation)?\s*(?:code|passcode|password|pin|token|otp)/i,
+    /(?:enter|input|type|masukkan|gunakan|use)\s+(?:the\s+)?(?:code|passcode|pin|otp|token)\s*(?:below|di bawah)?\s*[:：]?\s*([\d][\d\s-]{3,14}\d)/i,
+    /\b(?:OTP|PIN|CODE|TOKEN)\b\s*[:：=-]\s*([\d][\d\s-]{3,14}\d)/i,
+    /\b(\d{4,8})\b/,
   ];
   for (const re of patterns) {
     const match = text.match(re);
-    if (match && match[1]) return match[1];
+    if (match?.[1]) {
+      const candidate = match[1].replace(/[\s-]/g, '');
+      if (/^\d{4,8}$/.test(candidate)) return candidate;
+    }
   }
   return null;
 }
@@ -370,9 +372,11 @@ export function InboxInterface({ initialAddress, locale, retentionLabel }: Inbox
   };
 
   const openQrModal = async () => {
-    if (!address) return;
+    if (!address || typeof window === 'undefined') return;
     try {
-      const dataUrl = await QRCode.toDataURL(address, {
+      // QR opens the address-specific inbox directly, not just an email string.
+      const inboxUrl = `${window.location.origin}/${encodeURIComponent(address)}`;
+      const dataUrl = await QRCode.toDataURL(inboxUrl, {
         width: 260,
         margin: 2,
         color: { dark: '#000000', light: '#ffffff' },
