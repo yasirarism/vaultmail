@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { storage } from '@/lib/storage';
 import { BRANDING_SETTINGS_KEY } from '@/lib/admin-auth';
 import { DEFAULT_APP_NAME, normalizeAppName } from '@/lib/branding';
-import { getStoredDefaultTheme } from '@/lib/theme-settings';
+import { getStoredThemeSettings } from '@/lib/theme-settings';
 
 type BrandingSettings = {
   appName?: string;
@@ -28,10 +28,11 @@ const parseSettings = (value: unknown): BrandingSettings | null => {
 };
 
 export async function GET() {
-  const [settingsRaw, defaultTheme] = await Promise.all([
+  const [settingsRaw, themeSettings] = await Promise.all([
     storage.get(BRANDING_SETTINGS_KEY),
-    getStoredDefaultTheme()
+    getStoredThemeSettings()
   ]);
+  const { defaultTheme, themeVersion } = themeSettings;
   const settings = parseSettings(settingsRaw);
   const appName = normalizeAppName(settings?.appName) || DEFAULT_APP_NAME;
 
@@ -46,8 +47,10 @@ export async function GET() {
         typeof settings?.announcement === 'string'
           ? settings.announcement
           : '',
-      defaultTheme
+      defaultTheme,
+      themeVersion
     },
-    { headers: { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' } }
+    // Tema admin harus segera terlihat di semua browser: jangan cache lama.
+    { headers: { 'Cache-Control': 'no-store' } }
   );
 }

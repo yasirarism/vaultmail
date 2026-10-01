@@ -61,6 +61,7 @@ type ImapSettings = {
 
 type ThemeSettings = {
   defaultTheme: VisualTheme;
+  themeVersion?: number;
   updatedAt?: string;
 };
 
@@ -370,7 +371,7 @@ export function AdminDashboard() {
       }
       const data = (await response.json()) as ThemeSettings;
       setDefaultTheme(normalizeThemeSetting(data?.defaultTheme));
-      toast.success('Theme saved. Berlaku sebagai tema default untuk semua pengunjung baru.');
+      toast.success('Tema tersimpan. Berlaku untuk semua pengunjung sekarang.');
     } catch (error) {
       console.error(error);
       toast.error('Failed to save theme.');
@@ -802,8 +803,9 @@ export function AdminDashboard() {
                     Tema Tampilan
                   </h2>
                   <p className="text-sm text-white/60">
-                    Pilih tema default untuk seluruh website. Pengunjung tetap bisa
-                    memilih tema sendiri lewat menu pengaturan.
+                    Pilih tema untuk seluruh website. Saat disimpan, tema ini langsung
+                    diterapkan ke semua pengunjung (termasuk yang pernah memilih tema
+                    lain). Pengunjung tetap bisa mengganti sendiri setelahnya.
                   </p>
                 </div>
                 <Button onClick={saveTheme} disabled={themeSaving}>

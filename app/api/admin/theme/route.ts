@@ -7,10 +7,11 @@ import {
   isAdminSessionValid
 } from '@/lib/admin-auth';
 import { DEFAULT_THEME, type VisualTheme } from '@/lib/theme';
-import { normalizeThemeValue } from '@/lib/theme-settings';
+import { normalizeThemeValue, normalizeThemeVersion } from '@/lib/theme-settings';
 
 type ThemeSettings = {
   defaultTheme: VisualTheme;
+  themeVersion: number;
   updatedAt: string;
 };
 
@@ -20,29 +21,34 @@ const isAuthorized = async () => {
   return isAdminSessionValid(sessionToken);
 };
 
-type StoredThemeSettings = {
+type RawThemeSettings = {
   defaultTheme?: unknown;
+  themeVersion?: unknown;
   updatedAt?: unknown;
 };
 
-const readSettings = async (): Promise<ThemeSettings> => {
+const parseRaw = async (): Promise<RawThemeSettings | null> => {
   const raw = await storage.get(THEME_SETTINGS_KEY);
-  let parsed: StoredThemeSettings | null = null;
   if (typeof raw === 'string') {
     try {
-      parsed = JSON.parse(raw) as StoredThemeSettings;
+      return JSON.parse(raw) as RawThemeSettings;
     } catch {
-      parsed = null;
+      return null;
     }
-  } else if (raw && typeof raw === 'object') {
-    parsed = raw as StoredThemeSettings;
   }
+  if (raw && typeof raw === 'object') {
+    return raw as RawThemeSettings;
+  }
+  return null;
+};
+
+const readSettings = async (): Promise<ThemeSettings> => {
+  const parsed = await parseRaw();
   return {
     defaultTheme: normalizeThemeValue(parsed?.defaultTheme),
+    themeVersion: normalizeThemeVersion(parsed?.themeVersion),
     updatedAt:
-      typeof parsed?.updatedAt === 'string'
-        ? parsed.updatedAt
-        : new Date().toISOString()
+      typeof parsed?.updatedAt === 'string' ? parsed.updatedAt : new Date().toISOString()
   };
 };
 
@@ -61,9 +67,13 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null);
   const defaultTheme = normalizeThemeValue(body?.defaultTheme ?? DEFAULT_THEME);
+  const previous = await parseRaw();
 
+  // Naikkan versi setiap kali tema disimpan (walau nilainya sama) supaya browser
+  // pengunjung yang masih memegang preferensi lama ikut berpindah ke tema admin.
   const settings: ThemeSettings = {
     defaultTheme,
+    themeVersion: normalizeThemeVersion(previous?.themeVersion) + 1,
     updatedAt: new Date().toISOString()
   };
 
