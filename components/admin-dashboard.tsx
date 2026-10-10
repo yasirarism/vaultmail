@@ -122,6 +122,8 @@ export function AdminDashboard() {
   const [storageDriver, setStorageDriver] = useState<'d1' | 'mongo' | 'unknown'>('unknown');
   const [apiClientId, setApiClientId] = useState('');
   const [apiClientSecret, setApiClientSecret] = useState('');
+  const [googleClientId, setGoogleClientId] = useState('');
+  const [googleClientSecret, setGoogleClientSecret] = useState('');
   const [apiAppUrl, setApiAppUrl] = useState('');
   const [apiRequireKey, setApiRequireKey] = useState(false);
   const [apiSaving, setApiSaving] = useState(false);
@@ -186,11 +188,15 @@ export function AdminDashboard() {
         const apiData = (await apiResponse.json()) as {
           githubClientId?: string;
           githubClientSecret?: string;
+          googleClientId?: string;
+          googleClientSecret?: string;
           appUrl?: string;
           requireApiKey?: boolean;
         };
         setApiClientId(apiData.githubClientId || '');
         setApiClientSecret(apiData.githubClientSecret || '');
+        setGoogleClientId(apiData.googleClientId || '');
+        setGoogleClientSecret(apiData.googleClientSecret || '');
         setApiAppUrl(apiData.appUrl || '');
         setApiRequireKey(Boolean(apiData.requireApiKey));
       }
@@ -336,6 +342,8 @@ export function AdminDashboard() {
         body: JSON.stringify({
           githubClientId: apiClientId,
           githubClientSecret: apiClientSecret,
+          googleClientId,
+          googleClientSecret,
           appUrl: apiAppUrl,
           requireApiKey: apiRequireKey
         })
@@ -993,8 +1001,10 @@ export function AdminDashboard() {
             <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
               <h2 className="text-lg font-semibold text-white">API & Integrations</h2>
               <p className="mt-1 text-sm text-white/60">
-                Konfigurasi GitHub OAuth untuk API key generation. Panduan:
+                Konfigurasi OAuth provider untuk API key generation. Isi minimal satu provider.
               </p>
+
+              <h3 className="mt-4 text-sm font-semibold text-white/90">GitHub OAuth</h3>
               <ol className="mt-3 list-inside list-decimal space-y-1.5 text-xs text-white/70">
                 <li>Buka <a href="https://github.com/settings/developers" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">GitHub OAuth Apps</a> → New OAuth App</li>
                 <li>Homepage URL: <code className="block w-full break-all rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px]">{apiAppUrl || window.location.origin}</code></li>
@@ -1011,7 +1021,27 @@ export function AdminDashboard() {
                   <Input value={apiClientSecret} onChange={(e) => setApiClientSecret(e.target.value)} placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" type="password" className="mt-3 bg-black/30 text-white placeholder:text-white/40" />
                 </div>
               </div>
+
+              <h3 className="mt-6 text-sm font-semibold text-white/90">Google OAuth</h3>
+              <ol className="mt-3 list-inside list-decimal space-y-1.5 text-xs text-white/70">
+                <li>Buka <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">Google Cloud Console → Credentials</a> → Create Credentials → OAuth client ID</li>
+                <li>Application type: <b>Web application</b></li>
+                <li>Authorized JavaScript origins: <code className="block w-full break-all rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px]">{apiAppUrl || window.location.origin}</code></li>
+                <li>Authorized redirect URI: <code className="block w-full break-all rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px]">{apiAppUrl || window.location.origin}/api/auth/google/callback</code></li>
+                <li>Isi OAuth consent screen (scope cukup <b>email</b> + <b>profile</b>), lalu salin Client ID &amp; Secret ke bawah</li>
+              </ol>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-widest text-white/60">Google Client ID</label>
+                  <Input value={googleClientId} onChange={(e) => setGoogleClientId(e.target.value)} placeholder="xxxxxxxx.apps.googleusercontent.com" className="mt-3 bg-black/30 text-white placeholder:text-white/40" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-widest text-white/60">Google Client Secret</label>
+                  <Input value={googleClientSecret} onChange={(e) => setGoogleClientSecret(e.target.value)} placeholder="GOCSPX-xxxxxxxxxxxx" type="password" className="mt-3 bg-black/30 text-white placeholder:text-white/40" />
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-widest text-white/60">APP URL (kosongkan untuk auto-detect)</label>
                   <Input value={apiAppUrl} onChange={(e) => setApiAppUrl(e.target.value)} placeholder="https://domainkamu.com" className="mt-3 bg-black/30 text-white placeholder:text-white/40" />

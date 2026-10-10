@@ -6,6 +6,8 @@ import { API_SETTINGS_KEY, isAdminSessionValid, ADMIN_SESSION_COOKIE } from '@/l
 type ApiSettingsPayload = {
   githubClientId?: string;
   githubClientSecret?: string;
+  googleClientId?: string;
+  googleClientSecret?: string;
   appUrl?: string;
   requireApiKey?: boolean;
 };
@@ -38,6 +40,8 @@ export async function GET() {
   return NextResponse.json({
     githubClientId: settings.githubClientId || '',
     githubClientSecret: settings.githubClientSecret || '',
+    googleClientId: settings.googleClientId || '',
+    googleClientSecret: settings.googleClientSecret || '',
     appUrl: settings.appUrl || '',
     requireApiKey: Boolean(settings.requireApiKey),
   });
@@ -54,6 +58,8 @@ export async function POST(request: Request) {
     ...current,
     githubClientId: body.githubClientId?.trim() || '',
     githubClientSecret: body.githubClientSecret?.trim() || '',
+    googleClientId: body.googleClientId?.trim() || '',
+    googleClientSecret: body.googleClientSecret?.trim() || '',
     appUrl: body.appUrl?.trim() || '',
     requireApiKey: Boolean(body.requireApiKey),
     updatedAt: new Date().toISOString(),

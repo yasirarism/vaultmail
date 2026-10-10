@@ -3,16 +3,32 @@ import { storage } from '@/lib/storage';
 import { githubStateKey, sessionKey } from '@/lib/api-keys-keys';
 import { API_SETTINGS_KEY } from '@/lib/admin-auth';
 
+export type AuthProvider = 'github' | 'google';
+
+/**
+ * A user as returned by an OAuth provider, already normalised.
+ *
+ * `id` is the value used as the API-key owner id. GitHub keeps its raw numeric
+ * id (so existing `apikeys:user:<id>` records stay valid — do NOT change it),
+ * while Google is namespaced as `google:<sub>` because Google's `sub` is a bare
+ * number that could otherwise collide with a GitHub id.
+ */
 export type GitHubUser = {
   id: string;
+  provider: AuthProvider;
   login: string;
   name: string | null;
   avatar_url: string | null;
 };
 
+/** Provider-neutral alias — prefer this name in new code. */
+export type AuthUser = GitHubUser;
+
 export type Session = {
   id: string;
   userId: string;
+  /** Absent on sessions created before multi-provider support → treat as 'github'. */
+  provider?: AuthProvider;
   login: string;
   name: string | null;
   avatar: string | null;
@@ -22,6 +38,8 @@ export type Session = {
 export type ApiSettings = {
   githubClientId?: string;
   githubClientSecret?: string;
+  googleClientId?: string;
+  googleClientSecret?: string;
   appUrl?: string;
   requireApiKey?: boolean;
   updatedAt?: string;
@@ -55,16 +73,17 @@ export const githubClientSecret = async () => {
 };
 
 /**
- * Build the OAuth redirect/callback URL. Order of preference:
+ * Build an absolute callback URL for any OAuth provider.
+ * Order of preference:
  * 1. appUrl stored in admin settings (or APP_URL env)
  * 2. Auto-detect from the incoming request (Host / x-forwarded-host)
  */
-export const githubRedirectUri = async (req?: Request) => {
+export const buildCallbackUri = async (path: string, req?: Request) => {
   const settings = await getApiSettings();
   const appUrl = settings.appUrl?.trim() || process.env.APP_URL?.trim() || '';
 
   if (appUrl) {
-    return `${appUrl.replace(/\/$/, '')}/api/auth/github/callback`;
+    return `${appUrl.replace(/\/$/, '')}${path}`;
   }
 
   // Auto-detect from request
@@ -77,8 +96,13 @@ export const githubRedirectUri = async (req?: Request) => {
   // Prefer https unless explicitly forwarded as http (and not localhost)
   const proto =
     forwardedProto === 'http' && !cleanHost.includes('localhost') ? 'https' : (forwardedProto || 'https');
-  return `${proto}://${cleanHost}/api/auth/github/callback`;
+  return `${proto}://${cleanHost}${path}`;
 };
+
+export const GITHUB_CALLBACK_PATH = '/api/auth/github/callback';
+
+export const githubRedirectUri = async (req?: Request) =>
+  buildCallbackUri(GITHUB_CALLBACK_PATH, req);
 
 export const createOAuthState = async () => {
   const state = randomBytes(24).toString('hex');
@@ -133,7 +157,9 @@ export const fetchGitHubUser = async (token: string): Promise<GitHubUser> => {
   };
   if (!data.id) throw new Error('GitHub user fetch failed: no id in response');
   return {
+    // Keep the raw numeric id: existing `apikeys:user:<id>` records depend on it.
     id: String(data.id),
+    provider: 'github',
     login: data.login || 'unknown',
     name: data.name || null,
     avatar_url: data.avatar_url || null,
@@ -144,6 +170,7 @@ export const createSession = async (user: GitHubUser): Promise<Session> => {
   const session: Session = {
     id: randomUUID(),
     userId: user.id,
+    provider: user.provider,
     login: user.login,
     name: user.name,
     avatar: user.avatar_url,

@@ -6,6 +6,18 @@ import { Code2, ExternalLink, Github, Key, Copy, Trash2, Check, Loader2, LogOut,
 import { toast } from 'sonner';
 import { AppShell, useAppChrome } from '@/components/app-shell';
 
+/** Official four-colour Google "G" mark (lucide has no brand icon for it). */
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="#4285F4" d="M23.06 12.25c0-.85-.08-1.67-.22-2.45H12v4.63h6.2a5.3 5.3 0 0 1-2.3 3.48v2.89h3.72c2.18-2 3.44-4.96 3.44-8.55Z" />
+      <path fill="#34A853" d="M12 24c3.11 0 5.72-1.03 7.62-2.8l-3.72-2.88c-1.03.69-2.35 1.1-3.9 1.1-3 0-5.54-2.02-6.45-4.74H1.7v2.98A11.99 11.99 0 0 0 12 24Z" />
+      <path fill="#FBBC05" d="M5.55 14.68a7.2 7.2 0 0 1 0-4.6V7.1H1.7a12 12 0 0 0 0 10.56l3.85-2.98Z" />
+      <path fill="#EA4335" d="M12 4.75c1.69 0 3.21.58 4.4 1.72l3.3-3.3C17.71 1.24 15.1 0 12 0 7.36 0 3.35 2.66 1.7 6.54l3.85 2.98C6.46 6.77 9 4.75 12 4.75Z" />
+    </svg>
+  );
+}
+
 export function ApiAccessPage() {
   return (
     <AppShell contentClassName="max-w-6xl">
@@ -15,7 +27,13 @@ export function ApiAccessPage() {
 }
 
 type ApiKey = { id: string; prefix: string; createdAt: string; lastUsedAt: string | null };
-type User = { id: string; login: string; name: string | null; avatar: string | null };
+type User = {
+  id: string;
+  provider: 'github' | 'google';
+  login: string;
+  name: string | null;
+  avatar: string | null;
+};
 
 function ApiAccessContent() {
   const { t } = useAppChrome();
@@ -52,6 +70,29 @@ function ApiAccessContent() {
       setLoading(false);
     };
     load();
+  }, []);
+
+  // Surface the OAuth callback result, then strip it from the URL so a refresh
+  // does not re-trigger the toast.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const githubStatus = params.get('github');
+    const googleStatus = params.get('google');
+    const reason = params.get('reason');
+
+    if (githubStatus === 'ok' || googleStatus === 'ok') {
+      toast.success('Logged in successfully');
+    } else if (githubStatus === 'error' || googleStatus === 'error') {
+      toast.error(`Login failed${reason ? `: ${reason}` : ''}`);
+    } else {
+      return;
+    }
+
+    params.delete('github');
+    params.delete('google');
+    params.delete('reason');
+    const query = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''));
   }, []);
 
   const handleGenerate = async () => {
@@ -154,17 +195,23 @@ function ApiAccessContent() {
         </p>
       </div>
 
-      {/* ========== GitHub Auth ========== */}
+      {/* ========== Sign-in providers ========== */}
       <div className="brutal-card" style={{ padding: '16px 18px', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Github className="h-5 w-5" style={{ color: 'var(--text-primary)' }} />
-            <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            {user?.provider === 'google' ? (
+              <GoogleIcon className="h-5 w-5" />
+            ) : (
+              <Github className="h-5 w-5" style={{ color: 'var(--text-primary)' }} />
+            )}
+            <div style={{ minWidth: 0 }}>
               <p style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                {user ? `GitHub: ${user.login}` : 'GitHub Authentication'}
+                {user ? `${user.provider === 'google' ? 'Google' : 'GitHub'}: ${user.login}` : 'Authentication'}
               </p>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {user ? 'Login via GitHub' : 'Required to generate and manage API keys'}
+                {user
+                  ? `Logged in via ${user.provider === 'google' ? 'Google' : 'GitHub'}`
+                  : 'Required to generate and manage API keys'}
               </p>
             </div>
           </div>
@@ -179,14 +226,24 @@ function ApiAccessContent() {
               Logout
             </button>
           ) : (
-            <Link
-              href="/api/auth/github"
-              className="brutal-btn brutal-btn-accent"
-              style={{ padding: '6px 14px', fontSize: '0.78rem', textDecoration: 'none' }}
-            >
-              <Github className="h-3.5 w-3.5" />
-              Login with GitHub
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <Link
+                href="/api/auth/google"
+                className="brutal-btn brutal-btn-white"
+                style={{ padding: '6px 14px', fontSize: '0.78rem', textDecoration: 'none' }}
+              >
+                <GoogleIcon className="h-4 w-4" />
+                Login with Google
+              </Link>
+              <Link
+                href="/api/auth/github"
+                className="brutal-btn brutal-btn-accent"
+                style={{ padding: '6px 14px', fontSize: '0.78rem', textDecoration: 'none' }}
+              >
+                <Github className="h-3.5 w-3.5" />
+                Login with GitHub
+              </Link>
+            </div>
           )}
         </div>
       </div>

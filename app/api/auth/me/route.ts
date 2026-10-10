@@ -11,6 +11,8 @@ export async function GET(req: Request) {
   return NextResponse.json({
     user: {
       id: session.userId,
+      // Legacy sessions predate multi-provider support; they were all GitHub.
+      provider: session.provider || 'github',
       login: session.login,
       name: session.name,
       avatar: session.avatar,

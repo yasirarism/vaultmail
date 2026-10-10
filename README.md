@@ -10,7 +10,7 @@ Temporary email service with disposable inboxes. Built with Next.js.
 - **Webhook** — receive emails via webhook
 - **Theme system** — 3 themes: Neo Brutal (default), Glassmorphism, Neomorph
 - **Starfield background** — twinkling stars + shooting stars (theme-aware)
-- **API key support** — GitHub OAuth login → generate API keys → OpenAI-style API
+- **API key support** — GitHub or Google OAuth login → generate API keys → OpenAI-style API
 
 ## Architecture
 
@@ -28,7 +28,7 @@ The system is **separated** into two distinct API layers:
 
 ## API Key System
 
-1. **Login with GitHub** at `/api-access`
+1. **Login with GitHub or Google** at `/api-access`
 2. **Generate API key** — visible exactly once (`vm-xxx...`)
 3. **Use API key** — pass in `Authorization: Bearer vm-xxx...` header
 4. **Revoke** — delete keys from the API access page
@@ -47,6 +47,8 @@ curl -H "Authorization: Bearer vm-xxx..." \
 | `MONGODB_URI` | Yes | MongoDB connection string |
 | `GITHUB_CLIENT_ID` | No | GitHub OAuth App client ID |
 | `GITHUB_CLIENT_SECRET` | No | GitHub OAuth App client secret |
+| `GOOGLE_CLIENT_ID` | No | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | No | Google OAuth client secret |
 | `APP_URL` | No | Public base URL (auto-detect if not set) |
 | `REQUIRE_API_KEY` | No | Set to `1` to require keys on public API |
 
@@ -59,6 +61,64 @@ curl -H "Authorization: Bearer vm-xxx..." \
 5. Set `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` in:
    - Environment variables, or
    - Admin panel → API & Integrations (recommended)
+
+### Google OAuth Setup
+
+You need a Google Cloud project. The free tier is enough — this flow only reads the
+user's basic profile (`openid email profile`) and costs nothing.
+
+1. Open the [Google Cloud Console](https://console.cloud.google.com/) and create a
+   project (or pick an existing one).
+2. Configure the consent screen: **Google Auth Platform → Branding** (older consoles:
+   *APIs & Services → OAuth consent screen*)
+   - **User type**: `External` (use `Internal` only if you are on Google Workspace and
+     want to restrict login to your own organisation)
+   - **App name**, **User support email**, **Developer contact email** — required
+   - **Scopes**: add `.../auth/userinfo.email` and `.../auth/userinfo.profile`.
+     These two are enough; do not add sensitive scopes.
+   - **Publish the app**: go to **Google Auth Platform → Audience** and click
+     **Publish app** so the publishing status becomes *In production*.
+     **You do NOT need to add test users.** `openid`, `email` and `profile` are all
+     *non-sensitive* scopes, so Google requires no verification review and the app
+     publishes immediately. While the status is *Testing*, only accounts listed under
+     *Test users* can sign in (hard cap of 100) — fine for your own testing, but it
+     blocks real users.
+   - Optional: *brand verification* is only needed to show your app's name and logo on
+     the consent screen instead of the project's domain. Purely cosmetic — login works
+     without it.
+3. Create the client: **APIs & Services → Credentials → Create Credentials → OAuth client ID**
+   - **Application type**: `Web application`
+   - **Authorized JavaScript origins**:
+     ```
+     https://yourdomain.com
+     http://localhost:3000
+     ```
+   - **Authorized redirect URIs**:
+     ```
+     https://yourdomain.com/api/auth/google/callback
+     http://localhost:3000/api/auth/google/callback
+     ```
+   - Click **Create**, then copy the **Client ID** and **Client secret**.
+4. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in:
+   - Environment variables, or
+   - Admin panel → API & Integrations (recommended)
+
+Both providers can be enabled at the same time — `/api-access` shows a button for each.
+
+#### Notes & troubleshooting
+
+- **The redirect URI must match exactly**, character for character, including the path
+  and the trailing `/api/auth/google/callback`. A mismatch gives
+  `redirect_uri_mismatch` on the Google screen.
+- **`http://` is only allowed for `localhost`.** Any other host must be `https://`.
+- If you serve the app on a different domain than `APP_URL`, set `APP_URL` (or the
+  admin panel's *APP URL* field) so the callback is built against the right host;
+  otherwise it is auto-detected from the request.
+- Google's `sub` claim is used as the account identifier, namespaced as
+  `google:<sub>`. It is stable even if the user later changes their Gmail address,
+  which is why the email is never used as a primary key.
+- Unverified Google emails are rejected, and a `prompt=select_account` is sent so the
+  user always gets to pick which account to use.
 
 ## Deployment
 
